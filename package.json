@@ -1,0 +1,37 @@
+{
+  "name": "mmj-suite",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev --filter=!backend",
+    "dev:all": "turbo run dev",
+    "dev:landing": "turbo run dev --filter=@mmj/landing",
+    "dev:inventory": "turbo run dev --filter=@mmj/inventory",
+    "dev:pos": "turbo run dev --filter=@mmj/pos",
+    "dev:crm": "turbo run dev --filter=@mmj/crm",
+    "dev:backend": "turbo run dev --filter=backend",
+    "build": "turbo run build",
+    "build:landing": "turbo run build --filter=@mmj/landing",
+    "build:inventory": "turbo run build --filter=@mmj/inventory",
+    "build:pos": "turbo run build --filter=@mmj/pos",
+    "build:crm": "turbo run build --filter=@mmj/crm",
+    "build:backend": "turbo run build --filter=backend",
+    "start": "turbo run start",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md,js,jsx,mjs,json}\"",
+    "clean": "turbo run clean"
+  },
+  "devDependencies": {
+    "prettier": "^3.1.1",
+    "turbo": "^2.5.0"
+  },
+  "engines": {
+    "node": "24.x",
+    "npm": ">=9.0.0"
+  },
+  "packageManager": "npm@11.6.2"
+}

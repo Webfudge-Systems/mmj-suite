@@ -1,0 +1,18 @@
+{
+  "collectionName": "components_shared_social_links",
+  "info": {
+    "displayName": "Social link",
+    "description": "A labelled URL for Instagram, WhatsApp and the rest."
+  },
+  "options": {},
+  "attributes": {
+    "label": {
+      "type": "string",
+      "required": true
+    },
+    "href": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

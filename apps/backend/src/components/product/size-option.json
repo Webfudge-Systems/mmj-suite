@@ -1,0 +1,14 @@
+{
+  "collectionName": "components_product_size_options",
+  "info": {
+    "displayName": "Size option",
+    "description": "A selectable ring, bangle or chain size."
+  },
+  "options": {},
+  "attributes": {
+    "value": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

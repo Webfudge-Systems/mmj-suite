@@ -1,0 +1,18 @@
+{
+  "collectionName": "components_shared_showroom_hours",
+  "info": {
+    "displayName": "Showroom hours",
+    "description": "Opening hours for a given set of days."
+  },
+  "options": {},
+  "attributes": {
+    "days": {
+      "type": "string",
+      "required": true
+    },
+    "time": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

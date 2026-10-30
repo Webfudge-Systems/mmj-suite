@@ -1,0 +1,154 @@
+{
+  "kind": "collectionType",
+  "collectionName": "products",
+  "info": {
+    "singularName": "product",
+    "pluralName": "products",
+    "displayName": "Product",
+    "description": "A gold, diamond, silver, platinum or bullion ornament."
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "name",
+      "required": true
+    },
+    "tagline": {
+      "type": "string"
+    },
+    "sku": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "designNumber": {
+      "type": "string"
+    },
+    "metal": {
+      "type": "enumeration",
+      "enum": ["gold", "diamond", "silver", "platinum", "bullion"],
+      "required": true
+    },
+    "occasion": {
+      "type": "enumeration",
+      "enum": ["bridal", "festive", "daily", "gifting", "mens"],
+      "required": true
+    },
+    "purity": {
+      "type": "enumeration",
+      "enum": ["24KT", "22KT", "18KT", "14KT", "950PT", "925"],
+      "required": true
+    },
+    "grossWeight": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "netWeight": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "stoneWeight": {
+      "type": "decimal",
+      "min": 0
+    },
+    "makingChargePercent": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "stoneCost": {
+      "type": "integer",
+      "min": 0
+    },
+    "offerPercent": {
+      "type": "integer",
+      "min": 0,
+      "max": 90
+    },
+    "hallmark": {
+      "type": "component",
+      "repeatable": false,
+      "component": "product.hallmark"
+    },
+    "stones": {
+      "type": "component",
+      "repeatable": true,
+      "component": "product.stone-detail"
+    },
+    "images": {
+      "type": "media",
+      "multiple": true,
+      "required": true,
+      "allowedTypes": ["images"]
+    },
+    "sizes": {
+      "type": "component",
+      "repeatable": true,
+      "component": "product.size-option"
+    },
+    "availability": {
+      "type": "enumeration",
+      "enum": ["in-stock", "made-to-order"],
+      "default": "in-stock",
+      "required": true
+    },
+    "description": {
+      "type": "richtext"
+    },
+    "specs": {
+      "type": "component",
+      "repeatable": true,
+      "component": "product.spec"
+    },
+    "care": {
+      "type": "richtext"
+    },
+    "featured": {
+      "type": "boolean",
+      "default": false
+    },
+    "isNew": {
+      "type": "boolean",
+      "default": false
+    },
+    "bestseller": {
+      "type": "boolean",
+      "default": false
+    },
+    "popularity": {
+      "type": "integer",
+      "default": 0,
+      "min": 0
+    },
+    "releasedAt": {
+      "type": "date"
+    },
+    "category": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::category.category",
+      "inversedBy": "products"
+    },
+    "collection": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::collection.collection",
+      "inversedBy": "products"
+    },
+    "seo": {
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.seo"
+    }
+  }
+}

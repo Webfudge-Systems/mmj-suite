@@ -1,0 +1,61 @@
+{
+  "kind": "collectionType",
+  "collectionName": "stores",
+  "info": {
+    "singularName": "store",
+    "pluralName": "stores",
+    "displayName": "Store",
+    "description": "A showroom: address, hours and map."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "name",
+      "required": true
+    },
+    "addressLines": {
+      "type": "text",
+      "required": true
+    },
+    "city": {
+      "type": "string",
+      "required": true
+    },
+    "state": {
+      "type": "string",
+      "required": true
+    },
+    "pincode": {
+      "type": "string",
+      "required": true
+    },
+    "phone": {
+      "type": "string"
+    },
+    "mapUrl": {
+      "type": "string"
+    },
+    "hours": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.showroom-hours"
+    },
+    "closedOn": {
+      "type": "string"
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    }
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "kind": "singleType",
+  "collectionName": "globals",
+  "info": {
+    "singularName": "global",
+    "pluralName": "globals",
+    "displayName": "Global",
+    "description": "Site identity, announcement, contact, nav, promises and FAQs."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "default": "Mukund Maid Jewellers"
+    },
+    "shortName": {
+      "type": "string",
+      "default": "MMJ"
+    },
+    "tagline": {
+      "type": "string"
+    },
+    "description": {
+      "type": "text"
+    },
+    "announcement": {
+      "type": "string"
+    },
+    "email": {
+      "type": "email"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "whatsapp": {
+      "type": "string"
+    },
+    "showroomStreet": {
+      "type": "string"
+    },
+    "showroomCity": {
+      "type": "string"
+    },
+    "hours": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.showroom-hours"
+    },
+    "promises": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.promise"
+    },
+    "faqs": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.faq-item"
+    },
+    "mainNav": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.nav-link"
+    },
+    "footerColumns": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.footer-column"
+    },
+    "social": {
+      "type": "component",
+      "repeatable": true,
+      "component": "shared.social-link"
+    },
+    "seo": {
+      "type": "component",
+      "repeatable": false,
+      "component": "shared.seo"
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "kind": "collectionType",
+  "collectionName": "stones",
+  "info": {
+    "singularName": "stone",
+    "pluralName": "stones",
+    "displayName": "Stone",
+    "description": "A gem type used across the catalogue: diamond, polki, ruby and the rest."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "name",
+      "required": true
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": ["diamond", "polki", "ruby", "emerald", "sapphire", "pearl"],
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    }
+  }
+}

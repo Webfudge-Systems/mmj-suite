@@ -1,0 +1,20 @@
+{
+  "collectionName": "components_product_hallmarks",
+  "info": {
+    "displayName": "Hallmark",
+    "description": "BIS mark and the six-character HUID stamped on the piece."
+  },
+  "options": {},
+  "attributes": {
+    "huid": {
+      "type": "string",
+      "required": true,
+      "regex": "^[A-Z0-9]{6}$"
+    },
+    "bis": {
+      "type": "boolean",
+      "default": true,
+      "required": true
+    }
+  }
+}

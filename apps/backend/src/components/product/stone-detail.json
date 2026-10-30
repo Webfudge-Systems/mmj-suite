@@ -1,0 +1,31 @@
+{
+  "collectionName": "components_product_stone_details",
+  "info": {
+    "displayName": "Stone detail",
+    "description": "A group of stones set in a piece: type, count, carat, grading."
+  },
+  "options": {},
+  "attributes": {
+    "type": {
+      "type": "enumeration",
+      "enum": ["diamond", "polki", "ruby", "emerald", "sapphire", "pearl"],
+      "required": true
+    },
+    "count": {
+      "type": "integer",
+      "required": true,
+      "min": 1
+    },
+    "carat": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "clarity": {
+      "type": "string"
+    },
+    "colour": {
+      "type": "string"
+    }
+  }
+}

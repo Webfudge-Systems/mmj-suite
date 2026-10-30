@@ -1,0 +1,22 @@
+{
+  "collectionName": "components_shared_promises",
+  "info": {
+    "displayName": "Promise",
+    "description": "A numbered reason to buy, shown on home and about."
+  },
+  "options": {},
+  "attributes": {
+    "index": {
+      "type": "string",
+      "required": true
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "body": {
+      "type": "text",
+      "required": true
+    }
+  }
+}

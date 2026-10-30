@@ -1,0 +1,18 @@
+{
+  "collectionName": "components_shared_nav_links",
+  "info": {
+    "displayName": "Nav link",
+    "description": "A labelled path used in the header, footer and menus."
+  },
+  "options": {},
+  "attributes": {
+    "label": {
+      "type": "string",
+      "required": true
+    },
+    "href": {
+      "type": "string",
+      "required": true
+    }
+  }
+}
