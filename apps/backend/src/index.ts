@@ -1,4 +1,6 @@
 import type { Core } from "@strapi/strapi";
+import { registerAuditLog } from "./utils/audit";
+import { defaultOrganizationSlug } from "./utils/constants";
 
 const publicReads = [
   "api::category.category.find",
@@ -13,32 +15,105 @@ const publicReads = [
   "api::journal-post.journal-post.findOne",
   "api::review.review.find",
   "api::review.review.findOne",
-  "api::gold-rate.gold-rate.find",
-  "api::gold-rate.gold-rate.findOne",
   "api::store.store.find",
   "api::store.store.findOne",
   "api::global.global.find",
 ];
 
+/** Staff endpoints. Each is further limited by role in its route's policy. */
+const staffActions = [
+  "api::staff.staff.me",
+  "api::rate-card.rate-card.history",
+  "api::rate-card.rate-card.publish",
+];
+
+async function grant(strapi: Core.Strapi, roleType: string, actions: string[]) {
+  const role = await strapi.db
+    .query("plugin::users-permissions.role")
+    .findOne({ where: { type: roleType }, populate: ["permissions"] });
+  if (!role) return;
+
+  const existing = new Set(
+    (role.permissions ?? []).map((permission: { action: string }) => permission.action),
+  );
+
+  for (const action of actions) {
+    if (existing.has(action)) continue;
+    await strapi.db.query("plugin::users-permissions.permission").create({
+      data: { action, role: role.id },
+    });
+  }
+}
+
+/**
+ * First boot on an empty database: the MMJ organization, its first branch, and
+ * an owner account when SEED_OWNER_EMAIL and SEED_OWNER_PASSWORD are set.
+ */
+async function seed(strapi: Core.Strapi) {
+  const slug = defaultOrganizationSlug();
+  let organization: any = await strapi.db
+    .query("api::organization.organization")
+    .findOne({ where: { slug } });
+
+  if (!organization) {
+    organization = await strapi.documents("api::organization.organization").create({
+      data: { name: "Mukund Maid Jewellers", slug, settings: {} },
+    } as any);
+    strapi.log.info(`Created organization ${slug}`);
+  }
+
+  let branch: any = await strapi.db
+    .query("api::branch.branch")
+    .findOne({ where: { organization: organization.id } });
+
+  if (!branch) {
+    branch = await strapi.documents("api::branch.branch").create({
+      data: {
+        name: "Rahuri",
+        code: "B1",
+        city: "Rahuri",
+        isActive: true,
+        organization: organization.documentId,
+      },
+    } as any);
+    strapi.log.info("Created branch B1 Rahuri");
+  }
+
+  const email = process.env.SEED_OWNER_EMAIL;
+  const password = process.env.SEED_OWNER_PASSWORD;
+  if (!email || !password) return;
+
+  const existing = await strapi.db.query("plugin::users-permissions.user").findOne({ where: { email } });
+  if (existing) return;
+
+  const authenticated = await strapi.db
+    .query("plugin::users-permissions.role")
+    .findOne({ where: { type: "authenticated" } });
+
+  await strapi.plugin("users-permissions").service("user").add({
+    username: email.split("@")[0],
+    email,
+    password,
+    provider: "local",
+    confirmed: true,
+    blocked: false,
+    role: authenticated?.id,
+    fullName: process.env.SEED_OWNER_NAME || "Owner",
+    staffRole: "owner",
+    organization: organization.id,
+    branches: [branch.id],
+  });
+  strapi.log.info(`Created owner account ${email}`);
+}
+
 export default {
-  register(/* { strapi }: { strapi: Core.Strapi } */) {},
+  register({ strapi }: { strapi: Core.Strapi }) {
+    registerAuditLog(strapi);
+  },
 
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
-    const role = await strapi.db
-      .query("plugin::users-permissions.role")
-      .findOne({ where: { type: "public" }, populate: ["permissions"] });
-
-    if (!role) return;
-
-    const existing = new Set(
-      (role.permissions ?? []).map((permission: { action: string }) => permission.action),
-    );
-
-    for (const action of publicReads) {
-      if (existing.has(action)) continue;
-      await strapi.db.query("plugin::users-permissions.permission").create({
-        data: { action, role: role.id },
-      });
-    }
+    await grant(strapi, "public", publicReads);
+    await grant(strapi, "authenticated", staffActions);
+    await seed(strapi);
   },
 };

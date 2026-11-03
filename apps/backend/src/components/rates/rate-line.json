@@ -1,0 +1,29 @@
+{
+  "collectionName": "components_rates_rate_lines",
+  "info": {
+    "displayName": "Rate line",
+    "description": "Rate per gram for one purity."
+  },
+  "options": {},
+  "attributes": {
+    "metal": {
+      "type": "enumeration",
+      "enum": [
+        "gold",
+        "silver",
+        "platinum"
+      ],
+      "required": true
+    },
+    "purity": {
+      "type": "string",
+      "required": true,
+      "maxLength": 8
+    },
+    "ratePerGram": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    }
+  }
+}

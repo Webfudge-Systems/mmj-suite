@@ -1,0 +1,75 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "landing",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "-w",
+        "@mmj/landing"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "inventory",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "-w",
+        "@mmj/inventory"
+      ],
+      "port": 3001
+    },
+    {
+      "name": "pos",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "-w",
+        "@mmj/pos"
+      ],
+      "port": 3002
+    },
+    {
+      "name": "crm",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "-w",
+        "@mmj/crm"
+      ],
+      "port": 3003
+    },
+    {
+      "name": "showroom",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "-w",
+        "@mmj/showroom"
+      ],
+      "port": 3004
+    },
+    {
+      "name": "landing-3010",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "exec",
+        "-w",
+        "@mmj/landing",
+        "--",
+        "next",
+        "dev",
+        "-p",
+        "3010"
+      ],
+      "port": 3010
+    }
+  ]
+}

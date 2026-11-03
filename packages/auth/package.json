@@ -12,5 +12,10 @@
   },
   "peerDependencies": {
     "react": "^19.0.0"
+  },
+  "dependencies": {
+    "@webfudge/config": "*",
+    "@webfudge/ui": "*",
+    "@webfudge/utils": "*"
   }
 }

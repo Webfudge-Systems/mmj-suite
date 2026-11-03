@@ -10,5 +10,14 @@
     "./formatters": "./src/formatters/index.ts",
     "./api": "./src/api/index.ts",
     "./pricing": "./src/pricing/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@webfudge/config": "*"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.4"
   }
 }

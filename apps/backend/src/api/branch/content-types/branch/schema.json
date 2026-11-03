@@ -1,0 +1,29 @@
+{
+  "kind": "collectionType",
+  "collectionName": "branches",
+  "info": {
+    "singularName": "branch",
+    "pluralName": "branches",
+    "displayName": "Branch",
+    "description": "A shop of an organization. Stock, staff and sales are scoped to branches."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": { "type": "string", "required": true },
+    "code": { "type": "string", "required": true, "maxLength": 8 },
+    "city": { "type": "string" },
+    "address": { "type": "text" },
+    "phone": { "type": "string" },
+    "gstin": { "type": "string", "maxLength": 15 },
+    "isActive": { "type": "boolean", "default": true },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization",
+      "inversedBy": "branches"
+    }
+  }
+}

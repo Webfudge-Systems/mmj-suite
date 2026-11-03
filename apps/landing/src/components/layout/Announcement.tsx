@@ -2,15 +2,16 @@ import Link from "next/link";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { Shell } from "@/components/ui/Shell";
 import { announcements } from "@/data/site";
-import { rateByPurity } from "@/data/rates";
+import { getLiveRates } from "@/lib/live-rates";
 import { formatPrice } from "@/lib/utils";
 
 /**
  * Thin band above the header. An Indian jeweller leads with the day's rate, so
  * the 22KT figure sits on the right where a shipping promise usually would.
  */
-export function Announcement() {
-  const gold = rateByPurity("22KT");
+export async function Announcement() {
+  const { rates } = await getLiveRates();
+  const gold = rates.find((rate) => rate.purity === "22KT");
   const rising = (gold?.changePerGram ?? 0) >= 0;
   const Trend = rising ? TrendingUp : TrendingDown;
 

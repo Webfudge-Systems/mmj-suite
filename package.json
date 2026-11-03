@@ -13,21 +13,26 @@
     "dev:inventory": "turbo run dev --filter=@mmj/inventory",
     "dev:pos": "turbo run dev --filter=@mmj/pos",
     "dev:crm": "turbo run dev --filter=@mmj/crm",
+    "dev:showroom": "turbo run dev --filter=@mmj/showroom",
     "dev:backend": "turbo run dev --filter=backend",
     "build": "turbo run build",
     "build:landing": "turbo run build --filter=@mmj/landing",
     "build:inventory": "turbo run build --filter=@mmj/inventory",
     "build:pos": "turbo run build --filter=@mmj/pos",
     "build:crm": "turbo run build --filter=@mmj/crm",
+    "build:showroom": "turbo run build --filter=@mmj/showroom",
     "build:backend": "turbo run build --filter=backend",
     "start": "turbo run start",
     "lint": "turbo run lint",
+    "test": "turbo run test",
     "format": "prettier --write \"**/*.{ts,tsx,md,js,jsx,mjs,json}\"",
     "clean": "turbo run clean"
   },
   "devDependencies": {
     "prettier": "^3.1.1",
-    "turbo": "^2.5.0"
+    "turbo": "^2.5.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19"
   },
   "engines": {
     "node": "24.x",

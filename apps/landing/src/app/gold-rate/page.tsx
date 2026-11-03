@@ -5,9 +5,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Statement } from "@/components/ui/SectionHeading";
 import { ButtonLink } from "@/components/ui/Button";
 import { Prose } from "@/components/ui/Prose";
-import { metalRates, rateUpdatedOn } from "@/data/rates";
+import { getLiveRates } from "@/lib/live-rates";
 import { formatDate, formatRate } from "@/lib/utils";
-import type { Purity } from "@/types";
 
 export const metadata: Metadata = {
   title: "Today's gold rate",
@@ -15,21 +14,14 @@ export const metadata: Metadata = {
     "MMJ counter rates for 24, 22, 18 and 14 karat gold, 950 platinum and 925 silver, updated each trading morning in Rahuri.",
 };
 
-const fineness: Record<Purity, number> = {
-  "24KT": 1,
-  "22KT": 22 / 24,
-  "18KT": 18 / 24,
-  "14KT": 14 / 24,
-  "950PT": 0.95,
-  "925": 1,
-};
+export default async function GoldRatePage() {
+  const { rates, updatedOn } = await getLiveRates();
 
-export default function GoldRatePage() {
   return (
     <>
       <PageHeader
         title="Today's rate at the counter"
-        lead={`Updated ${formatDate(rateUpdatedOn)}. The same numbers sit behind every estimate on this site and every slip printed in Rahuri.`}
+        lead={`Updated ${formatDate(updatedOn)}. These are the counter rates set in Rahuri each morning.`}
         trail={[{ label: "Home", href: "/" }, { label: "Today's rate" }]}
       />
 
@@ -45,9 +37,9 @@ export default function GoldRatePage() {
               </tr>
             </thead>
             <tbody>
-              {metalRates.map((rate) => {
-                const effective = rate.ratePerGram * fineness[rate.purity];
-                const change = rate.changePerGram * fineness[rate.purity];
+              {rates.map((rate) => {
+                const effective = rate.ratePerGram;
+                const change = rate.changePerGram;
                 const up = change >= 0;
 
                 return (
@@ -67,7 +59,7 @@ export default function GoldRatePage() {
         </div>
 
         <p className="mt-4 max-w-2xl text-[12px] leading-relaxed text-stone">
-          Gold is quoted as 24 karat and scaled by purity on the estimate. Silver is quoted as 925.
+          Each purity is quoted per gram, as set at the counter each morning.
           Rates move through the day; a piece reserved after 4pm is billed at the next morning&apos;s
           figure if you have not paid.
         </p>

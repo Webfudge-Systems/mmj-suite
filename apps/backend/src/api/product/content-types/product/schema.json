@@ -34,18 +34,30 @@
     },
     "metal": {
       "type": "enumeration",
-      "enum": ["gold", "diamond", "silver", "platinum", "bullion"],
+      "enum": [
+        "gold",
+        "diamond",
+        "silver",
+        "platinum",
+        "bullion"
+      ],
       "required": true
     },
     "occasion": {
       "type": "enumeration",
-      "enum": ["bridal", "festive", "daily", "gifting", "mens"],
+      "enum": [
+        "bridal",
+        "festive",
+        "daily",
+        "gifting",
+        "mens"
+      ],
       "required": true
     },
     "purity": {
-      "type": "enumeration",
-      "enum": ["24KT", "22KT", "18KT", "14KT", "950PT", "925"],
-      "required": true
+      "type": "string",
+      "required": true,
+      "maxLength": 8
     },
     "grossWeight": {
       "type": "decimal",
@@ -89,7 +101,9 @@
       "type": "media",
       "multiple": true,
       "required": true,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "sizes": {
       "type": "component",
@@ -98,7 +112,10 @@
     },
     "availability": {
       "type": "enumeration",
-      "enum": ["in-stock", "made-to-order"],
+      "enum": [
+        "in-stock",
+        "made-to-order"
+      ],
       "default": "in-stock",
       "required": true
     },

@@ -1,0 +1,60 @@
+/*
+ * MMJ suite theme for the internal apps (Back Office, POS, CRM, Showroom).
+ * Import after tailwindcss in each app's globals.css, then add an @source for
+ * this package so its classes are generated.
+ *
+ * Brand palette: Deep Blue #0A2874 · Golden Crown #E9B120 · White Cap #FAFAFA
+ * Velvet Black #272727 · Taupe #AF9C87
+ */
+
+@theme {
+  --font-sans: var(--font-open-sauce), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+  --color-navy: #0a2874;
+  --color-navy-deep: #071c52;
+  --color-navy-soft: #e6ebf7;
+  --color-gold: #e9b120;
+  --color-gold-deep: #835f00;
+  --color-gold-soft: #fbf1d6;
+  --color-taupe: #af9c87;
+
+  --color-ink: #23252e;
+  --color-ash: #5b6072;
+  --color-line: #e1e3ea;
+  --color-paper: #fafafa;
+  --color-surface: #ffffff;
+  --color-sunk: #f2f3f7;
+
+  --color-ok: #1e6b3a;
+  --color-ok-soft: #e3f2e8;
+  --color-warn: #8a5a00;
+  --color-warn-soft: #fdf3dc;
+  --color-risk: #a3253b;
+  --color-risk-soft: #fbe7ea;
+
+  --radius-control: 8px;
+  --radius-panel: 12px;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: var(--color-navy);
+    color: var(--color-paper);
+  }
+}

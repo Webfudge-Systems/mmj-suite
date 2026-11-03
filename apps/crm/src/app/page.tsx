@@ -1,7 +1,23 @@
+import { Card, CardBody, CardHeader, LiveRateBoard, Wordmark } from "@webfudge/ui";
+import { API_URL } from "@/lib/env";
+
 export default function Home() {
   return (
-    <main className="flex min-h-screen items-center justify-center">
-      <h1 className="text-2xl font-semibold">MMJ CRM & Loyalty</h1>
-    </main>
+    <div className="min-h-dvh">
+      <header className="bg-navy-deep px-4 py-4 sm:px-6">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
+          <Wordmark appName="CRM & Loyalty" />
+        </div>
+      </header>
+      <main className="mx-auto grid max-w-5xl gap-6 px-4 py-8 sm:px-6">
+        <Card>
+          <CardHeader title="Today's rates" description="Published from the Back Office. Updates on its own within a minute." />
+          <CardBody>
+            <LiveRateBoard apiUrl={API_URL} />
+          </CardBody>
+        </Card>
+        <p className="text-sm text-ash">Customer screens arrive in phase 5: customers, loyalty points, gold schemes and campaigns.</p>
+      </main>
+    </div>
   );
 }

@@ -9,10 +9,15 @@
     ".": "./src/index.ts",
     "./components": "./src/components/index.ts",
     "./layouts": "./src/layouts/index.ts",
-    "./feedback": "./src/feedback/index.ts",
-    "./themes": "./src/themes/index.ts"
+    "./fonts": "./src/fonts/index.ts",
+    "./theme.css": "./src/styles/theme.css"
   },
   "peerDependencies": {
-    "react": "^19.0.0"
+    "react": "^19.0.0",
+    "next": "^16.0.0"
+  },
+  "dependencies": {
+    "@webfudge/hooks": "*",
+    "@webfudge/utils": "*"
   }
 }

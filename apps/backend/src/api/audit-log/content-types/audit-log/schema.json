@@ -1,0 +1,34 @@
+{
+  "kind": "collectionType",
+  "collectionName": "audit_logs",
+  "info": {
+    "singularName": "audit-log",
+    "pluralName": "audit-logs",
+    "displayName": "Audit log",
+    "description": "Who changed what, and when. Written by the backend only."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "action": { "type": "enumeration", "enum": ["create", "update", "delete", "publish", "unpublish"], "required": true },
+    "entityType": { "type": "string", "required": true },
+    "entityId": { "type": "string" },
+    "summary": { "type": "string" },
+    "changes": { "type": "json" },
+    "actorType": { "type": "enumeration", "enum": ["staff", "admin", "system"], "required": true },
+    "actorLabel": { "type": "string" },
+    "ip": { "type": "string" },
+    "actor": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    }
+  }
+}

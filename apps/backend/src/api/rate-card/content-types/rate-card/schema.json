@@ -1,0 +1,35 @@
+{
+  "kind": "collectionType",
+  "collectionName": "rate_cards",
+  "info": {
+    "singularName": "rate-card",
+    "pluralName": "rate-cards",
+    "displayName": "Rate card",
+    "description": "The metal rates published for a trading day. Never edited; a new card replaces the last."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "effectiveFrom": { "type": "datetime", "required": true },
+    "note": { "type": "text", "maxLength": 500 },
+    "largeChange": { "type": "boolean", "default": false },
+    "rates": {
+      "type": "component",
+      "repeatable": true,
+      "component": "rates.rate-line",
+      "required": true
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    },
+    "setBy": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    }
+  }
+}
