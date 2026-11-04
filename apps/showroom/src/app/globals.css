@@ -2,3 +2,15 @@
 @import "../../../../packages/ui/src/styles/theme.css";
 
 @source "../../../../packages/ui/src";
+@source "../../../../packages/auth/src";
+
+@layer base {
+  /* Tablets: no tap flash, no text selection when swiping cards. */
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  button,
+  a {
+    touch-action: manipulation;
+  }
+}

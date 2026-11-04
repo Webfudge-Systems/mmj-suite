@@ -13,7 +13,7 @@ export function BranchSwitcher() {
   return (
     <label className="flex items-center gap-2 text-[13px]">
       <span className="text-ash">Branch</span>
-      <Select id="branch-switcher" value={branch?.id ?? ""} onChange={(event) => setBranchId(Number(event.target.value))} className="h-8 w-auto py-0">
+      <Select id="branch-switcher" value={branch?.id ?? ""} onChange={(event) => setBranchId(Number(event.target.value))} className="h-8 max-w-56 py-0">
         {branches.map((entry) => (
           <option key={entry.id} value={entry.id}>
             {entry.name} ({entry.code})

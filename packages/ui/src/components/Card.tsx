@@ -4,7 +4,8 @@ import { cn } from "../lib/cn";
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("rounded-[var(--radius-panel)] border border-line bg-surface", className)}
+      // min-w-0 lets wide tables scroll inside the card instead of widening the page.
+      className={cn("min-w-0 rounded-[var(--radius-panel)] border border-line bg-surface", className)}
       {...props}
     />
   );

@@ -1,0 +1,58 @@
+{
+  "kind": "collectionType",
+  "collectionName": "day_closes",
+  "info": {
+    "singularName": "day-close",
+    "pluralName": "day-closes",
+    "displayName": "Day close",
+    "description": "The counter's end-of-day cash count against what the system expects."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "date": {
+      "type": "date",
+      "required": true
+    },
+    "openingCash": {
+      "type": "decimal",
+      "required": true
+    },
+    "expectedCash": {
+      "type": "decimal",
+      "required": true
+    },
+    "countedCash": {
+      "type": "decimal",
+      "required": true
+    },
+    "difference": {
+      "type": "decimal",
+      "required": true
+    },
+    "totals": {
+      "type": "json",
+      "required": true
+    },
+    "notes": {
+      "type": "text"
+    },
+    "closedBy": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "branch": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::branch.branch"
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    }
+  }
+}

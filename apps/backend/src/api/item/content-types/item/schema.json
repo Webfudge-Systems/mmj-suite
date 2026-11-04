@@ -123,6 +123,14 @@
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::organization.organization"
+    },
+    "heldBy": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "heldSince": {
+      "type": "datetime"
     }
   }
 }

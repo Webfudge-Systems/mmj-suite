@@ -1,0 +1,128 @@
+{
+  "kind": "collectionType",
+  "collectionName": "invoices",
+  "info": {
+    "singularName": "invoice",
+    "pluralName": "invoices",
+    "displayName": "Invoice",
+    "description": "A tax invoice. Priced on the server; never edited after it is issued, only cancelled."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "number": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "maxLength": 40
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "paid",
+        "cancelled"
+      ],
+      "required": true,
+      "default": "paid"
+    },
+    "invoiceDate": {
+      "type": "datetime",
+      "required": true
+    },
+    "lines": {
+      "type": "json",
+      "required": true
+    },
+    "customerSnapshot": {
+      "type": "json",
+      "required": true
+    },
+    "rates": {
+      "type": "json",
+      "required": true
+    },
+    "taxableValue": {
+      "type": "decimal",
+      "required": true
+    },
+    "cgst": {
+      "type": "decimal",
+      "required": true
+    },
+    "sgst": {
+      "type": "decimal",
+      "required": true
+    },
+    "roundOff": {
+      "type": "decimal",
+      "required": true
+    },
+    "total": {
+      "type": "decimal",
+      "required": true
+    },
+    "oldGoldValue": {
+      "type": "decimal"
+    },
+    "advanceUsed": {
+      "type": "decimal"
+    },
+    "creditNoteUsed": {
+      "type": "decimal"
+    },
+    "amountDue": {
+      "type": "decimal",
+      "required": true
+    },
+    "payments": {
+      "type": "json",
+      "required": true
+    },
+    "notes": {
+      "type": "text"
+    },
+    "cancelReason": {
+      "type": "text"
+    },
+    "cancelledAt": {
+      "type": "datetime"
+    },
+    "customer": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::customer.customer"
+    },
+    "salesperson": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "cashier": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "cancelledBy": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "estimate": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::estimate.estimate"
+    },
+    "branch": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::branch.branch"
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    }
+  }
+}

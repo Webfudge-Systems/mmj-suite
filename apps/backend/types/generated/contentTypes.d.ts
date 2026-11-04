@@ -431,6 +431,54 @@ export interface ApiAuditLogAuditLog extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiBookingBooking extends Struct.CollectionTypeSchema {
+  collectionName: "bookings";
+  info: {
+    description: "An advance paid by a customer, optionally locking the day's rate for some weight.";
+    displayName: "Booking";
+    pluralName: "bookings";
+    singularName: "booking";
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    amount: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    balance: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    branch: Schema.Attribute.Relation<"manyToOne", "api::branch.branch">;
+    by: Schema.Attribute.Relation<"manyToOne", "plugin::users-permissions.user">;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+    customer: Schema.Attribute.Relation<"manyToOne", "api::customer.customer">;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<"oneToMany", "api::booking.booking"> &
+      Schema.Attribute.Private;
+    lockedPurity: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 8;
+      }>;
+    lockedRate: Schema.Attribute.Decimal;
+    lockedWeight: Schema.Attribute.Decimal;
+    lockedWeightUsed: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    note: Schema.Attribute.Text;
+    number: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 40;
+      }>;
+    organization: Schema.Attribute.Relation<"manyToOne", "api::organization.organization">;
+    payments: Schema.Attribute.JSON & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    status: Schema.Attribute.Enumeration<["open", "used", "refunded"]> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<"open">;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+    usage: Schema.Attribute.JSON;
+    validUntil: Schema.Attribute.Date;
+  };
+}
+
 export interface ApiBranchBranch extends Struct.CollectionTypeSchema {
   collectionName: "branches";
   info: {
@@ -536,6 +584,129 @@ export interface ApiCollectionCollection extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiCreditNoteCreditNote extends Struct.CollectionTypeSchema {
+  collectionName: "credit_notes";
+  info: {
+    description: "Value owed to a customer for returned pieces. Used against a bill or paid out.";
+    displayName: "Credit note";
+    pluralName: "credit-notes";
+    singularName: "credit-note";
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    amount: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    balance: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    branch: Schema.Attribute.Relation<"manyToOne", "api::branch.branch">;
+    by: Schema.Attribute.Relation<"manyToOne", "plugin::users-permissions.user">;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+    customer: Schema.Attribute.Relation<"manyToOne", "api::customer.customer">;
+    deductionPercent: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    invoice: Schema.Attribute.Relation<"manyToOne", "api::invoice.invoice">;
+    lines: Schema.Attribute.JSON & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<"oneToMany", "api::credit-note.credit-note"> &
+      Schema.Attribute.Private;
+    number: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 40;
+      }>;
+    organization: Schema.Attribute.Relation<"manyToOne", "api::organization.organization">;
+    publishedAt: Schema.Attribute.DateTime;
+    reason: Schema.Attribute.Text;
+    refunds: Schema.Attribute.JSON;
+    status: Schema.Attribute.Enumeration<["open", "used", "refunded"]> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<"open">;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+    usage: Schema.Attribute.JSON;
+  };
+}
+
+export interface ApiCustomerCustomer extends Struct.CollectionTypeSchema {
+  collectionName: "customers";
+  info: {
+    description: "A person or business who buys from or sells to the shop.";
+    displayName: "Customer";
+    pluralName: "customers";
+    singularName: "customer";
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    address: Schema.Attribute.Text;
+    altPhone: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 15;
+      }>;
+    branch: Schema.Attribute.Relation<"manyToOne", "api::branch.branch">;
+    city: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+    email: Schema.Attribute.Email;
+    gstin: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 15;
+      }>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<"oneToMany", "api::customer.customer"> &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    notes: Schema.Attribute.Text;
+    organization: Schema.Attribute.Relation<"manyToOne", "api::organization.organization">;
+    pan: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 10;
+      }>;
+    phone: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 15;
+      }>;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+  };
+}
+
+export interface ApiDayCloseDayClose extends Struct.CollectionTypeSchema {
+  collectionName: "day_closes";
+  info: {
+    description: "The counter's end-of-day cash count against what the system expects.";
+    displayName: "Day close";
+    pluralName: "day-closes";
+    singularName: "day-close";
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    branch: Schema.Attribute.Relation<"manyToOne", "api::branch.branch">;
+    closedBy: Schema.Attribute.Relation<"manyToOne", "plugin::users-permissions.user">;
+    countedCash: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+    date: Schema.Attribute.Date & Schema.Attribute.Required;
+    difference: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    expectedCash: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<"oneToMany", "api::day-close.day-close"> &
+      Schema.Attribute.Private;
+    notes: Schema.Attribute.Text;
+    openingCash: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    organization: Schema.Attribute.Relation<"manyToOne", "api::organization.organization">;
+    publishedAt: Schema.Attribute.DateTime;
+    totals: Schema.Attribute.JSON & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+  };
+}
+
 export interface ApiDesignDesign extends Struct.CollectionTypeSchema {
   collectionName: "designs";
   info: {
@@ -574,6 +745,78 @@ export interface ApiDesignDesign extends Struct.CollectionTypeSchema {
     occasion: Schema.Attribute.Enumeration<["bridal", "festive", "daily", "gifting", "mens"]>;
     organization: Schema.Attribute.Relation<"manyToOne", "api::organization.organization">;
     publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+  };
+}
+
+export interface ApiDeviceDevice extends Struct.CollectionTypeSchema {
+  collectionName: "devices";
+  info: {
+    description: "A showroom tablet paired with a branch. Salespeople sign in on it with a PIN.";
+    displayName: "Device";
+    pluralName: "devices";
+    singularName: "device";
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    addedBy: Schema.Attribute.Relation<"manyToOne", "plugin::users-permissions.user">;
+    branch: Schema.Attribute.Relation<"manyToOne", "api::branch.branch">;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+    isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    lastSeenAt: Schema.Attribute.DateTime;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<"oneToMany", "api::device.device"> &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    organization: Schema.Attribute.Relation<"manyToOne", "api::organization.organization">;
+    pairingCodeHash: Schema.Attribute.String & Schema.Attribute.Private;
+    pairingExpiresAt: Schema.Attribute.DateTime;
+    publishedAt: Schema.Attribute.DateTime;
+    tokenHash: Schema.Attribute.String & Schema.Attribute.Private;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+  };
+}
+
+export interface ApiEstimateEstimate extends Struct.CollectionTypeSchema {
+  collectionName: "estimates";
+  info: {
+    description: "Pieces a customer chose, waiting at the counter to be billed.";
+    displayName: "Estimate";
+    pluralName: "estimates";
+    singularName: "estimate";
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    billedAt: Schema.Attribute.DateTime;
+    branch: Schema.Attribute.Relation<"manyToOne", "api::branch.branch">;
+    cancelledAt: Schema.Attribute.DateTime;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+    customer: Schema.Attribute.Relation<"manyToOne", "api::customer.customer">;
+    invoice: Schema.Attribute.Relation<"manyToOne", "api::invoice.invoice">;
+    lines: Schema.Attribute.JSON & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<"oneToMany", "api::estimate.estimate"> &
+      Schema.Attribute.Private;
+    note: Schema.Attribute.Text;
+    number: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 40;
+      }>;
+    organization: Schema.Attribute.Relation<"manyToOne", "api::organization.organization">;
+    publishedAt: Schema.Attribute.DateTime;
+    salesperson: Schema.Attribute.Relation<"manyToOne", "plugin::users-permissions.user">;
+    status: Schema.Attribute.Enumeration<["open", "billed", "cancelled"]> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<"open">;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
   };
@@ -621,6 +864,62 @@ export interface ApiGlobalGlobal extends Struct.SingleTypeSchema {
   };
 }
 
+export interface ApiInvoiceInvoice extends Struct.CollectionTypeSchema {
+  collectionName: "invoices";
+  info: {
+    description: "A tax invoice. Priced on the server; never edited after it is issued, only cancelled.";
+    displayName: "Invoice";
+    pluralName: "invoices";
+    singularName: "invoice";
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    advanceUsed: Schema.Attribute.Decimal;
+    amountDue: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    branch: Schema.Attribute.Relation<"manyToOne", "api::branch.branch">;
+    cancelledAt: Schema.Attribute.DateTime;
+    cancelledBy: Schema.Attribute.Relation<"manyToOne", "plugin::users-permissions.user">;
+    cancelReason: Schema.Attribute.Text;
+    cashier: Schema.Attribute.Relation<"manyToOne", "plugin::users-permissions.user">;
+    cgst: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+    creditNoteUsed: Schema.Attribute.Decimal;
+    customer: Schema.Attribute.Relation<"manyToOne", "api::customer.customer">;
+    customerSnapshot: Schema.Attribute.JSON & Schema.Attribute.Required;
+    estimate: Schema.Attribute.Relation<"manyToOne", "api::estimate.estimate">;
+    invoiceDate: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    lines: Schema.Attribute.JSON & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<"oneToMany", "api::invoice.invoice"> &
+      Schema.Attribute.Private;
+    notes: Schema.Attribute.Text;
+    number: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 40;
+      }>;
+    oldGoldValue: Schema.Attribute.Decimal;
+    organization: Schema.Attribute.Relation<"manyToOne", "api::organization.organization">;
+    payments: Schema.Attribute.JSON & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    rates: Schema.Attribute.JSON & Schema.Attribute.Required;
+    roundOff: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    salesperson: Schema.Attribute.Relation<"manyToOne", "plugin::users-permissions.user">;
+    sgst: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    status: Schema.Attribute.Enumeration<["paid", "cancelled"]> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<"paid">;
+    taxableValue: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    total: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+  };
+}
+
 export interface ApiItemItem extends Struct.CollectionTypeSchema {
   collectionName: "items";
   info: {
@@ -653,6 +952,8 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
         },
         number
       >;
+    heldBy: Schema.Attribute.Relation<"manyToOne", "plugin::users-permissions.user">;
+    heldSince: Schema.Attribute.DateTime;
     huid: Schema.Attribute.String &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 6;
@@ -798,6 +1099,47 @@ export interface ApiLocationLocation extends Struct.CollectionTypeSchema {
     parent: Schema.Attribute.Relation<"manyToOne", "api::location.location">;
     publishedAt: Schema.Attribute.DateTime;
     sortOrder: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+  };
+}
+
+export interface ApiOldGoldOldGold extends Struct.CollectionTypeSchema {
+  collectionName: "old_golds";
+  info: {
+    description: "Old gold or silver taken from a customer, against a bill or bought outright.";
+    displayName: "Old gold";
+    pluralName: "old-golds";
+    singularName: "old-gold";
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    branch: Schema.Attribute.Relation<"manyToOne", "api::branch.branch">;
+    by: Schema.Attribute.Relation<"manyToOne", "plugin::users-permissions.user">;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+    customer: Schema.Attribute.Relation<"manyToOne", "api::customer.customer">;
+    idProof: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 60;
+      }>;
+    invoice: Schema.Attribute.Relation<"manyToOne", "api::invoice.invoice">;
+    kind: Schema.Attribute.Enumeration<["exchange", "purchase"]> & Schema.Attribute.Required;
+    lines: Schema.Attribute.JSON & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<"oneToMany", "api::old-gold.old-gold"> &
+      Schema.Attribute.Private;
+    number: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 40;
+      }>;
+    organization: Schema.Attribute.Relation<"manyToOne", "api::organization.organization">;
+    payouts: Schema.Attribute.JSON;
+    publishedAt: Schema.Attribute.DateTime;
+    totalValue: Schema.Attribute.Decimal & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
   };
@@ -1107,7 +1449,22 @@ export interface ApiStockMovementStockMovement extends Struct.CollectionTypeSche
     toLocation: Schema.Attribute.Relation<"manyToOne", "api::location.location">;
     toStatus: Schema.Attribute.String;
     type: Schema.Attribute.Enumeration<
-      ["received", "imported", "moved", "edited", "dispatched", "arrived", "audited"]
+      [
+        "received",
+        "imported",
+        "moved",
+        "edited",
+        "dispatched",
+        "arrived",
+        "audited",
+        "picked",
+        "put_back",
+        "reserved",
+        "released",
+        "sold",
+        "returned",
+        "sale_cancelled",
+      ]
     > &
       Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;
@@ -1700,6 +2057,11 @@ export interface PluginUsersPermissionsUser extends Struct.CollectionTypeSchema 
         minLength: 6;
       }>;
     phone: Schema.Attribute.String;
+    pinFailures: Schema.Attribute.Integer &
+      Schema.Attribute.Private &
+      Schema.Attribute.DefaultTo<0>;
+    pinHash: Schema.Attribute.String & Schema.Attribute.Private;
+    pinLockedUntil: Schema.Attribute.DateTime & Schema.Attribute.Private;
     provider: Schema.Attribute.String;
     publishedAt: Schema.Attribute.DateTime;
     resetPasswordToken: Schema.Attribute.String & Schema.Attribute.Private;
@@ -1738,14 +2100,22 @@ declare module "@strapi/strapi" {
       "admin::transfer-token-permission": AdminTransferTokenPermission;
       "admin::user": AdminUser;
       "api::audit-log.audit-log": ApiAuditLogAuditLog;
+      "api::booking.booking": ApiBookingBooking;
       "api::branch.branch": ApiBranchBranch;
       "api::category.category": ApiCategoryCategory;
       "api::collection.collection": ApiCollectionCollection;
+      "api::credit-note.credit-note": ApiCreditNoteCreditNote;
+      "api::customer.customer": ApiCustomerCustomer;
+      "api::day-close.day-close": ApiDayCloseDayClose;
       "api::design.design": ApiDesignDesign;
+      "api::device.device": ApiDeviceDevice;
+      "api::estimate.estimate": ApiEstimateEstimate;
       "api::global.global": ApiGlobalGlobal;
+      "api::invoice.invoice": ApiInvoiceInvoice;
       "api::item.item": ApiItemItem;
       "api::journal-post.journal-post": ApiJournalPostJournalPost;
       "api::location.location": ApiLocationLocation;
+      "api::old-gold.old-gold": ApiOldGoldOldGold;
       "api::organization.organization": ApiOrganizationOrganization;
       "api::product.product": ApiProductProduct;
       "api::rate-card.rate-card": ApiRateCardRateCard;

@@ -12,6 +12,8 @@ type AuthContextValue = {
   staff: StaffProfile | null;
   apiUrl: string;
   signIn: (identifier: string, password: string) => Promise<void>;
+  /** Starts a session from an access token issued elsewhere, such as a tablet PIN sign-in. */
+  signInWithToken: (accessToken: string) => Promise<void>;
   signOut: () => Promise<void>;
   /** Runs a request with a valid access token, renewing it once if it has expired. */
   withToken: <T>(request: (token: string) => Promise<T>) => Promise<T>;
@@ -81,6 +83,9 @@ export function AuthProvider({ apiUrl, children }: { apiUrl: string; children: R
       apiUrl,
       async signIn(identifier, password) {
         const accessToken = await signIn(apiUrl, identifier, password);
+        await adopt(accessToken);
+      },
+      async signInWithToken(accessToken) {
         await adopt(accessToken);
       },
       async signOut() {

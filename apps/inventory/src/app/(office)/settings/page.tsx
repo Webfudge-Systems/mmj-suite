@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useAuth } from "@webfudge/auth/components";
 import { Alert, Button, Card, CardBody, CardHeader, Field, Input, PageHeader, Table, Td, Th, Tr } from "@webfudge/ui";
 import type { Branch, Category } from "@webfudge/utils/api";
+import { InvoiceDetails, StaffPins, Tablets } from "@/components/settings-floor";
 import { errorMessage, useApi, useResource } from "@/lib/api";
 
 function BranchForm({ branch, onSaved, onCancel }: { branch?: Branch; onSaved: () => void; onCancel?: () => void }) {
@@ -135,7 +136,10 @@ export default function SettingsPage() {
 
   return (
     <div className="grid gap-6">
-      <PageHeader title="Settings" description="Staff accounts and roles are still managed in the backend admin panel." />
+      <PageHeader title="Settings" description="Staff accounts and roles are still created in the backend admin panel." />
+      <InvoiceDetails />
+      {hasRole("owner", "branch_manager") && <StaffPins />}
+      {hasRole("owner", "branch_manager") && <Tablets />}
 
       <Card>
         <CardHeader title="Branches" description="Each shop. Stock, trays and staff belong to a branch." />

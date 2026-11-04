@@ -21,7 +21,14 @@
         "edited",
         "dispatched",
         "arrived",
-        "audited"
+        "audited",
+        "picked",
+        "put_back",
+        "reserved",
+        "released",
+        "sold",
+        "returned",
+        "sale_cancelled"
       ],
       "required": true
     },

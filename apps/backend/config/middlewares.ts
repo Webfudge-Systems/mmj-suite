@@ -16,7 +16,7 @@ const config = ({ env }: Core.Config.Shared.ConfigParams): Core.Config.Middlewar
         "http://localhost:3004",
       ]),
       credentials: true,
-      headers: ["Content-Type", "Authorization", "Origin", "Accept"],
+      headers: ["Content-Type", "Authorization", "Origin", "Accept", "X-Device-Token"],
     },
   },
   "strapi::poweredBy",

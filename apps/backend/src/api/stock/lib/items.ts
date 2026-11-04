@@ -7,7 +7,21 @@ import { parseMaking } from "../controllers/catalogue";
 import { DESIGN, ITEM, LOCATION, MOVEMENT, codeWhere, orgWhere, text } from "./common";
 
 export type MovementInput = {
-  type: "received" | "imported" | "moved" | "edited" | "dispatched" | "arrived" | "audited";
+  type:
+    | "received"
+    | "imported"
+    | "moved"
+    | "edited"
+    | "dispatched"
+    | "arrived"
+    | "audited"
+    | "picked"
+    | "put_back"
+    | "reserved"
+    | "released"
+    | "sold"
+    | "returned"
+    | "sale_cancelled";
   item: number;
   fromStatus?: string | null;
   toStatus?: string | null;

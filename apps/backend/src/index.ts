@@ -1,4 +1,6 @@
 import type { Core } from "@strapi/strapi";
+import { floorRoutes } from "./api/floor/routes/floor";
+import { salesRoutes } from "./api/sales/routes/sales";
 import { stockRoutes } from "./api/stock/routes/stock";
 import { registerAuditLog } from "./utils/audit";
 import { DEFAULT_CATEGORIES, defaultOrganizationSlug } from "./utils/constants";
@@ -26,11 +28,17 @@ const staffActions = [
   "api::staff.staff.me",
   "api::staff.staff.branches",
   "api::staff.staff.saveBranch",
+  "api::staff.staff.organization",
+  "api::staff.staff.saveOrganization",
+  "api::staff.staff.team",
+  "api::staff.staff.setPin",
   "api::rate-card.rate-card.history",
   "api::rate-card.rate-card.publish",
   // Design photos. Who may attach them to a design is checked by the design endpoint.
   "plugin::upload.content-api.upload",
   ...stockRoutes.map((route) => `api::stock.${route.handler}`),
+  ...salesRoutes.map((route) => `api::sales.${route.handler}`),
+  ...floorRoutes.map((route) => `api::floor.${route.handler}`),
 ];
 
 async function grant(strapi: Core.Strapi, roleType: string, actions: string[]) {

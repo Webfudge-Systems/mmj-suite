@@ -16,6 +16,10 @@ export default (plugin: any) => {
       relation: "manyToMany",
       target: "api::branch.branch",
     },
+    // Showroom tablet PIN. Stored as a salted scrypt hash, never readable through the API.
+    pinHash: { type: "string", private: true, configurable: false },
+    pinFailures: { type: "integer", default: 0, private: true, configurable: false },
+    pinLockedUntil: { type: "datetime", private: true, configurable: false },
   });
 
   return plugin;

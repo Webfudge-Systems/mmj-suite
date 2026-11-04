@@ -1,0 +1,86 @@
+{
+  "kind": "collectionType",
+  "collectionName": "bookings",
+  "info": {
+    "singularName": "booking",
+    "pluralName": "bookings",
+    "displayName": "Booking",
+    "description": "An advance paid by a customer, optionally locking the day's rate for some weight."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "number": {
+      "type": "string",
+      "required": true,
+      "maxLength": 40
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "open",
+        "used",
+        "refunded"
+      ],
+      "required": true,
+      "default": "open"
+    },
+    "amount": {
+      "type": "decimal",
+      "required": true
+    },
+    "balance": {
+      "type": "decimal",
+      "required": true
+    },
+    "payments": {
+      "type": "json",
+      "required": true
+    },
+    "lockedPurity": {
+      "type": "string",
+      "maxLength": 8
+    },
+    "lockedRate": {
+      "type": "decimal"
+    },
+    "lockedWeight": {
+      "type": "decimal"
+    },
+    "lockedWeightUsed": {
+      "type": "decimal",
+      "default": 0
+    },
+    "usage": {
+      "type": "json"
+    },
+    "note": {
+      "type": "text"
+    },
+    "validUntil": {
+      "type": "date"
+    },
+    "customer": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::customer.customer"
+    },
+    "by": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "branch": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::branch.branch"
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    }
+  }
+}

@@ -65,7 +65,7 @@ npm run dev:inventory  # or :landing, :pos, :crm, :showroom
 ```bash
 npm run build          # everything
 npm run build:landing  # or :inventory, :pos, :crm, :showroom, :backend
-npm test               # pricing, formatter, CSV, scale and stock-rule tests
+npm test               # pricing, formatter, CSV, scale, stock-rule and billing tests
 ```
 
 ## Phase 0: what works
@@ -133,6 +133,65 @@ All under `/api`, signed in as staff.
 | GET, POST | `/stock/audits`, `/stock/audits/:id`, `/stock/audits/:id/scan`, `/stock/audits/:id/close` | Stock counts |
 | GET | `/stock/summary` | Dashboard counts |
 | GET, POST, PUT | `/staff/branches`, `/staff/branches/:id` | Branches; adding and editing is owner only |
+
+## Phase 2: POS & Billing
+
+- **New bill.** Scan tags or open an estimate from the tablets. The server prices every line at today's rate (metal, making, stones, hallmark, 3% GST split into CGST and SGST) and recalculates it when the invoice is issued, so the browser never decides the amount.
+- **Discounts** come off the making charge, up to a limit per role (owner 100%, branch manager 50%, cashier 10% by default).
+- **Old gold in exchange.** Weighed, tested (fineness), valued at today's 24KT rate (999 for silver) less the shop's deduction (2% by default), and taken off the bill. Seller ID proof is required.
+- **Advances and rate booking.** An advance can book today's rate for a purity and weight (at least 10% of its value). When the customer buys, booked grams are billed at the booked rate if the metal has risen, and at today's rate if it has fallen.
+- **Split payments** across cash, UPI, card, bank transfer and cheque. They must add up exactly.
+- **Invoices** are numbered per financial year (`MMJ/2627/000001`) and print as an A4 tax invoice with seller GSTIN, buyer PAN, HSN 7113, HUID, weights, rate, CGST/SGST and the amount in words. Pieces become sold.
+- **Cancelling** an invoice (owner or branch manager, with a reason) returns the pieces to stock, restores used advances and credit notes, and puts what the customer paid on a credit note.
+- **Returns** take pieces back from an invoice for a credit note (less the return deduction, 0% by default). Credit notes can pay a new bill or be paid out.
+- **Old gold purchase** buys metal outright, with ID proof.
+- **Day close** shows cash, UPI, card and bank totals taken and paid out, the cash that should be in the drawer, and records the count. A mismatch needs a note.
+- **Customers** by mobile number, with their bills, advances and credit notes.
+
+### Counter rules (confirm with the CA)
+
+| Rule | Default | Setting key |
+| --- | --- | --- |
+| PAN required when a customer's purchases in a day reach | ₹2,00,000 | `panThreshold` |
+| Cash from one customer in a day must stay below | ₹2,00,000 | `cashReceiptLimit` |
+| Cash paid out to one person (old gold, refunds) at most | ₹10,000 | `cashPayoutLimit` |
+| Hallmark charge per HUID piece | ₹45 | `hallmarkChargePerPiece` |
+| Old gold deduction | 2% | `oldGoldDeductionPercent` |
+| Return deduction | 0% | `returnDeductionPercent` |
+| Making discount limits | manager 50%, cashier 10% | `discountLimits` |
+| Billing needs today's rate | yes | `requireTodayRate` |
+
+Settings live in the organization's `settings` JSON in the admin panel.
+
+## Phase 3: Showroom tablets
+
+- **Pairing.** A manager creates a six-digit code in Back Office › Settings › Showroom tablets; the tablet types it once and keeps a secret token. Unpairing locks the tablet out at once.
+- **PIN sign-in.** Salespeople tap their name and type a 4–6 digit PIN (set in Settings › Staff & tablet PINs). Five wrong tries lock that person for ten minutes. The tablet locks itself after ten idle minutes.
+- **Collection.** Every design with pieces on the floor, filtered by category, metal, price at today's rate, weight, and this branch or all branches.
+- **Design page.** Each piece's price today with its breakdown, and exactly where it is: showcase › tray › slot, or which salesperson has it.
+- **Take out / put back.** Taking a piece out marks it as in that salesperson's hands; nobody else can take it. "In my hands" lists everything still out.
+- **Customer's tray.** Pieces the customer is considering, kept through a reload. Sending it to billing creates an estimate the counter bills.
+- **Installable.** Add to home screen on the tablet for a full-screen app.
+
+### API
+
+| Method | Path | Who |
+| --- | --- | --- |
+| GET, POST, PUT | `/sales/customers`, `/sales/customers/:id` | Counter and sales staff |
+| GET, POST | `/sales/estimates`, `/sales/estimates/:id`, `/sales/estimates/:id/cancel` | Counter and sales staff |
+| POST | `/sales/quote` | Any staff (price only) |
+| GET, POST | `/sales/invoices`, `/sales/invoices/:id` | Counter |
+| POST | `/sales/invoices/:id/cancel` | Owner, branch manager |
+| GET, POST | `/sales/old-gold`, `/sales/old-gold/quote` | Counter |
+| GET, POST | `/sales/advances`, `/sales/advances/:id/refund` (refund: managers) | Counter |
+| POST | `/sales/returns` | Counter |
+| GET, POST | `/sales/credit-notes`, `/sales/credit-notes/:id/refund` (refund: managers) | Counter |
+| GET, POST | `/sales/day`, `/sales/day/close` | Counter |
+| GET, PUT | `/staff/organization` (PUT: owner) | Invoice details |
+| GET, PUT | `/staff/team`, `/staff/team/:id/pin` | Managers; anyone for their own PIN |
+| GET, POST | `/floor/devices`, `/floor/devices/:id/revoke` | Managers |
+| POST, GET, POST | `/floor/pair`, `/floor/people`, `/floor/pin` | The tablet (device token, no sign-in) |
+| GET, POST | `/floor/designs`, `/floor/designs/:id`, `/floor/pick`, `/floor/put-back`, `/floor/held` | Any staff |
 
 ## Using shared packages
 

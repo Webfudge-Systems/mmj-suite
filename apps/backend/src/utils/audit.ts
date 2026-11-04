@@ -9,12 +9,14 @@ const AUDITED = new Set([
   "api::design.design",
   "api::supplier.supplier",
   "api::location.location",
+  "api::customer.customer",
+  "api::device.device",
   "plugin::users-permissions.user",
 ]);
 
 const ACTIONS = new Set(["create", "update", "delete", "publish", "unpublish"]);
 
-const SECRET_FIELDS = new Set(["password", "resetPasswordToken", "confirmationToken"]);
+const SECRET_FIELDS = new Set(["password", "resetPasswordToken", "confirmationToken", "pinHash", "tokenHash", "pairingCodeHash"]);
 
 function scrub(data: unknown): unknown {
   if (!data || typeof data !== "object" || Array.isArray(data)) return data ?? null;

@@ -1,0 +1,81 @@
+{
+  "kind": "collectionType",
+  "collectionName": "credit_notes",
+  "info": {
+    "singularName": "credit-note",
+    "pluralName": "credit-notes",
+    "displayName": "Credit note",
+    "description": "Value owed to a customer for returned pieces. Used against a bill or paid out."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "number": {
+      "type": "string",
+      "required": true,
+      "maxLength": 40
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "open",
+        "used",
+        "refunded"
+      ],
+      "required": true,
+      "default": "open"
+    },
+    "lines": {
+      "type": "json",
+      "required": true
+    },
+    "amount": {
+      "type": "decimal",
+      "required": true
+    },
+    "balance": {
+      "type": "decimal",
+      "required": true
+    },
+    "deductionPercent": {
+      "type": "decimal",
+      "default": 0
+    },
+    "reason": {
+      "type": "text"
+    },
+    "usage": {
+      "type": "json"
+    },
+    "refunds": {
+      "type": "json"
+    },
+    "invoice": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::invoice.invoice"
+    },
+    "customer": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::customer.customer"
+    },
+    "by": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "branch": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::branch.branch"
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    }
+  }
+}

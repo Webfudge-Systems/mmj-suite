@@ -1,0 +1,69 @@
+{
+  "kind": "collectionType",
+  "collectionName": "old_golds",
+  "info": {
+    "singularName": "old-gold",
+    "pluralName": "old-golds",
+    "displayName": "Old gold",
+    "description": "Old gold or silver taken from a customer, against a bill or bought outright."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "number": {
+      "type": "string",
+      "required": true,
+      "maxLength": 40
+    },
+    "kind": {
+      "type": "enumeration",
+      "enum": [
+        "exchange",
+        "purchase"
+      ],
+      "required": true
+    },
+    "lines": {
+      "type": "json",
+      "required": true
+    },
+    "totalValue": {
+      "type": "decimal",
+      "required": true
+    },
+    "payouts": {
+      "type": "json"
+    },
+    "idProof": {
+      "type": "string",
+      "maxLength": 60
+    },
+    "customer": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::customer.customer"
+    },
+    "invoice": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::invoice.invoice"
+    },
+    "by": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "branch": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::branch.branch"
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    }
+  }
+}
