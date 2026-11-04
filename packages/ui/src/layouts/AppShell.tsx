@@ -85,8 +85,8 @@ export function AppShell({ appName, nav, activeHref, LinkComponent = DefaultLink
   );
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[248px_minmax(0,1fr)]">
-      <aside className="sticky top-0 hidden h-dvh overflow-y-auto lg:block">{sidebar}</aside>
+    <div className="min-h-dvh lg:grid lg:grid-cols-[248px_minmax(0,1fr)] print:block">
+      <aside className="sticky top-0 hidden h-dvh overflow-y-auto lg:block print:hidden">{sidebar}</aside>
 
       {open && (
         <div className="fixed inset-0 z-40 lg:hidden">
@@ -98,7 +98,7 @@ export function AppShell({ appName, nav, activeHref, LinkComponent = DefaultLink
       )}
 
       <div className="flex min-w-0 flex-col">
-        <header className="sticky top-0 z-30 flex min-h-14 flex-wrap items-center gap-3 border-b border-line bg-surface/95 px-4 py-2 backdrop-blur sm:px-6">
+        <header className="sticky top-0 z-30 flex min-h-14 print:hidden flex-wrap items-center gap-3 border-b border-line bg-surface/95 px-4 py-2 backdrop-blur sm:px-6">
           <button
             type="button"
             className="rounded-md border border-line px-2.5 py-1.5 text-[13px] font-semibold lg:hidden"
@@ -109,7 +109,7 @@ export function AppShell({ appName, nav, activeHref, LinkComponent = DefaultLink
           </button>
           <div className="min-w-0 flex-1">{topBar}</div>
         </header>
-        <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">{children}</main>
+        <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8 print:max-w-none print:p-0">{children}</main>
       </div>
     </div>
   );

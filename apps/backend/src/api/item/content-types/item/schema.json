@@ -1,0 +1,128 @@
+{
+  "kind": "collectionType",
+  "collectionName": "items",
+  "info": {
+    "singularName": "item",
+    "pluralName": "items",
+    "displayName": "Item",
+    "description": "One tagged physical piece. Changed only through the stock endpoints, which write a movement each time."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "tagNumber": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "maxLength": 32
+    },
+    "legacyTag": {
+      "type": "string",
+      "maxLength": 64
+    },
+    "huid": {
+      "type": "string",
+      "maxLength": 6
+    },
+    "metal": {
+      "type": "enumeration",
+      "enum": [
+        "gold",
+        "silver",
+        "platinum"
+      ],
+      "required": true
+    },
+    "purity": {
+      "type": "string",
+      "required": true,
+      "maxLength": 8
+    },
+    "grossWeight": {
+      "type": "decimal",
+      "min": 0,
+      "required": true
+    },
+    "stoneWeight": {
+      "type": "decimal",
+      "min": 0
+    },
+    "netWeight": {
+      "type": "decimal",
+      "min": 0,
+      "required": true
+    },
+    "making": {
+      "type": "component",
+      "repeatable": false,
+      "component": "pricing.making"
+    },
+    "stoneValue": {
+      "type": "decimal",
+      "min": 0
+    },
+    "costPrice": {
+      "type": "decimal",
+      "min": 0,
+      "private": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "in_stock",
+        "with_staff",
+        "reserved",
+        "sold",
+        "on_approval",
+        "at_karigar",
+        "in_transit",
+        "melted"
+      ],
+      "required": true,
+      "default": "in_stock"
+    },
+    "slot": {
+      "type": "string",
+      "maxLength": 8
+    },
+    "notes": {
+      "type": "text"
+    },
+    "receivedAt": {
+      "type": "datetime"
+    },
+    "design": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::design.design"
+    },
+    "branch": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::branch.branch"
+    },
+    "location": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::location.location"
+    },
+    "supplier": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::supplier.supplier"
+    },
+    "receipt": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::stock-receipt.stock-receipt",
+      "inversedBy": "items"
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    }
+  }
+}

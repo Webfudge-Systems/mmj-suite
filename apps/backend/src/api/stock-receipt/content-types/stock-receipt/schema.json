@@ -1,0 +1,65 @@
+{
+  "kind": "collectionType",
+  "collectionName": "stock_receipts",
+  "info": {
+    "singularName": "stock-receipt",
+    "pluralName": "stock-receipts",
+    "displayName": "Stock receipt",
+    "description": "Goods received: a supplier bill, a karigar delivery, or opening stock."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "number": {
+      "type": "string",
+      "required": true,
+      "maxLength": 32
+    },
+    "source": {
+      "type": "enumeration",
+      "enum": [
+        "purchase",
+        "karigar",
+        "opening_stock"
+      ],
+      "required": true
+    },
+    "billNumber": {
+      "type": "string"
+    },
+    "billDate": {
+      "type": "date"
+    },
+    "notes": {
+      "type": "text"
+    },
+    "supplier": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::supplier.supplier"
+    },
+    "branch": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::branch.branch"
+    },
+    "receivedBy": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "items": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::item.item",
+      "mappedBy": "receipt"
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    }
+  }
+}

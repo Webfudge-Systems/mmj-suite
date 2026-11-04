@@ -1,0 +1,79 @@
+{
+  "kind": "collectionType",
+  "collectionName": "stock_movements",
+  "info": {
+    "singularName": "stock-movement",
+    "pluralName": "stock-movements",
+    "displayName": "Stock movement",
+    "description": "The stock ledger. One row per change to a piece. Never edited."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "type": {
+      "type": "enumeration",
+      "enum": [
+        "received",
+        "imported",
+        "moved",
+        "edited",
+        "dispatched",
+        "arrived",
+        "audited"
+      ],
+      "required": true
+    },
+    "fromStatus": {
+      "type": "string"
+    },
+    "toStatus": {
+      "type": "string"
+    },
+    "reference": {
+      "type": "string"
+    },
+    "note": {
+      "type": "text"
+    },
+    "changes": {
+      "type": "json"
+    },
+    "item": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::item.item"
+    },
+    "fromLocation": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::location.location"
+    },
+    "toLocation": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::location.location"
+    },
+    "fromBranch": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::branch.branch"
+    },
+    "toBranch": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::branch.branch"
+    },
+    "by": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    }
+  }
+}

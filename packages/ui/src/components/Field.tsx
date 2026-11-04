@@ -1,4 +1,11 @@
-import { forwardRef, type InputHTMLAttributes, type LabelHTMLAttributes, type ReactNode } from "react";
+import {
+  forwardRef,
+  type InputHTMLAttributes,
+  type LabelHTMLAttributes,
+  type ReactNode,
+  type SelectHTMLAttributes,
+  type TextareaHTMLAttributes,
+} from "react";
 import { cn } from "../lib/cn";
 
 export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElement>) {
@@ -21,6 +28,26 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input({ c
       {...props}
     />
   );
+});
+
+const controlClass = (invalid: boolean | undefined, className?: string) =>
+  cn(
+    "w-full rounded-[var(--radius-control)] border bg-surface px-3 text-sm text-ink",
+    "focus:border-navy focus:outline-none focus:ring-2 focus:ring-navy/15 disabled:bg-sunk",
+    invalid ? "border-risk" : "border-line",
+    className,
+  );
+
+export type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & { invalid?: boolean };
+
+export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select({ className, invalid, ...props }, ref) {
+  return <select ref={ref} aria-invalid={invalid || undefined} className={controlClass(invalid, cn("h-10", className))} {...props} />;
+});
+
+export type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & { invalid?: boolean };
+
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea({ className, invalid, ...props }, ref) {
+  return <textarea ref={ref} aria-invalid={invalid || undefined} className={controlClass(invalid, cn("min-h-20 py-2", className))} {...props} />;
 });
 
 type FieldProps = {

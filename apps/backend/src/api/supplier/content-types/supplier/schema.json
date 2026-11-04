@@ -1,0 +1,51 @@
+{
+  "kind": "collectionType",
+  "collectionName": "suppliers",
+  "info": {
+    "singularName": "supplier",
+    "pluralName": "suppliers",
+    "displayName": "Supplier",
+    "description": "A supplier of finished jewellery or a karigar who makes it."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "kind": {
+      "type": "enumeration",
+      "enum": [
+        "supplier",
+        "karigar"
+      ],
+      "required": true,
+      "default": "supplier"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "gstin": {
+      "type": "string",
+      "maxLength": 15
+    },
+    "city": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "text"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    }
+  }
+}

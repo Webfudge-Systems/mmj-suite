@@ -31,13 +31,28 @@
       "type": "media",
       "multiple": false,
       "required": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "products": {
       "type": "relation",
       "relation": "oneToMany",
       "target": "api::product.product",
       "mappedBy": "category"
+    },
+    "code": {
+      "type": "string",
+      "maxLength": 4
+    },
+    "sortOrder": {
+      "type": "integer",
+      "default": 0
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
     }
   }
 }

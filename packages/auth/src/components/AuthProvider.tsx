@@ -16,6 +16,8 @@ type AuthContextValue = {
   /** Runs a request with a valid access token, renewing it once if it has expired. */
   withToken: <T>(request: (token: string) => Promise<T>) => Promise<T>;
   hasRole: (...roles: StaffRole[]) => boolean;
+  /** Reloads the staff profile, for example after a branch is added. */
+  refreshProfile: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -102,6 +104,10 @@ export function AuthProvider({ apiUrl, children }: { apiUrl: string; children: R
       },
       hasRole(...roles) {
         return !!staff && roles.includes(staff.staffRole);
+      },
+      async refreshProfile() {
+        if (!token.current) return;
+        setStaff(await fetchStaffProfile(apiUrl, token.current));
       },
     }),
     [status, staff, apiUrl, adopt, clear],

@@ -1,0 +1,25 @@
+{
+  "kind": "collectionType",
+  "collectionName": "sequences",
+  "info": {
+    "singularName": "sequence",
+    "pluralName": "sequences",
+    "displayName": "Sequence",
+    "description": "Running numbers for tags, designs, receipts and transfers. Written by the backend only."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "value": {
+      "type": "biginteger",
+      "required": true
+    }
+  }
+}

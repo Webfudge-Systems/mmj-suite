@@ -9,7 +9,9 @@
     ".": "./src/index.ts",
     "./formatters": "./src/formatters/index.ts",
     "./api": "./src/api/index.ts",
-    "./pricing": "./src/pricing/index.ts"
+    "./pricing": "./src/pricing/index.ts",
+    "./scale": "./src/scale/index.ts",
+    "./csv": "./src/csv/index.ts"
   },
   "scripts": {
     "test": "vitest run"

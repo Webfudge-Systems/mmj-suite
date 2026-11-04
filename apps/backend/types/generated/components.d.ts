@@ -1,5 +1,26 @@
 import type { Schema, Struct } from "@strapi/strapi";
 
+export interface PricingMaking extends Struct.ComponentSchema {
+  collectionName: "components_pricing_makings";
+  info: {
+    description: "Per gram, a percentage of metal value, or a fixed amount.";
+    displayName: "Making charge";
+  };
+  attributes: {
+    type: Schema.Attribute.Enumeration<["per_gram", "percent", "fixed"]> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<"per_gram">;
+    value: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+  };
+}
+
 export interface ProductHallmark extends Struct.ComponentSchema {
   collectionName: "components_product_hallmarks";
   info: {
@@ -180,6 +201,7 @@ export interface SharedSocialLink extends Struct.ComponentSchema {
 declare module "@strapi/strapi" {
   export namespace Public {
     export interface ComponentSchemas {
+      "pricing.making": PricingMaking;
       "product.hallmark": ProductHallmark;
       "product.size-option": ProductSizeOption;
       "product.spec": ProductSpec;

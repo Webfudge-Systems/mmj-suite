@@ -1,0 +1,65 @@
+{
+  "kind": "collectionType",
+  "collectionName": "stock_audits",
+  "info": {
+    "singularName": "stock-audit",
+    "pluralName": "stock-audits",
+    "displayName": "Stock audit",
+    "description": "A count of one branch or one showcase or tray, compared with what the system expects."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "open",
+        "closed"
+      ],
+      "required": true,
+      "default": "open"
+    },
+    "expected": {
+      "type": "json"
+    },
+    "scans": {
+      "type": "json"
+    },
+    "result": {
+      "type": "json"
+    },
+    "startedAt": {
+      "type": "datetime"
+    },
+    "closedAt": {
+      "type": "datetime"
+    },
+    "branch": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::branch.branch"
+    },
+    "location": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::location.location"
+    },
+    "startedBy": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "closedBy": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    }
+  }
+}

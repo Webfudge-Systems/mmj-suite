@@ -142,3 +142,5 @@ export async function refreshSession(baseUrl: string): Promise<string> {
 export async function signOut(baseUrl: string, token: string): Promise<void> {
   await apiRequest(baseUrl, "/auth/logout", { method: "POST", body: {}, token, withCredentials: true });
 }
+
+export * from "./stock";

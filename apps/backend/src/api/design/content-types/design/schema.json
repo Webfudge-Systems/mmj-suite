@@ -1,0 +1,86 @@
+{
+  "kind": "collectionType",
+  "collectionName": "designs",
+  "info": {
+    "singularName": "design",
+    "pluralName": "designs",
+    "displayName": "Design",
+    "description": "A catalogue entry. Each tagged piece is an item of one design."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "code": {
+      "type": "string",
+      "required": true,
+      "maxLength": 32
+    },
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "metal": {
+      "type": "enumeration",
+      "enum": [
+        "gold",
+        "silver",
+        "platinum"
+      ],
+      "required": true
+    },
+    "defaultPurity": {
+      "type": "string",
+      "maxLength": 8
+    },
+    "occasion": {
+      "type": "enumeration",
+      "enum": [
+        "bridal",
+        "festive",
+        "daily",
+        "gifting",
+        "mens"
+      ]
+    },
+    "description": {
+      "type": "text"
+    },
+    "making": {
+      "type": "component",
+      "repeatable": false,
+      "component": "pricing.making"
+    },
+    "images": {
+      "type": "media",
+      "multiple": true,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "isOnline": {
+      "type": "boolean",
+      "default": false
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "category": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::category.category"
+    },
+    "collection": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::collection.collection"
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    }
+  }
+}

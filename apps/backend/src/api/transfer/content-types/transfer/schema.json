@@ -1,0 +1,68 @@
+{
+  "kind": "collectionType",
+  "collectionName": "transfers",
+  "info": {
+    "singularName": "transfer",
+    "pluralName": "transfers",
+    "displayName": "Transfer",
+    "description": "Pieces sent from one branch to another."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "number": {
+      "type": "string",
+      "required": true,
+      "maxLength": 32
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "in_transit",
+        "partly_received",
+        "received"
+      ],
+      "required": true
+    },
+    "lines": {
+      "type": "json",
+      "required": true
+    },
+    "note": {
+      "type": "text"
+    },
+    "dispatchedAt": {
+      "type": "datetime"
+    },
+    "completedAt": {
+      "type": "datetime"
+    },
+    "fromBranch": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::branch.branch"
+    },
+    "toBranch": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::branch.branch"
+    },
+    "dispatchedBy": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "receivedBy": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    }
+  }
+}

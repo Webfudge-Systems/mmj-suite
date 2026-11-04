@@ -65,7 +65,7 @@ npm run dev:inventory  # or :landing, :pos, :crm, :showroom
 ```bash
 npm run build          # everything
 npm run build:landing  # or :inventory, :pos, :crm, :showroom, :backend
-npm test               # pricing and formatter tests
+npm test               # pricing, formatter, CSV, scale and stock-rule tests
 ```
 
 ## Phase 0: what works
@@ -85,6 +85,54 @@ npm test               # pricing and formatter tests
 | GET | `/api/rates/history?limit=30` | Any staff |
 | POST | `/api/rates` | Owner, branch manager |
 | GET | `/api/staff/me` | Any staff |
+
+## Phase 1: Back Office stock
+
+- **Catalogue.** Designs with a category, usual purity, making charge and photos. Design numbers are automatic (`D-NK-0001`, from the category code) or typed. Categories and their codes are in Settings.
+- **Receive stock.** One receipt per supplier bill or karigar delivery (`GRN-000001`). Each line is weighed (type it, or connect a USB/serial scale in Chrome or Edge), and becomes one piece with its own tag (`MMJ-G-000001`; S for silver, P for platinum). HUIDs and old tag numbers must be unique.
+- **Tags & labels.** Code128 barcodes on a two-flap dumbbell tag (90 × 12 mm) or a 50 × 25 mm sticker. Print with the label printer and paper size set to the label size.
+- **Locations.** Showcases, counters and safes, with trays inside (`B1-SC01-T05`). Each tray has a QR label; scanning pieces on a tray's page puts them there.
+- **Stock.** Every piece, filterable by status, purity, tray and "waiting for a tray". Each piece shows its price at today's rate and its full history. Corrections need a reason and are recorded with before and after values.
+- **Transfers.** Scan pieces out of one branch (`TRF-000001`); they are in transit until the other branch scans them in.
+- **Stock audit.** Count a tray, a showcase or the whole branch. Each scan says counted, already counted, belongs elsewhere or unknown. Closing lists missing, misplaced and unknown pieces. A count never changes stock by itself.
+- **Branches.** The owner adds branches in Settings. The owner works in every branch; others in the branches on their account.
+- **Ledger.** Every change to a piece (received, imported, moved, edited, sent, arrived) is a row in `stock_movements`. Pieces change only through the stock endpoints.
+
+### Loading current stock
+
+Back Office → Receive stock → Import current stock. Export the stock list from the old software as CSV; the import recognises common column names (Tag No, Gross Wt, Purity, Design No, Category, HUID, Tray). It checks every row first and saves nothing if any row is wrong. Each piece gets an MMJ tag and keeps its old tag number, so old tags still scan everywhere. Designs the suite does not know are created from the category and name.
+
+Create the showcases and trays in Locations before importing if the file has a tray column.
+
+### Roles
+
+| Action | Who |
+| --- | --- |
+| Receive, import, move, transfer, audit, correct pieces | Owner, branch manager, stock keeper |
+| Add designs, categories, suppliers | Owner, branch manager, stock keeper |
+| See cost prices | Owner, branch manager, stock keeper, accountant |
+| Add branches | Owner |
+| Look up stock | Any staff |
+
+### API
+
+All under `/api`, signed in as staff.
+
+| Method | Path | Does |
+| --- | --- | --- |
+| GET, POST, PUT | `/stock/categories`, `/stock/categories/:id` | Categories |
+| GET, POST, PUT | `/stock/designs`, `/stock/designs/:id` | Designs |
+| GET, POST, PUT | `/stock/suppliers`, `/stock/suppliers/:id` | Suppliers and karigars |
+| GET, POST, PUT | `/stock/locations`, `/stock/locations/:id` | Locations; `GET /stock/locations/lookup?code=` opens a scanned tray |
+| GET | `/stock/items`, `/stock/items/:id`, `/stock/items/lookup?code=` | Pieces; lookup takes a tag, old tag or HUID |
+| PUT | `/stock/items/:id` | Correct a piece's details |
+| POST | `/stock/move` | Put scanned pieces into a tray |
+| GET, POST | `/stock/receipts`, `/stock/receipts/:id` | Receive pieces |
+| POST | `/stock/import` | Import opening stock in batches; `dryRun: true` only checks |
+| GET, POST | `/stock/transfers`, `/stock/transfers/:id`, `/stock/transfers/:id/receive` | Branch transfers |
+| GET, POST | `/stock/audits`, `/stock/audits/:id`, `/stock/audits/:id/scan`, `/stock/audits/:id/close` | Stock counts |
+| GET | `/stock/summary` | Dashboard counts |
+| GET, POST, PUT | `/staff/branches`, `/staff/branches/:id` | Branches; adding and editing is owner only |
 
 ## Using shared packages
 

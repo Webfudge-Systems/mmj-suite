@@ -5,6 +5,10 @@ const AUDITED = new Set([
   "api::organization.organization",
   "api::branch.branch",
   "api::rate-card.rate-card",
+  "api::category.category",
+  "api::design.design",
+  "api::supplier.supplier",
+  "api::location.location",
   "plugin::users-permissions.user",
 ]);
 

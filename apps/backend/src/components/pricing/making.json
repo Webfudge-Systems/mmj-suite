@@ -1,0 +1,25 @@
+{
+  "collectionName": "components_pricing_makings",
+  "info": {
+    "displayName": "Making charge",
+    "description": "Per gram, a percentage of metal value, or a fixed amount."
+  },
+  "options": {},
+  "attributes": {
+    "type": {
+      "type": "enumeration",
+      "enum": [
+        "per_gram",
+        "percent",
+        "fixed"
+      ],
+      "required": true,
+      "default": "per_gram"
+    },
+    "value": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    }
+  }
+}

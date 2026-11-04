@@ -1,0 +1,64 @@
+{
+  "kind": "collectionType",
+  "collectionName": "locations",
+  "info": {
+    "singularName": "location",
+    "pluralName": "locations",
+    "displayName": "Location",
+    "description": "A showcase, counter, tray or safe in a branch. Trays sit inside showcases or counters."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "code": {
+      "type": "string",
+      "required": true,
+      "maxLength": 12
+    },
+    "fullCode": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "maxLength": 40
+    },
+    "name": {
+      "type": "string"
+    },
+    "kind": {
+      "type": "enumeration",
+      "enum": [
+        "showcase",
+        "counter",
+        "tray",
+        "safe",
+        "back_office"
+      ],
+      "required": true
+    },
+    "sortOrder": {
+      "type": "integer",
+      "default": 0
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "parent": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::location.location"
+    },
+    "branch": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::branch.branch"
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    }
+  }
+}

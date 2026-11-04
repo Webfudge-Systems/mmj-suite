@@ -5,3 +5,5 @@ export * from "./Field";
 export * from "./RateBoard";
 export * from "./Spinner";
 export * from "./LiveRateBoard";
+export * from "./ScanInput";
+export * from "./Table";

@@ -1,6 +1,7 @@
 import type { Core } from "@strapi/strapi";
+import { stockRoutes } from "./api/stock/routes/stock";
 import { registerAuditLog } from "./utils/audit";
-import { defaultOrganizationSlug } from "./utils/constants";
+import { DEFAULT_CATEGORIES, defaultOrganizationSlug } from "./utils/constants";
 
 const publicReads = [
   "api::category.category.find",
@@ -23,8 +24,13 @@ const publicReads = [
 /** Staff endpoints. Each is further limited by role in its route's policy. */
 const staffActions = [
   "api::staff.staff.me",
+  "api::staff.staff.branches",
+  "api::staff.staff.saveBranch",
   "api::rate-card.rate-card.history",
   "api::rate-card.rate-card.publish",
+  // Design photos. Who may attach them to a design is checked by the design endpoint.
+  "plugin::upload.content-api.upload",
+  ...stockRoutes.map((route) => `api::stock.${route.handler}`),
 ];
 
 async function grant(strapi: Core.Strapi, roleType: string, actions: string[]) {
@@ -77,6 +83,24 @@ async function seed(strapi: Core.Strapi) {
       },
     } as any);
     strapi.log.info("Created branch B1 Rahuri");
+  }
+
+  const hasCategories = await strapi.db
+    .query("api::category.category")
+    .count({ where: { organization: { id: organization.id } } });
+  if (!hasCategories) {
+    for (const [index, category] of DEFAULT_CATEGORIES.entries()) {
+      const taken = await strapi.db.query("api::category.category").findOne({ where: { slug: category.slug } });
+      await strapi.documents("api::category.category").create({
+        data: {
+          ...category,
+          slug: taken ? `${category.slug}-${slug}` : category.slug,
+          sortOrder: index,
+          organization: organization.documentId,
+        },
+      } as any);
+    }
+    strapi.log.info(`Created ${DEFAULT_CATEGORIES.length} categories`);
   }
 
   const email = process.env.SEED_OWNER_EMAIL;

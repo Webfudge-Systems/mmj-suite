@@ -34,7 +34,9 @@
       "type": "media",
       "multiple": false,
       "required": false,
-      "allowedTypes": ["images"]
+      "allowedTypes": [
+        "images"
+      ]
     },
     "products": {
       "type": "relation",
@@ -46,6 +48,11 @@
       "type": "component",
       "repeatable": false,
       "component": "shared.seo"
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
     }
   }
 }
