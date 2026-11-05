@@ -9,8 +9,8 @@ export const site = {
   email: "customerservice@mmj.com",
   phones: ["+91 98226 72923", "+91 73853 02967"],
   whatsapp: "7385302967",
-  domain: "mmjewellers.com",
-  url: "https://www.mmjewellers.com",
+  domain: "mukundmaidjewellers.in",
+  url: "https://www.mukundmaidjewellers.in",
   address: {
     lines: ["Mukund Maid Jewellers", "Main Road, Rahuri"],
     city: "Ahmednagar",
