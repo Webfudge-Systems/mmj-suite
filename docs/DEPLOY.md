@@ -21,7 +21,7 @@ Backend service settings:
 
 - Source: `Webfudge-Systems/mmj-suite`, branch `master`
 - Root directory: `/` (the repo root, so npm workspaces and the lockfile are used)
-- Config file: `/apps/backend/railway.json` (build `npm ci && npm run build -w backend`, start `npm run start -w backend`, health check `/api/rates/current`)
+- Config file: `/railway.json` at the repo root, applied to the backend service (build `npm run build -w backend` after Railway's own install, start `npm run start -w backend`, health check `/api/rates/current`)
 - Volume: mounted at `/app/apps/backend/public/uploads` (design photos)
 - Custom domain: `api.mukundmaidjewellers.in`
 

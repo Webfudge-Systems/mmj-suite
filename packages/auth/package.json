@@ -11,7 +11,7 @@
     "./services": "./src/services/index.ts"
   },
   "peerDependencies": {
-    "react": "^19.0.0"
+    "react": "^18.0.0 || ^19.0.0"
   },
   "dependencies": {
     "@webfudge/config": "*",

@@ -54,3 +54,6 @@ next-env.d.ts
 
 # design references
 design-ref/
+
+.vercel
+.env*
