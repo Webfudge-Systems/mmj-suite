@@ -7,3 +7,4 @@ export * from "./Spinner";
 export * from "./LiveRateBoard";
 export * from "./ScanInput";
 export * from "./Table";
+export * from "./MmjMark";

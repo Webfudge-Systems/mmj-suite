@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@webfudge/auth/components";
-import { LiveRateBoard, cn } from "@webfudge/ui";
+import { LiveRateBoard, MmjMark, cn } from "@webfudge/ui";
 import { API_URL } from "@/lib/device";
 import { useFloor } from "@/lib/floor";
 
@@ -29,7 +29,7 @@ export function Header() {
     <header className="sticky top-0 z-30 bg-navy-deep text-paper">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6">
         <Link href="/" className="flex items-center gap-2">
-          <span className="grid size-10 place-items-center rounded-lg bg-gold text-[13px] font-bold text-navy-deep">MMJ</span>
+          <MmjMark className="h-10 w-auto shrink-0" />
           <span className="hidden text-[13px] leading-tight text-paper/70 sm:block">
             {device.branch.name}
             <span className="block text-paper">Mukund Maid Jewellers</span>

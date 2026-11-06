@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ComponentType, type ReactNode } from "react";
+import { MmjMark } from "../components/MmjMark";
 import { cn } from "../lib/cn";
 
 export type NavItem = {
@@ -35,10 +36,8 @@ function DefaultLink({ href, className, children, ...rest }: LinkProps) {
 
 export function Wordmark({ appName }: { appName: string }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <span className="grid size-9 place-items-center rounded-lg bg-gold text-[13px] font-bold tracking-wide text-navy-deep">
-        MMJ
-      </span>
+    <div className="flex items-center gap-3">
+      <MmjMark className="h-10 w-auto shrink-0" />
       <span className="grid leading-tight">
         <span className="text-[14px] font-semibold text-paper">{appName}</span>
         <span className="text-[11px] text-paper/60">Mukund Maid Jewellers</span>
