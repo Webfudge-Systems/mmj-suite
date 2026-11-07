@@ -11,7 +11,7 @@ function priceRange(from: number | null, to: number | null) {
 
 export function DesignCard({ design }: { design: FloorDesign }) {
   return (
-    <Link href={`/design/${design.id}`} className="group grid content-start gap-3 rounded-[var(--radius-panel)] bg-surface p-3 shadow-sm ring-1 ring-line transition-shadow hover:shadow-md">
+    <Link href={`/design/${design.id}`} className="group grid content-start gap-3 rounded-xl border border-gray-100 bg-surface p-3 shadow-[var(--shadow-card)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-card-hover)] motion-reduce:hover:translate-y-0">
       <div className="relative grid aspect-square place-items-center overflow-hidden rounded-lg bg-[radial-gradient(circle_at_50%_40%,var(--color-surface),var(--color-sunk))]">
         {design.image ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -19,7 +19,7 @@ export function DesignCard({ design }: { design: FloorDesign }) {
         ) : (
           <span className="font-mono text-sm tracking-widest text-taupe">{design.code}</span>
         )}
-        {design.here === 0 && design.elsewhere > 0 && <span className="absolute top-2 left-2 rounded-full bg-navy px-2.5 py-1 text-[11px] font-semibold text-paper">At another branch</span>}
+        {design.here === 0 && design.elsewhere > 0 && <span className="absolute top-2 left-2 rounded-lg bg-navy px-2.5 py-1 text-[11px] font-semibold text-white shadow-md">At another branch</span>}
       </div>
       <div className="grid gap-1 px-1">
         <span className="line-clamp-2 text-[15px] leading-snug font-semibold text-ink">{design.name}</span>

@@ -6,7 +6,7 @@ import { RateBoard } from "./RateBoard";
 
 type LiveRateBoardProps = {
   apiUrl: string;
-  variant?: "strip" | "table";
+  variant?: "strip" | "table" | "list";
   only?: RateLine["purity"][];
   className?: string;
 };

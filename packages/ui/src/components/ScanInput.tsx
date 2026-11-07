@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type KeyboardEvent } from "react";
+import { ScanLine } from "lucide-react";
 import { cn } from "../lib/cn";
 import { Button } from "./Button";
 
@@ -45,7 +46,9 @@ export function ScanInput({ id, onScan, placeholder = "Scan or type a tag, then 
 
   return (
     <div className={cn("flex gap-2", className)}>
-      <input
+      <div className="relative min-w-0 flex-1">
+        <ScanLine className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-navy/60" aria-hidden />
+        <input
         ref={input}
         id={id}
         value={value}
@@ -56,9 +59,10 @@ export function ScanInput({ id, onScan, placeholder = "Scan or type a tag, then 
         autoFocus={autoFocus}
         autoComplete="off"
         spellCheck={false}
-        className="h-12 w-full rounded-[var(--radius-control)] border-2 border-navy/30 bg-surface px-4 font-mono text-[15px] tracking-wide text-ink uppercase placeholder:font-sans placeholder:tracking-normal placeholder:normal-case placeholder:text-ash/70 focus:border-navy focus:outline-none"
-      />
-      <Button size="lg" variant="secondary" onClick={submit} loading={busy} disabled={disabled || !value.trim()}>
+        className="h-12 w-full rounded-full border border-navy/40 bg-surface pr-4 pl-12 font-mono text-[15px] tracking-wide text-ink uppercase shadow-sm transition-all placeholder:font-sans placeholder:tracking-normal placeholder:normal-case placeholder:text-gray-400 focus:border-navy focus:ring-2 focus:ring-navy/25 focus:outline-none"
+        />
+      </div>
+      <Button size="lg" className="rounded-full" onClick={submit} loading={busy} disabled={disabled || !value.trim()}>
         Add
       </Button>
     </div>

@@ -7,8 +7,8 @@ type RateBoardProps = {
   card: RateCard | null;
   loading?: boolean;
   error?: string | null;
-  /** "strip" for a header band, "table" for a full list. */
-  variant?: "strip" | "table";
+  /** "strip" for a header band, "table" for a full list, "list" for a narrow sidebar panel. */
+  variant?: "strip" | "table" | "list";
   /** Purities to show in the strip, in order. Defaults to every line on the card. */
   only?: RateLine["purity"][];
   className?: string;
@@ -24,21 +24,40 @@ function Change({ value }: { value: number | null }) {
 export function RateBoard({ card, loading, error, variant = "table", only, className }: RateBoardProps) {
   if (loading && !card) {
     return (
-      <div className={cn("flex items-center gap-2 text-[13px] text-ash", className)}>
+      <div className={cn("flex items-center gap-2 text-[13px] text-ash", variant === "list" && "px-3 py-3 text-[12px]", className)}>
         <Spinner className="size-4" /> Loading today&apos;s rates
       </div>
     );
   }
 
   if (error && !card) {
-    return <p className={cn("text-[13px] text-risk", className)}>Rates could not be loaded. {error}</p>;
+    return <p className={cn("text-[13px] text-risk", variant === "list" && "px-3 py-3 text-[12px]", className)}>Rates could not be loaded. {error}</p>;
   }
 
   if (!card) {
-    return <p className={cn("text-[13px] text-ash", className)}>No rate has been published yet.</p>;
+    return <p className={cn("text-[13px] text-ash", variant === "list" && "px-3 py-3 text-[12px]", className)}>No rate has been published yet.</p>;
   }
 
   const lines = only ? card.rates.filter((line) => only.includes(line.purity)) : card.rates;
+
+  if (variant === "list") {
+    return (
+      <div className={cn("divide-y divide-gray-100", className)}>
+        {lines.map((line) => (
+          <div key={line.purity} className="flex items-center justify-between gap-2 px-3 py-2 text-[12px]">
+            <span className="text-gray-700">{line.label}</span>
+            <span className="grid justify-items-end leading-tight tabular-nums">
+              <span className="font-semibold text-ink">{formatINR(line.ratePerGram)}/g</span>
+              {line.changePerGram ? (
+                <span className={cn("text-[10px]", line.changePerGram > 0 ? "text-ok" : "text-risk")}>{formatChange(line.changePerGram)}</span>
+              ) : null}
+            </span>
+          </div>
+        ))}
+        <p className="px-3 py-2 text-[10.5px] text-ash">As of {formatDateTime(card.effectiveFrom)}</p>
+      </div>
+    );
+  }
 
   if (variant === "strip") {
     return (
@@ -59,15 +78,15 @@ export function RateBoard({ card, loading, error, variant = "table", only, class
       <div className="overflow-x-auto">
         <table className="w-full min-w-[420px] text-left text-sm">
           <thead>
-            <tr className="text-[11px] tracking-wide text-ash uppercase">
-              <th className="py-2 pr-4 font-semibold">Purity</th>
-              <th className="py-2 pr-4 text-right font-semibold">Rate per gram</th>
-              <th className="py-2 text-right font-semibold">Change</th>
+            <tr className="text-[11.5px] tracking-wide text-gray-700 uppercase">
+              <th className="py-2 pr-4 font-bold">Purity</th>
+              <th className="py-2 pr-4 text-right font-bold">Rate per gram</th>
+              <th className="py-2 text-right font-bold">Change</th>
             </tr>
           </thead>
           <tbody>
             {lines.map((line) => (
-              <tr key={line.purity} className="border-t border-line">
+              <tr key={line.purity} className="border-t border-gray-100">
                 <td className="py-2.5 pr-4">{line.label}</td>
                 <td className="py-2.5 pr-4 text-right font-semibold tabular-nums">{formatINR(line.ratePerGram)}</td>
                 <td className="py-2.5 text-right text-[13px] tabular-nums">

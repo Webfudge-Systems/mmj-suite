@@ -14,9 +14,6 @@ export default function DesignPage({ params }: { params: Promise<{ id: string }>
 
   return (
     <div className="grid gap-6">
-      <Link href="/catalogue" className="text-[13px] text-ash hover:text-navy">
-        ← Catalogue
-      </Link>
       {loading ? (
         <Spinner className="text-navy" />
       ) : error || !design ? (

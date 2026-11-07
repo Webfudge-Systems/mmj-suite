@@ -3,7 +3,8 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@webfudge/auth/components";
-import { Alert, Badge, Button, Card, CardBody, CardHeader, PageHeader, ScanInput, Spinner, StatusBadge, Table, Td, Th, Tr } from "@webfudge/ui";
+import { CheckCircle2, ClipboardList, SearchX } from "lucide-react";
+import { Alert, Badge, Button, Card, CardBody, CardHeader, KpiCard, PageHeader, ScanInput, Spinner, StatusBadge, Table, Td, Th, Tr } from "@webfudge/ui";
 import type { StockAudit, StockItem } from "@webfudge/utils/api";
 import { formatDateTime, formatWeight } from "@webfudge/utils/formatters";
 import { pieces } from "@/lib/labels";
@@ -98,25 +99,15 @@ export default function AuditPage({ params }: { params: Promise<{ id: string }> 
 
   return (
     <div className="grid gap-6">
-      <Link href="/audit" className="text-[13px] text-ash hover:text-navy">
-        ← Stock audit
-      </Link>
       <PageHeader
         title={`Count of ${area}`}
         description={`Started ${formatDateTime(audit.startedAt)}${audit.startedBy ? ` by ${audit.startedBy}` : ""}${audit.closedAt ? `. Closed ${formatDateTime(audit.closedAt)}${audit.closedBy ? ` by ${audit.closedBy}` : ""}` : ""}.`}
       />
 
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          ["Expected", audit.expectedCount],
-          ["Found", audit.foundCount],
-          ["Still to find", left],
-        ].map(([label, value]) => (
-          <div key={label} className="grid gap-1 rounded-[var(--radius-panel)] border border-line bg-surface px-4 py-3">
-            <span className="text-2xl font-semibold text-navy tabular-nums">{value}</span>
-            <span className="text-[13px] text-ash">{label}</span>
-          </div>
-        ))}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <KpiCard compact title="Expected" value={audit.expectedCount} icon={ClipboardList} subtitle="Pieces the system has here" />
+        <KpiCard compact title="Found" value={audit.foundCount} icon={CheckCircle2} tone="ok" subtitle="Scanned in this count" />
+        <KpiCard compact title="Still to find" value={left} icon={SearchX} tone={left ? "warn" : "ok"} subtitle={left ? "Not scanned yet" : "All accounted for"} />
       </div>
 
       {audit.status === "open" && hasRole("owner", "branch_manager", "stock_keeper") && (

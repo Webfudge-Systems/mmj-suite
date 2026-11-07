@@ -216,9 +216,6 @@ export default function InvoicePage({ params, searchParams }: { params: Promise<
     <div className="grid gap-6">
       <style>{`@media print { @page { size: A4; margin: 12mm; } }`}</style>
       <div className="grid gap-6 print:hidden">
-        <Link href="/invoices" className="text-[13px] text-ash hover:text-navy">
-          ← Invoices
-        </Link>
         <PageHeader
           title={<span className="font-mono">{invoice.number}</span>}
           description={

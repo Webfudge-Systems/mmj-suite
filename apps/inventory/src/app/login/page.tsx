@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { LoginForm, useAuth } from "@webfudge/auth/components";
-import { Card, CardBody, Wordmark } from "@webfudge/ui";
+import { LoginLayout } from "@webfudge/ui";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,19 +14,19 @@ export default function LoginPage() {
   }, [status, router]);
 
   return (
-    <main className="grid min-h-dvh place-items-center bg-navy-deep px-4 py-10">
-      <div className="grid w-full max-w-sm gap-6">
-        <Wordmark appName="Back Office" />
-        <Card>
-          <CardBody className="grid gap-5 p-6">
-            <div className="grid gap-1">
-              <h1 className="text-lg font-semibold text-navy">Sign in</h1>
-              <p className="text-[13px] text-ash">Use the account the owner set up for you.</p>
-            </div>
-            <LoginForm onSignedIn={() => router.replace("/")} />
-          </CardBody>
-        </Card>
-      </div>
-    </main>
+    <LoginLayout
+      appName="Back Office"
+      tagline="Stock, tags, trays and rates for every branch."
+      detail="Receive new pieces, print tags, keep every tray counted and publish the morning rate that the website, tablets and billing counter all price from."
+      features={[
+        { value: "Every piece", label: "tagged & traced" },
+        { value: "Both branches", label: "one stock book" },
+        { value: "Live rates", label: "on every screen" },
+      ]}
+      intro="Use the account the owner set up for you."
+      footer="No account yet? Ask the owner to add you."
+    >
+      <LoginForm onSignedIn={() => router.replace("/")} />
+    </LoginLayout>
   );
 }

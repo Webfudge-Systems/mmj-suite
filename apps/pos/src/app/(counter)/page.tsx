@@ -2,9 +2,10 @@
 
 import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { ClipboardList, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { errorMessage, useApi, useBranch } from "@webfudge/auth/components";
-import { Alert, Badge, Button, Card, CardBody, CardHeader, Field, Input, PageHeader, ScanInput, Spinner, Table, Td, Th, Tr } from "@webfudge/ui";
+import { Alert, Badge, Button, Card, CardBody, CardHeader, Field, Input, PageHeader, ScanInput, Spinner, Table, Td, Th, Tr, buttonClass } from "@webfudge/ui";
 import type { Customer, CustomerDetail, Estimate, Invoice, Quote, StockItem } from "@webfudge/utils/api";
 import { formatINR, formatWeight } from "@webfudge/utils/formatters";
 import { CustomerPicker } from "@/components/customer-picker";
@@ -166,11 +167,13 @@ export default function NewBillPage({ searchParams }: { searchParams: Promise<{ 
         description={estimate ? `Sent from the floor by ${estimate.salesperson ?? "a salesperson"}.` : "Scan the tags, or open an estimate sent from the showroom."}
         actions={
           <>
-            <Link href="/estimates" className="text-[13px] font-semibold text-navy underline">
+            <Link href="/estimates" className={buttonClass("secondary")}>
+              <ClipboardList className="size-4" aria-hidden />
               Estimates queue
             </Link>
             {(pieces.length > 0 || customer) && (
               <Button variant="ghost" onClick={reset}>
+                <RotateCcw className="size-4" aria-hidden />
                 Start over
               </Button>
             )}

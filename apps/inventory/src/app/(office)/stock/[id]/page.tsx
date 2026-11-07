@@ -198,9 +198,6 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
 
   return (
     <div className="grid gap-6">
-      <Link href="/stock" className="text-[13px] text-ash hover:text-navy">
-        ← Stock
-      </Link>
       <PageHeader
         title={<span className="font-mono">{item.tagNumber}</span>}
         description={

@@ -16,6 +16,7 @@
   "dependencies": {
     "@webfudge/config": "*",
     "@webfudge/ui": "*",
-    "@webfudge/utils": "*"
+    "@webfudge/utils": "*",
+    "lucide-react": "^1.70.0"
   }
 }

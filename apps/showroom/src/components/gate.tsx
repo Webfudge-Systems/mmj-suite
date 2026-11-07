@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useAuth } from "@webfudge/auth/components";
-import { Alert, Button, Input, Spinner, Wordmark } from "@webfudge/ui";
+import { Delete } from "lucide-react";
+import { Alert, Button, Input, LoginLayout, Spinner } from "@webfudge/ui";
 import { ApiError, apiRequest, type DeviceInfo } from "@webfudge/utils/api";
 import { API_URL, forgetDevice, readDevice, saveDevice, type PairedDevice } from "@/lib/device";
 import { FloorProvider } from "@/lib/floor";
@@ -12,12 +13,26 @@ const IDLE_LOCK_MS = 10 * 60 * 1000;
 
 type Person = { id: number; name: string; staffRole: string };
 
-function Screen({ children }: { children: ReactNode }) {
+const FEATURES = [
+  { value: "Every design", label: "with live prices" },
+  { value: "Tray & rack", label: "for each piece" },
+  { value: "One tap", label: "to the counter" },
+];
+
+function Loading() {
   return (
-    <main className="grid min-h-dvh place-items-center bg-navy-deep px-6 py-10 text-paper">
-      <div className="grid w-full max-w-xl gap-8">{children}</div>
+    <main className="grid min-h-dvh place-items-center bg-sunk">
+      <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white px-6 py-4 shadow-lg">
+        <Spinner className="text-navy" />
+        <span className="font-medium text-ink">Loading</span>
+      </div>
     </main>
   );
+}
+
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/);
+  return ((parts[0]?.[0] ?? "") + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
 }
 
 function PairScreen({ onPaired }: { onPaired: (paired: PairedDevice) => void }) {
@@ -42,11 +57,15 @@ function PairScreen({ onPaired }: { onPaired: (paired: PairedDevice) => void }) 
   }
 
   return (
-    <Screen>
-      <Wordmark appName="Showroom" />
-      <form onSubmit={submit} className="grid gap-4 rounded-[var(--radius-panel)] bg-surface p-6 text-ink" noValidate>
-        <h1 className="text-xl font-semibold text-navy">Pair this tablet</h1>
-        <p className="text-sm text-ash">The branch manager creates a six-digit code in the Back Office under Settings › Tablets. Type it here once.</p>
+    <LoginLayout
+      appName="Showroom"
+      tagline="The collection, with today's prices, in the salesperson's hands."
+      detail="Show customers every design in stock, see which tray it sits in, and send the chosen pieces to the billing counter as an estimate."
+      features={FEATURES}
+      heading="Pair this tablet"
+      intro="The branch manager creates a six-digit code in the Back Office under Settings › Tablets. Type it here once."
+    >
+      <form onSubmit={submit} className="grid gap-5" noValidate>
         <Input
           id="pair-code"
           inputMode="numeric"
@@ -54,15 +73,15 @@ function PairScreen({ onPaired }: { onPaired: (paired: PairedDevice) => void }) 
           maxLength={6}
           value={code}
           onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))}
-          className="h-14 text-center font-mono text-3xl tracking-[0.5em]"
+          className="h-16 text-center font-mono text-3xl tracking-[0.5em]"
           autoFocus
         />
         {error && <Alert tone="risk">{error}</Alert>}
-        <Button type="submit" size="lg" loading={busy} disabled={code.length !== 6}>
+        <Button type="submit" size="lg" className="w-full" loading={busy} disabled={code.length !== 6}>
           Pair
         </Button>
       </form>
-    </Screen>
+    </LoginLayout>
   );
 }
 
@@ -122,20 +141,21 @@ function PinScreen({ paired, onUnpaired }: { paired: PairedDevice; onUnpaired: (
   }
 
   return (
-    <Screen>
-      <div className="flex items-center justify-between gap-4">
-        <Wordmark appName="Showroom" />
-        <span className="text-right text-[13px] text-paper/70">{paired.device.name} · {paired.device.branch.name}</span>
-      </div>
-
+    <LoginLayout
+      appName="Showroom"
+      tagline="The collection, with today's prices, in the salesperson's hands."
+      detail="Show customers every design in stock, see which tray it sits in, and send the chosen pieces to the billing counter as an estimate."
+      features={FEATURES}
+      heading={person ? person.name : "Who is serving?"}
+      intro={`${paired.device.name} · ${paired.device.branch.name}`}
+    >
       {!person ? (
         <div className="grid gap-4">
-          <h1 className="text-2xl font-semibold">Who is serving?</h1>
           {error && <Alert tone="risk">{error}</Alert>}
           {!people ? (
             <Spinner />
           ) : people.length === 0 ? (
-            <p className="text-paper/70">Nobody at this branch has a tablet PIN yet. The branch manager sets PINs in the Back Office under Settings › Staff.</p>
+            <p className="text-ash">Nobody at this branch has a tablet PIN yet. The branch manager sets PINs in the Back Office under Settings › Staff.</p>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {people.map((entry) => (
@@ -147,9 +167,10 @@ function PinScreen({ paired, onUnpaired }: { paired: PairedDevice; onUnpaired: (
                     setPin("");
                     setError(null);
                   }}
-                  className="grid min-h-24 place-items-center rounded-[var(--radius-panel)] bg-paper/10 px-3 text-center text-lg font-semibold transition-colors hover:bg-paper/20"
+                  className="grid min-h-28 place-items-center gap-2 rounded-xl border border-gray-100 bg-white px-3 py-4 text-center shadow-[var(--shadow-tile)] transition-all hover:border-navy-line hover:shadow-md active:bg-navy-soft"
                 >
-                  {entry.name}
+                  <span className="grid size-12 place-items-center rounded-full border-2 border-white bg-gradient-to-br from-navy to-navy-deep text-sm font-bold text-gold shadow-lg">{initials(entry.name)}</span>
+                  <span className="text-[15px] font-semibold text-ink">{entry.name}</span>
                 </button>
               ))}
             </div>
@@ -157,15 +178,12 @@ function PinScreen({ paired, onUnpaired }: { paired: PairedDevice; onUnpaired: (
         </div>
       ) : (
         <div className="grid justify-items-center gap-6">
-          <div className="grid justify-items-center gap-1">
-            <h1 className="text-2xl font-semibold">{person.name}</h1>
-            <button type="button" className="text-sm text-paper/70 underline" onClick={() => setPerson(null)}>
-              Not you?
-            </button>
-          </div>
+          <button type="button" className="justify-self-start text-sm font-medium text-navy hover:underline" onClick={() => setPerson(null)}>
+            Not you? Choose someone else
+          </button>
           <div className="flex gap-3" aria-label={`${pin.length} digits entered`}>
             {Array.from({ length: Math.max(4, pin.length) }, (_, index) => (
-              <span key={index} className={`size-4 rounded-full ${index < pin.length ? "bg-gold" : "bg-paper/25"}`} />
+              <span key={index} className={`size-4 rounded-full ${index < pin.length ? "bg-navy" : "bg-gray-200"}`} />
             ))}
           </div>
           {error && <Alert tone="risk">{error}</Alert>}
@@ -176,22 +194,22 @@ function PinScreen({ paired, onUnpaired }: { paired: PairedDevice; onUnpaired: (
                   key={index}
                   type="button"
                   onClick={() => press(key)}
-                  className="size-20 rounded-full bg-paper/10 text-2xl font-semibold transition-colors hover:bg-paper/20 active:bg-paper/30"
+                  className="grid size-20 place-items-center rounded-full border border-gray-200 bg-white text-2xl font-semibold text-ink shadow-md transition-colors hover:bg-gray-50 active:bg-navy active:text-white"
                   aria-label={key === "⌫" ? "Delete" : key}
                 >
-                  {key}
+                  {key === "⌫" ? <Delete className="size-6" aria-hidden /> : key}
                 </button>
               ) : (
                 <span key={index} />
               ),
             )}
           </div>
-          <Button variant="gold" size="lg" className="w-56" loading={busy} disabled={pin.length < 4} onClick={() => submit(pin)}>
+          <Button size="lg" className="w-full max-w-xs" loading={busy} disabled={pin.length < 4} onClick={() => submit(pin)}>
             Sign in
           </Button>
         </div>
       )}
-    </Screen>
+    </LoginLayout>
   );
 }
 
@@ -230,9 +248,7 @@ export function Gate({ children }: { children: ReactNode }) {
 
   if (paired === undefined || status === "loading") {
     return (
-      <Screen>
-        <Spinner />
-      </Screen>
+      <Loading />
     );
   }
   if (!paired) return <PairScreen onPaired={setPaired} />;

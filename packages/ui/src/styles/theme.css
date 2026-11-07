@@ -3,7 +3,10 @@
  * Import after tailwindcss in each app's globals.css, then add an @source for
  * this package so its classes are generated.
  *
- * Brand palette: Deep Blue #0A2874 · Golden Crown #E9B120 · White Cap #FAFAFA
+ * Layout and component styling follow the Webfudge platform (white workspace,
+ * white sidebar with tile navigation, glass page headers, soft elevated cards).
+ * Colours are MMJ's own:
+ * Deep Blue #0A2874 · Golden Crown #E9B120 · White Cap #FAFAFA
  * Velvet Black #272727 · Taupe #AF9C87
  */
 
@@ -13,28 +16,39 @@
 
   --color-navy: #0a2874;
   --color-navy-deep: #071c52;
-  --color-navy-soft: #e6ebf7;
+  --color-navy-soft: #e8edf8;
+  --color-navy-line: #c9d4ee;
   --color-gold: #e9b120;
   --color-gold-deep: #835f00;
   --color-gold-soft: #fbf1d6;
+  --color-gold-line: #f1d891;
   --color-taupe: #af9c87;
 
-  --color-ink: #23252e;
-  --color-ash: #5b6072;
-  --color-line: #e1e3ea;
+  /* Neutrals, Webfudge-style: near-black text, mid-grey secondary text, light hairlines. */
+  --color-ink: #272727;
+  --color-ash: #666666;
+  --color-line: #e8e8e8;
   --color-paper: #fafafa;
   --color-surface: #ffffff;
-  --color-sunk: #f2f3f7;
+  --color-sunk: #f6f6f8;
 
   --color-ok: #1e6b3a;
-  --color-ok-soft: #e3f2e8;
+  --color-ok-soft: #e9f6ee;
+  --color-ok-line: #b9e0c6;
   --color-warn: #8a5a00;
-  --color-warn-soft: #fdf3dc;
+  --color-warn-soft: #fdf5e1;
+  --color-warn-line: #f2d999;
   --color-risk: #a3253b;
-  --color-risk-soft: #fbe7ea;
+  --color-risk-soft: #fcecee;
+  --color-risk-line: #f2c1c9;
 
-  --radius-control: 8px;
-  --radius-panel: 12px;
+  --radius-control: 10px;
+  --radius-panel: 14px;
+
+  --shadow-card: 0 3px 16px rgba(15, 23, 42, 0.1), 0 2px 5px rgba(15, 23, 42, 0.06);
+  --shadow-card-hover: 0 6px 26px rgba(15, 23, 42, 0.13), 0 3px 8px rgba(15, 23, 42, 0.07);
+  --shadow-tile: 0 4px 12px rgba(10, 40, 116, 0.08);
+  --shadow-tile-active: 0 10px 22px rgba(10, 40, 116, 0.3);
 }
 
 @layer base {
@@ -43,7 +57,7 @@
   }
 
   body {
-    background-color: var(--color-paper);
+    background-color: var(--color-surface);
     color: var(--color-ink);
     font-family: var(--font-sans);
   }
@@ -56,5 +70,23 @@
   ::selection {
     background-color: var(--color-navy);
     color: var(--color-paper);
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--color-sunk);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
   }
 }

@@ -3,3 +3,4 @@ export * from "./LoginForm";
 export * from "./RequireAuth";
 export * from "./BranchProvider";
 export * from "./data";
+export * from "./HeaderExtras";

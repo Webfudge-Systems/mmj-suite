@@ -58,7 +58,7 @@ function PieceCard({ piece, design, onChanged }: { piece: FloorPiece; design: De
   }
 
   return (
-    <li className={cn("grid gap-3 rounded-[var(--radius-panel)] bg-surface p-4 ring-1", inTray ? "ring-2 ring-gold" : "ring-line")}>
+    <li className={cn("grid gap-3 rounded-xl border bg-surface p-4 shadow-[var(--shadow-card)]", inTray ? "border-gold ring-2 ring-gold" : "border-gray-100")}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="grid gap-1">
           <span className="text-2xl font-semibold text-navy tabular-nums">{piece.pricing ? formatRupees(piece.pricing.price) : "Ask at the counter"}</span>
@@ -157,7 +157,7 @@ export default function DesignPage({ params }: { params: Promise<{ id: string }>
       </Link>
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
         <div className="grid content-start gap-3 lg:sticky lg:top-36">
-          <div className="grid aspect-square place-items-center overflow-hidden rounded-[var(--radius-panel)] bg-[radial-gradient(circle_at_50%_40%,var(--color-surface),var(--color-sunk))] ring-1 ring-line">
+          <div className="grid aspect-square place-items-center overflow-hidden rounded-xl bg-[radial-gradient(circle_at_50%_40%,var(--color-surface),var(--color-sunk))] shadow-[var(--shadow-card)]">
             {image ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={mediaUrl(image.url)} alt={design.name} className="size-full object-contain" />
@@ -180,7 +180,7 @@ export default function DesignPage({ params }: { params: Promise<{ id: string }>
         <div className="grid content-start gap-5">
           <div className="grid gap-1">
             <span className="text-[13px] font-semibold tracking-wide text-gold-deep uppercase">{design.category?.name}</span>
-            <h1 className="text-3xl font-semibold text-balance text-navy">{design.name}</h1>
+            <h1 className="text-3xl font-normal tracking-tight text-balance text-ink sm:text-4xl">{design.name}</h1>
             <span className="font-mono text-[13px] text-ash">{design.code}</span>
             {design.description && <p className="mt-2 max-w-prose text-[15px] text-ink/80">{design.description}</p>}
           </div>

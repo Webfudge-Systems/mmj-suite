@@ -34,7 +34,7 @@ export default function MinePage() {
   return (
     <div className="grid gap-6">
       <div className="grid gap-1">
-        <h1 className="text-3xl font-semibold text-navy">In my hands</h1>
+        <h1 className="text-3xl font-normal tracking-tight text-ink sm:text-4xl">In my hands</h1>
         <p className="text-[15px] text-ash">Pieces you have taken out. Put each one back in its tray when the customer is done.</p>
       </div>
       {error && <Alert tone="risk">{error}</Alert>}
@@ -45,7 +45,7 @@ export default function MinePage() {
       ) : (
         <ul className="grid gap-3 md:grid-cols-2">
           {pieces.map((piece) => (
-            <li key={piece.id} className="grid gap-3 rounded-[var(--radius-panel)] bg-surface p-4 ring-1 ring-line">
+            <li key={piece.id} className="grid gap-3 rounded-xl border border-gray-100 bg-surface p-4 shadow-[var(--shadow-card)]">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="grid">
                   <span className="font-semibold">{piece.design?.name}</span>

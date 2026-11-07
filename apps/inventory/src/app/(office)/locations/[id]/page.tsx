@@ -44,9 +44,6 @@ export default function LocationPage({ params }: { params: Promise<{ id: string 
   return (
     <div className="grid gap-6">
       <div className="grid gap-6 print:hidden">
-        <Link href="/locations" className="text-[13px] text-ash hover:text-navy">
-          ← Locations
-        </Link>
         <PageHeader
           title={<span className="font-mono">{location.fullCode}</span>}
           description={`${LOCATION_KIND_LABELS[location.kind]}${location.name ? ` · ${location.name}` : ""} · ${pieces(location.items.length)} · ${formatWeight(netTotal)} net`}

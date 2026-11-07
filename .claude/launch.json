@@ -70,6 +70,17 @@
         "3010"
       ],
       "port": 3010
+    },
+    {
+      "name": "backend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "develop",
+        "-w",
+        "backend"
+      ],
+      "port": 1337
     }
   ]
 }

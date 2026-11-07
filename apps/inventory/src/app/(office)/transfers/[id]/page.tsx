@@ -45,9 +45,6 @@ export default function TransferPage({ params }: { params: Promise<{ id: string 
 
   return (
     <div className="grid gap-6">
-      <Link href="/transfers" className="text-[13px] text-ash hover:text-navy">
-        ← Transfers
-      </Link>
       <PageHeader
         title={<span className="font-mono">{transfer.number}</span>}
         description={

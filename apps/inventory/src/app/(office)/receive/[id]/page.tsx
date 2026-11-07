@@ -22,9 +22,6 @@ export default function ReceiptPage({ params, searchParams }: { params: Promise<
 
   return (
     <div className="grid gap-6">
-      <Link href="/receive" className="text-[13px] text-ash hover:text-navy">
-        ← Receive stock
-      </Link>
       <PageHeader
         title={<span className="font-mono">{receipt.number}</span>}
         description={`${SOURCE_LABELS[receipt.source]}${receipt.supplier ? ` from ${receipt.supplier.name}` : ""}${receipt.billNumber ? `, bill ${receipt.billNumber}` : ""}${receipt.billDate ? ` of ${formatDate(receipt.billDate)}` : ""}. Received ${formatDateTime(receipt.createdAt)}${receipt.receivedBy ? ` by ${receipt.receivedBy}` : ""}.`}

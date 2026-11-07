@@ -51,7 +51,7 @@ function CustomerStep() {
   }
 
   return (
-    <form onSubmit={create} className="grid max-w-lg gap-3 rounded-[var(--radius-panel)] bg-surface p-5 ring-1 ring-line" noValidate>
+    <form onSubmit={create} className="grid max-w-lg gap-3 rounded-xl border border-gray-100 bg-surface p-5 shadow-[var(--shadow-card)]" noValidate>
       <h2 className="text-lg font-semibold">Who is the customer?</h2>
       <Input id="tray-phone" inputMode="tel" placeholder="Mobile number" value={phone} onChange={(event) => setPhone(event.target.value)} className="h-12 text-lg tabular-nums" />
       {found && found.length > 0 && (
@@ -96,9 +96,9 @@ export default function TrayPage() {
 
   if (sent) {
     return (
-      <div className="grid max-w-xl justify-items-start gap-4 rounded-[var(--radius-panel)] bg-surface p-8 ring-1 ring-line">
+      <div className="grid max-w-xl justify-items-start gap-4 rounded-xl border border-gray-100 bg-surface p-8 shadow-[var(--shadow-card)]">
         <span className="text-[13px] font-semibold tracking-wide text-ok uppercase">Sent to billing</span>
-        <h1 className="text-3xl font-semibold text-navy">
+        <h1 className="text-3xl font-normal tracking-tight text-ink sm:text-4xl">
           Estimate <span className="font-mono">{sent.number}</span>
         </h1>
         <p className="text-[15px] text-ink/80">
@@ -115,7 +115,7 @@ export default function TrayPage() {
     <div className="grid gap-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="grid gap-1">
-          <h1 className="text-3xl font-semibold text-navy">{customer ? `${customer.name}'s tray` : "Customer's tray"}</h1>
+          <h1 className="text-3xl font-normal tracking-tight text-ink sm:text-4xl">{customer ? `${customer.name}'s tray` : "Customer's tray"}</h1>
           {customer && (
             <span className="text-[14px] text-ash tabular-nums">
               {customer.phone} ·{" "}
@@ -135,7 +135,7 @@ export default function TrayPage() {
       ) : (
         <ul className="grid gap-3 md:grid-cols-2">
           {tray.map((piece) => (
-            <li key={piece.id} className="flex gap-4 rounded-[var(--radius-panel)] bg-surface p-3 ring-1 ring-line">
+            <li key={piece.id} className="flex gap-4 rounded-xl border border-gray-100 bg-surface p-3 shadow-[var(--shadow-card)]">
               <div className="grid size-24 shrink-0 place-items-center overflow-hidden rounded-lg bg-sunk">
                 {piece.design.image ? (
                   // eslint-disable-next-line @next/next/no-img-element

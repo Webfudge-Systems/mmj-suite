@@ -53,9 +53,6 @@ export default function NewTransferPage() {
 
   return (
     <div className="grid gap-6">
-      <Link href="/transfers" className="text-[13px] text-ash hover:text-navy">
-        ← Transfers
-      </Link>
       <PageHeader title="Send pieces" description={`From ${branch?.name ?? "this branch"}. Scan each piece as it goes into the bag.`} />
 
       {all.data && destinations.length === 0 ? (

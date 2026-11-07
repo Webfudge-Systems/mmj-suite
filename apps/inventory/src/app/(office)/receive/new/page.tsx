@@ -104,9 +104,6 @@ export default function ReceivePage() {
 
   return (
     <form onSubmit={submit} className="grid gap-6" noValidate>
-      <Link href="/receive" className="text-[13px] text-ash hover:text-navy">
-        ← Receive stock
-      </Link>
       <PageHeader title="Receive pieces" description={`Into ${branch?.name ?? "this branch"}. Each line becomes one tagged piece.`} />
 
       <Card>

@@ -151,9 +151,6 @@ export default function ImportPage() {
 
   return (
     <div className="grid gap-6">
-      <Link href="/receive" className="text-[13px] text-ash hover:text-navy">
-        ← Receive stock
-      </Link>
       <PageHeader
         title="Import current stock"
         description={`Load the pieces already in ${branch?.name ?? "the shop"} from your old software. Each piece gets an MMJ tag and keeps its old tag number, so old tags still scan.`}

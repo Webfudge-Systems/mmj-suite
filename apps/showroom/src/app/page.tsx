@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Search } from "lucide-react";
 import { useApi, useResource } from "@webfudge/auth/components";
 import { Alert, Button, EmptyState, Input, Spinner, cn } from "@webfudge/ui";
 import type { Category, FloorDesign } from "@webfudge/utils/api";
@@ -39,8 +40,8 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        "h-10 shrink-0 rounded-full px-4 text-[14px] font-semibold whitespace-nowrap ring-1 transition-colors",
-        active ? "bg-navy text-paper ring-navy" : "bg-surface text-ink ring-line hover:ring-navy/40",
+        "h-10 shrink-0 rounded-lg border px-4 text-[14px] font-semibold whitespace-nowrap transition-all duration-200",
+        active ? "border-transparent bg-navy text-white shadow-lg" : "border-gray-100 bg-white text-gray-700 shadow-sm hover:shadow-md",
       )}
     >
       {children}
@@ -107,24 +108,27 @@ export default function CollectionPage() {
 
   return (
     <div className="grid gap-5">
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-white/40 bg-white/95 p-3 shadow-lg backdrop-blur-xl">
+        <div className="relative w-full max-w-md">
+        <Search className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-gray-400" aria-hidden />
         <Input
           id="collection-search"
           value={q}
           onChange={(event) => refine(setQ)(event.target.value)}
           placeholder="Search a design, number or tag"
-          className="h-12 max-w-md text-base"
+          className="h-12 rounded-full border-navy/40 pl-12 text-base"
           inputMode="search"
         />
-        <label className="flex h-12 items-center gap-2 rounded-full bg-surface px-4 text-[14px] font-semibold ring-1 ring-line">
-          <input type="checkbox" checked={everywhere} onChange={(event) => refine(setEverywhere)(event.target.checked)} className="size-5" />
+        </div>
+        <label className="flex h-12 items-center gap-2 rounded-full border border-gray-200 bg-white px-4 text-[14px] font-semibold text-gray-700 shadow-sm">
+          <input type="checkbox" checked={everywhere} onChange={(event) => refine(setEverywhere)(event.target.checked)} className="size-5 accent-navy" />
           Include other branches
         </label>
         <select
           aria-label="Sort"
           value={sort}
           onChange={(event) => refine(setSort)(event.target.value)}
-          className="h-12 rounded-full bg-surface px-4 text-[14px] font-semibold ring-1 ring-line"
+          className="h-12 rounded-full border border-gray-200 bg-white px-4 text-[14px] font-semibold text-gray-700 shadow-sm focus:ring-2 focus:ring-navy focus:outline-none"
         >
           <option value="newest">Newest first</option>
           <option value="price_asc">Price: low to high</option>

@@ -1,10 +1,12 @@
 "use client";
 
+import type { ComponentType } from "react";
 import Link from "next/link";
+import { ArrowDownToLine, Boxes, Inbox, PackagePlus, Truck, UserRound } from "lucide-react";
 import { useAuth } from "@webfudge/auth/components";
 import { PURITIES, RATE_EDITOR_ROLES } from "@webfudge/config";
 import { useCurrentRates } from "@webfudge/hooks";
-import { Badge, Card, CardBody, CardHeader, PageHeader, RateBoard, Table, Td, Th, Tr, buttonClass } from "@webfudge/ui";
+import { Badge, Card, CardBody, CardHeader, KpiCard, PageHeader, RateBoard, Table, Td, Th, Tr, buttonClass, type KpiTone } from "@webfudge/ui";
 import type { StockSummary } from "@webfudge/utils/api";
 import { formatDate, formatDateTime, formatWeight } from "@webfudge/utils/formatters";
 import { useResource } from "@/lib/api";
@@ -15,19 +17,14 @@ function isToday(iso: string) {
   return formatDate(iso) === formatDate(new Date().toISOString());
 }
 
-function Stat({ label, value, href, tone }: { label: string; value: number | string; href?: string; tone?: "warn" }) {
-  const body = (
-    <div className="grid gap-1 rounded-[var(--radius-panel)] border border-line bg-surface px-4 py-3">
-      <span className={`text-2xl font-semibold tabular-nums ${tone === "warn" ? "text-warn" : "text-navy"}`}>{value}</span>
-      <span className="text-[13px] text-ash">{label}</span>
-    </div>
-  );
+function Stat({ label, value, href, icon, tone, note }: { label: string; value: number | string; href?: string; icon: ComponentType<{ className?: string }>; tone?: KpiTone; note?: string }) {
+  const card = <KpiCard title={label} value={value} icon={icon} tone={tone} subtitle={note} compact hoverable={Boolean(href)} />;
   return href ? (
-    <Link href={href} className="rounded-[var(--radius-panel)] transition-shadow hover:shadow-md">
-      {body}
+    <Link href={href} className="rounded-xl">
+      {card}
     </Link>
   ) : (
-    body
+    card
   );
 }
 
@@ -48,18 +45,26 @@ export default function DashboardPage() {
         description={branch ? `${branch.name} branch` : undefined}
         actions={
           <Link href="/receive/new" className={buttonClass("primary")}>
+            <PackagePlus className="size-4" aria-hidden />
             Receive stock
           </Link>
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <Stat label="Pieces in stock" value={stock?.inStock ?? "–"} href="/stock" />
-        <Stat label="Waiting for a tray" value={stock?.untrayed ?? "–"} href="/stock?untrayed=true" tone={stock?.untrayed ? "warn" : undefined} />
-        <Stat label="With salespeople" value={stock?.withStaff ?? "–"} />
-        <Stat label="Received today" value={stock?.receivedToday ?? "–"} href="/receive" />
-        <Stat label="In transit" value={stock?.inTransit ?? "–"} href="/transfers" />
-        <Stat label="Arriving here" value={stock?.incomingTransfers ?? "–"} href="/transfers" />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <Stat label="Pieces in stock" value={stock?.inStock ?? "–"} href="/stock" icon={Boxes} note="Across every tray in this branch" />
+        <Stat
+          label="Waiting for a tray"
+          value={stock?.untrayed ?? "–"}
+          href="/stock?untrayed=true"
+          icon={Inbox}
+          tone={stock?.untrayed ? "warn" : "navy"}
+          note={stock?.untrayed ? "Put these away before the floor opens" : "Everything is in a tray"}
+        />
+        <Stat label="With salespeople" value={stock?.withStaff ?? "–"} icon={UserRound} tone="gold" note="Picked on the showroom tablets" />
+        <Stat label="Received today" value={stock?.receivedToday ?? "–"} href="/receive" icon={PackagePlus} tone="ok" note="New pieces tagged today" />
+        <Stat label="In transit" value={stock?.inTransit ?? "–"} href="/transfers" icon={Truck} note="Sent to the other branch" />
+        <Stat label="Arriving here" value={stock?.incomingTransfers ?? "–"} href="/transfers" icon={ArrowDownToLine} tone="gold" note="Transfers to receive" />
       </div>
       {summary.error && <p className="text-[13px] text-risk">{summary.error}</p>}
 
