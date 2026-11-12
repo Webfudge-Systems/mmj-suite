@@ -36,7 +36,7 @@ export type Design = {
   isActive: boolean;
   category: { id: number; name: string; code: string | null } | null;
   collection: { id: number; name: string } | null;
-  images: { id: number; url: string; thumbnailUrl: string; alternativeText: string | null }[];
+  images: ImageRef[];
   inStock?: number;
 };
 
@@ -61,6 +61,9 @@ export type StockLocation = LocationRef & {
   pieces: number;
 };
 
+/** An uploaded photo: full size, thumbnail and alt text. URLs are relative to the API on local uploads. */
+export type ImageRef = { id: number; url: string; thumbnailUrl: string; alternativeText: string | null };
+
 export type StockItem = {
   id: number;
   tagNumber: string;
@@ -79,7 +82,9 @@ export type StockItem = {
   slot: string | null;
   notes: string | null;
   receivedAt: string | null;
-  design: { id: number; code: string; name: string; category: { id: number; name: string; code: string | null } | null } | null;
+  /** The piece's own photos, main photo first. */
+  photos: ImageRef[];
+  design: { id: number; code: string; name: string; category: { id: number; name: string; code: string | null } | null; image: ImageRef | null } | null;
   branch: BranchRef | null;
   location: LocationRef | null;
   supplier: { id: number; name: string; kind: string } | null;

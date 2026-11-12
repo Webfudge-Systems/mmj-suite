@@ -3,7 +3,7 @@ import { STOCK_EDITOR_ROLES } from "../../../utils/constants";
 import { reserveSequence } from "../../../utils/sequence";
 import { formatDesignCode, metalForPurity, normaliseCode, StockRuleError } from "../../../utils/stock";
 import { canSeeCost, requireBranch, type Staff } from "../../../utils/staff";
-import { CATEGORY, DESIGN, ITEM, LOCATION, RECEIPT, SUPPLIER, idOf, notFound, orgWhere, paging, requireRole, staffOf, text } from "../lib/common";
+import { CATEGORY, DESIGN, ITEM, LOCATION, RECEIPT, SUPPLIER, idOf, imageIds, notFound, orgWhere, paging, requireRole, staffOf, text } from "../lib/common";
 import { assertUniqueCodes, createPieces, parsePiece, type PieceInput } from "../lib/items";
 import { ITEM_POPULATE, serializeItem } from "../lib/serialize";
 
@@ -103,6 +103,13 @@ export default ({ strapi }: { strapi: any }) => ({
       throw new errors.ForbiddenError("Your role cannot enter cost prices.");
     }
     await assertUniqueCodes(strapi, staff, pieces);
+    for (const [index, piece] of pieces.entries()) {
+      try {
+        piece.photoIds = await imageIds(strapi, piece.photoIds);
+      } catch (error) {
+        throw new errors.ValidationError(`Line ${index + 1}: ${(error as Error).message}`);
+      }
+    }
 
     const billDate = text(body.billDate, 10);
     if (billDate && !/^\d{4}-\d{2}-\d{2}$/.test(billDate)) throw new errors.ValidationError("Enter the bill date as a date.");

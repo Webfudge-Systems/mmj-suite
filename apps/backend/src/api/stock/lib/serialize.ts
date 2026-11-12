@@ -3,12 +3,23 @@ import { num } from "./common";
 /** Populate shape that gives every field serializeItem reads. */
 export const ITEM_POPULATE = {
   making: true,
-  design: { select: ["id", "code", "name"], populate: { category: { select: ["id", "name", "code"] } } },
+  photos: true,
+  design: { select: ["id", "code", "name"], populate: { category: { select: ["id", "name", "code"] }, images: true } },
   branch: { select: ["id", "code", "name"] },
   location: { select: ["id", "code", "fullCode", "name", "kind"] },
   supplier: { select: ["id", "name", "kind"] },
   receipt: { select: ["id", "number"] },
 };
+
+/** An uploaded image as the apps use it: full URL, thumbnail URL and alt text. */
+export function serializeImage(image: any) {
+  return {
+    id: image.id,
+    url: image.url,
+    thumbnailUrl: image.formats?.thumbnail?.url ?? image.url,
+    alternativeText: image.alternativeText ?? null,
+  };
+}
 
 export const making = (value: any) => (value ? { type: value.type, value: Number(value.value) } : null);
 
@@ -34,12 +45,14 @@ export function serializeItem(item: any, { cost }: { cost: boolean }) {
     slot: item.slot ?? null,
     notes: item.notes ?? null,
     receivedAt: item.receivedAt ?? null,
+    photos: (item.photos ?? []).map(serializeImage),
     design: item.design
       ? {
           id: item.design.id,
           code: item.design.code,
           name: item.design.name,
           category: item.design.category ? { id: item.design.category.id, name: item.design.category.name, code: item.design.category.code } : null,
+          image: item.design.images?.[0] ? serializeImage(item.design.images[0]) : null,
         }
       : null,
     branch: item.branch ? { id: item.branch.id, code: item.branch.code, name: item.branch.name } : null,
@@ -63,12 +76,7 @@ export function serializeDesign(design: any) {
     isActive: design.isActive !== false,
     category: design.category ? { id: design.category.id, name: design.category.name, code: design.category.code } : null,
     collection: design.collection ? { id: design.collection.id, name: design.collection.name } : null,
-    images: (design.images ?? []).map((image: any) => ({
-      id: image.id,
-      url: image.url,
-      thumbnailUrl: image.formats?.thumbnail?.url ?? image.url,
-      alternativeText: image.alternativeText ?? null,
-    })),
+    images: (design.images ?? []).map(serializeImage),
   };
 }
 

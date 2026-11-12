@@ -63,3 +63,18 @@ export function notFound(what: string): never {
 }
 
 export const num = (value: unknown) => (value === null || value === undefined ? null : Number(value));
+
+/** Up to this many photos per piece. */
+export const MAX_PHOTOS = 8;
+
+/** Keeps the ids that are uploaded images, in the order given. Throws when any id is not one. */
+export async function imageIds(strapi: any, raw: unknown): Promise<number[]> {
+  if (!Array.isArray(raw)) return [];
+  const ids = [...new Set(raw.map(idOf).filter((id): id is number => id !== null))];
+  if (ids.length > MAX_PHOTOS) throw new errors.ValidationError(`Add at most ${MAX_PHOTOS} photos to a piece.`);
+  if (!ids.length) return [];
+  const files = await strapi.db.query("plugin::upload.file").findMany({ where: { id: { $in: ids } }, select: ["id", "mime"] });
+  const images = new Set(files.filter((file: any) => String(file.mime ?? "").startsWith("image/")).map((file: any) => file.id));
+  if (ids.some((id) => !images.has(id))) throw new errors.ValidationError("One of the photos is missing or is not an image. Upload it again.");
+  return ids;
+}

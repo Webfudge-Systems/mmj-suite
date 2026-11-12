@@ -2,7 +2,7 @@ import { errors } from "@strapi/utils";
 import { priceLine, roundBill } from "../../../utils/pricing";
 import { normaliseCode } from "../../../utils/stock";
 import { requireBranch, type Staff } from "../../../utils/staff";
-import { DESIGN_POPULATE, serializeDesign } from "../../stock/lib/serialize";
+import { DESIGN_POPULATE, serializeDesign, serializeImage } from "../../stock/lib/serialize";
 import { staffOf } from "../../stock/lib/common";
 import { latestRateCard } from "../../sales/lib/bill";
 import { person, rules } from "../../sales/lib/common";
@@ -45,11 +45,13 @@ function piece(item: any, card: Card | null, hallmark: number) {
     heldBy: item.heldBy ? { id: item.heldBy.id, name: person(item.heldBy) } : null,
     heldSince: item.heldSince ?? null,
     pricing: card ? priceOf(item, card, hallmark) : null,
+    photos: (item.photos ?? []).map(serializeImage),
   };
 }
 
 const PIECE_POPULATE = {
   making: true,
+  photos: true,
   location: { select: ["id", "code", "fullCode", "name"], populate: { parent: { select: ["id", "code"] } } },
   heldBy: { select: ["id", "fullName", "username"] },
 };
@@ -93,10 +95,10 @@ export default ({ strapi }: { strapi: any }) => ({
     const items = await strapi.db.query(ITEM).findMany({
       where,
       select: ["id", "purity", "netWeight", "grossWeight", "stoneValue", "huid", "status", "receivedAt"],
-      populate: { making: true, design: { select: ["id"] }, branch: { select: ["id"] } },
+      populate: { making: true, photos: true, design: { select: ["id"] }, branch: { select: ["id"] } },
     });
 
-    const groups = new Map<number, { here: number; elsewhere: number; minPrice: number; maxPrice: number; minWeight: number; maxWeight: number; newest: string }>();
+    const groups = new Map<number, { here: number; elsewhere: number; minPrice: number; maxPrice: number; minWeight: number; maxWeight: number; newest: string; photo: any }>();
     for (const item of items) {
       if (!item.design) continue;
       const weight = Number(item.grossWeight);
@@ -106,7 +108,9 @@ export default ({ strapi }: { strapi: any }) => ({
       if ((minPrice !== null || maxPrice !== null) && price === null) continue;
       if (minPrice !== null && price! < minPrice) continue;
       if (maxPrice !== null && price! > maxPrice) continue;
-      const group = groups.get(item.design.id) ?? { here: 0, elsewhere: 0, minPrice: Infinity, maxPrice: 0, minWeight: Infinity, maxWeight: 0, newest: "" };
+      const group = groups.get(item.design.id) ?? { here: 0, elsewhere: 0, minPrice: Infinity, maxPrice: 0, minWeight: Infinity, maxWeight: 0, newest: "", photo: null };
+      // A piece photo stands in for a design with no photo of its own, preferring a piece at this branch.
+      if (item.photos?.length && (!group.photo || (item.branch?.id === branch.id && group.here === 0))) group.photo = item.photos[0];
       if (item.branch?.id === branch.id) group.here += 1;
       else group.elsewhere += 1;
       if (price !== null) {
@@ -143,7 +147,7 @@ export default ({ strapi }: { strapi: any }) => ({
             metal: design.metal,
             category: design.category,
             occasion: design.occasion,
-            image: design.images[0] ?? null,
+            image: design.images[0] ?? (group.photo ? serializeImage(group.photo) : null),
             here: group.here,
             elsewhere: group.elsewhere,
             priceFrom: Number.isFinite(group.minPrice) ? group.minPrice : null,

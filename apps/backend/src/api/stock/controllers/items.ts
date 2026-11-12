@@ -3,7 +3,7 @@ import { ITEM_STATUSES, STOCK_EDITOR_ROLES } from "../../../utils/constants";
 import { metalForPurity, netWeight, normaliseCode, normaliseHuid, StockRuleError, toNumber } from "../../../utils/stock";
 import { branchIdsFor, canSeeCost } from "../../../utils/staff";
 import { parseMaking } from "./catalogue";
-import { AUDIT, DESIGN, ITEM, MOVEMENT, TRANSFER, codeWhere, idOf, notFound, orgWhere, paging, requireRole, staffOf, text } from "../lib/common";
+import { AUDIT, DESIGN, ITEM, MOVEMENT, TRANSFER, codeWhere, idOf, imageIds, notFound, orgWhere, paging, requireRole, staffOf, text } from "../lib/common";
 import { findByCode, holdingLocation, recordMovement } from "../lib/items";
 import { ITEM_POPULATE, MOVEMENT_POPULATE, serializeItem, serializeMovement } from "../lib/serialize";
 
@@ -152,6 +152,19 @@ export default ({ strapi }: { strapi: any }) => ({
       });
     }
 
+    const updated = await strapi.db.query(ITEM).findOne({ where: { id: item.id }, populate: ITEM_POPULATE });
+    ctx.body = { data: serializeItem(updated, { cost: canSeeCost(staff) }) };
+  },
+
+  /** Replaces a piece's photos with the given uploaded images, first one shown as the main photo. */
+  async setPhotos(ctx: any) {
+    const staff = staffOf(ctx);
+    requireRole(staff, STOCK_EDITOR_ROLES, "change piece photos");
+    const item = await strapi.db.query(ITEM).findOne({ where: { id: idOf(ctx.params.id), ...orgWhere(staff) }, populate: { branch: { select: ["id"] } } });
+    if (!item) notFound("Piece");
+    if (!(await branchIdsFor(strapi, staff)).includes(item.branch.id)) throw new errors.ForbiddenError("This piece is at a branch you do not work in.");
+    const photos = await imageIds(strapi, ctx.request.body?.photoIds);
+    await strapi.documents(ITEM).update({ documentId: item.documentId, data: { photos } });
     const updated = await strapi.db.query(ITEM).findOne({ where: { id: item.id }, populate: ITEM_POPULATE });
     ctx.body = { data: serializeItem(updated, { cost: canSeeCost(staff) }) };
   },

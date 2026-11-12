@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@webfudge/auth/components";
 import { PURITIES } from "@webfudge/config";
 import { Alert, Badge, Button, Card, CardBody, CardHeader, Field, Input, PageHeader, Select, Textarea } from "@webfudge/ui";
-import type { Design, MakingCharge, Supplier } from "@webfudge/utils/api";
+import type { Design, ImageRef, MakingCharge, Supplier } from "@webfudge/utils/api";
 import { formatWeight } from "@webfudge/utils/formatters";
+import { PhotoStrip } from "@/components/photos";
 import { DesignPicker, LocationSelect, MakingInput, useLocations } from "@/components/pickers";
 import { errorMessage, useApi, useResource } from "@/lib/api";
 import { useBranch } from "@/lib/branch";
@@ -24,6 +25,7 @@ type Line = {
   stoneValue: string;
   cost: string;
   locationId: number | null;
+  photos: ImageRef[];
 };
 
 let nextKey = 1;
@@ -38,6 +40,8 @@ const blankLine = (locationId: number | null, from?: Line): Line => ({
   stoneValue: "",
   cost: "",
   locationId: from?.locationId ?? locationId,
+  // Every piece is photographed on its own, so "another like this" starts without photos.
+  photos: [],
 });
 
 function net(line: Line): number | null {
@@ -69,6 +73,12 @@ export default function ReceivePage() {
   const update = (key: number, patch: Partial<Line>) => setLines((all) => all.map((line) => (line.key === key ? { ...line, ...patch } : line)));
   const ready = lines.filter((line) => line.design && net(line) !== null);
   const totalNet = ready.reduce((sum, line) => sum + (net(line) ?? 0), 0);
+  // Says why the receive button is off, piece by piece.
+  const blockers = lines.flatMap((line, index) => {
+    if (!line.design && !line.gross) return lines.length > 1 ? [`Piece ${index + 1} is empty: fill it in or remove it.`] : [];
+    const missing = [!line.design && "pick a design from the catalogue", net(line) === null && "enter a gross weight above the stone weight"].filter(Boolean);
+    return missing.length ? [`Piece ${index + 1}: ${missing.join(" and ")}.`] : [];
+  });
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -93,6 +103,7 @@ export default function ReceivePage() {
           stoneValue: line.stoneValue || 0,
           ...(canCost && line.cost ? { costPrice: line.cost } : {}),
           locationId: line.locationId ?? undefined,
+          photoIds: line.photos.map((photo) => photo.id),
         })),
       });
       router.replace(`/receive/${result.data.id}?new=1`);
@@ -177,7 +188,7 @@ export default function ReceivePage() {
             const purities = PURITIES.filter((entry) => !line.design || entry.metal === line.design.metal);
             const lineNet = net(line);
             return (
-              <div key={line.key} className="grid gap-3 rounded-[var(--radius-panel)] border border-line p-3 md:grid-cols-12">
+              <div key={line.key} className="grid gap-3 rounded-xl border border-gray-200 p-4 md:grid-cols-12">
                 <div className="flex items-center justify-between md:col-span-12">
                   <span className="text-[12px] font-semibold text-ash">Piece {index + 1}</span>
                   <span className="flex gap-2">
@@ -195,6 +206,8 @@ export default function ReceivePage() {
                   <DesignPicker
                     id={`line-${line.key}-design`}
                     value={line.design}
+                    purity={line.purity}
+                    making={line.making}
                     onChange={(design) =>
                       update(line.key, {
                         design,
@@ -250,6 +263,12 @@ export default function ReceivePage() {
                 <Field label="Tray" htmlFor={`line-${line.key}-tray`} className={canCost ? "md:col-span-2" : "md:col-span-4"}>
                   <LocationSelect id={`line-${line.key}-tray`} locations={locations} value={line.locationId} onChange={(locationId) => update(line.key, { locationId })} emptyLabel="Decide later" />
                 </Field>
+                <div className="grid gap-1.5 md:col-span-12">
+                  <span className="text-sm font-medium text-gray-700">
+                    Photos <span className="font-normal text-ash">(optional, shown on the showroom tablets)</span>
+                  </span>
+                  <PhotoStrip id={`line-${line.key}-photos`} photos={line.photos} onChange={(photos) => update(line.key, { photos })} compact />
+                </div>
               </div>
             );
           })}
@@ -266,6 +285,13 @@ export default function ReceivePage() {
         </Button>
         <span className="text-[13px] text-ash tabular-nums">Total net {formatWeight(totalNet)}</span>
       </div>
+      {blockers.length > 0 && (
+        <ul className="-mt-2 grid gap-1 text-[13px] text-risk">
+          {blockers.map((message) => (
+            <li key={message}>{message}</li>
+          ))}
+        </ul>
+      )}
     </form>
   );
 }

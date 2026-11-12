@@ -978,6 +978,7 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
       >;
     notes: Schema.Attribute.Text;
     organization: Schema.Attribute.Relation<"manyToOne", "api::organization.organization">;
+    photos: Schema.Attribute.Media<"images", true>;
     publishedAt: Schema.Attribute.DateTime;
     purity: Schema.Attribute.String &
       Schema.Attribute.Required &

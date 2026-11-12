@@ -1,5 +1,5 @@
 import type { Purity } from "@webfudge/config";
-import type { BranchRef } from "./stock";
+import type { BranchRef, ImageRef } from "./stock";
 
 /** Response shapes of the /api/sales and /api/floor endpoints. */
 
@@ -245,6 +245,7 @@ export type FloorPiece = {
   heldSince: string | null;
   pricing: PiecePricing | null;
   design?: { id: number; code: string; name: string } | null;
+  photos: ImageRef[];
 };
 
 export type FloorDesign = {

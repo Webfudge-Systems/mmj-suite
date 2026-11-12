@@ -7,6 +7,7 @@ import { Card, EmptyState, Input, PageHeader, Pager, Select, Spinner, StatusBadg
 import type { Page, StockItem, StockLocation } from "@webfudge/utils/api";
 import { ITEM_STATUS_LABELS } from "@webfudge/utils/api";
 import { formatWeight } from "@webfudge/utils/formatters";
+import { PieceThumb } from "@/components/photos";
 import { useLocations } from "@/components/pickers";
 import { useResource } from "@/lib/api";
 import { useBranch } from "@/lib/branch";
@@ -109,6 +110,9 @@ export default function StockPage({ searchParams }: { searchParams: Promise<Sear
             <Table minWidth={860}>
               <thead>
                 <tr>
+                  <Th className="w-16">
+                    <span className="sr-only">Photo</span>
+                  </Th>
                   <Th>Tag</Th>
                   <Th>Design</Th>
                   <Th>Purity</Th>
@@ -121,7 +125,10 @@ export default function StockPage({ searchParams }: { searchParams: Promise<Sear
               </thead>
               <tbody>
                 {items.data.data.map((item) => (
-                  <Tr key={item.id} className="hover:bg-sunk/60">
+                  <Tr key={item.id}>
+                    <Td className="py-2 pr-0">
+                      <PieceThumb item={item} />
+                    </Td>
                     <Td>
                       <Link href={`/stock/${item.id}`} className="grid font-mono hover:underline">
                         <span className="font-semibold">{item.tagNumber}</span>

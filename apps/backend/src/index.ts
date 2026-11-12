@@ -2,6 +2,7 @@ import type { Core } from "@strapi/strapi";
 import { floorRoutes } from "./api/floor/routes/floor";
 import { salesRoutes } from "./api/sales/routes/sales";
 import { stockRoutes } from "./api/stock/routes/stock";
+import { seedDemo } from "./seed/demo";
 import { registerAuditLog } from "./utils/audit";
 import { DEFAULT_CATEGORIES, defaultOrganizationSlug } from "./utils/constants";
 
@@ -147,5 +148,6 @@ export default {
     await grant(strapi, "public", publicReads);
     await grant(strapi, "authenticated", staffActions);
     await seed(strapi);
+    await seedDemo(strapi);
   },
 };

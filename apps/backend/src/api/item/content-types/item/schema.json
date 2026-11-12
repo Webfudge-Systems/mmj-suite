@@ -59,6 +59,13 @@
       "repeatable": false,
       "component": "pricing.making"
     },
+    "photos": {
+      "type": "media",
+      "multiple": true,
+      "allowedTypes": [
+        "images"
+      ]
+    },
     "stoneValue": {
       "type": "decimal",
       "min": 0

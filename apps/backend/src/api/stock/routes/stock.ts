@@ -30,6 +30,7 @@ export const stockRoutes = [
   route("GET", "/stock/items/lookup", "items.lookup"),
   route("GET", "/stock/items/:id", "items.get"),
   route("PUT", "/stock/items/:id", "items.update"),
+  route("PUT", "/stock/items/:id/photos", "items.setPhotos"),
   route("POST", "/stock/move", "items.move"),
 
   route("GET", "/stock/receipts", "receipts.list"),

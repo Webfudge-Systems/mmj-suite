@@ -6,12 +6,13 @@ import { useAuth } from "@webfudge/auth/components";
 import { HALLMARK_CHARGE_PER_PIECE, PURITIES } from "@webfudge/config";
 import { useCurrentRates } from "@webfudge/hooks";
 import { Alert, Button, Card, CardBody, CardHeader, Field, Input, PageHeader, Select, Spinner, StatusBadge, buttonClass } from "@webfudge/ui";
-import type { MakingCharge, Movement, StockItem } from "@webfudge/utils/api";
+import type { ImageRef, MakingCharge, Movement, StockItem } from "@webfudge/utils/api";
 import { formatDateTime, formatINR, formatRupees, formatWeight } from "@webfudge/utils/formatters";
 import { calculatePrice, rateFor } from "@webfudge/utils/pricing";
+import { PhotoStrip } from "@/components/photos";
 import { MakingInput } from "@/components/pickers";
 import { errorMessage, useApi, useResource } from "@/lib/api";
-import { API_URL } from "@/lib/env";
+import { API_URL, mediaUrl } from "@/lib/env";
 
 type Detail = StockItem & { movements: Movement[] };
 
@@ -167,6 +168,62 @@ function EditForm({ item, onSaved }: { item: StockItem; onSaved: (item: StockIte
   );
 }
 
+/** The piece's own photos. Changes save straight away. Falls back to showing the design's photo. */
+function PiecePhotos({ item, canEdit, onSaved }: { item: Detail; canEdit: boolean; onSaved: () => void }) {
+  const api = useApi();
+  const [photos, setPhotos] = useState<ImageRef[]>(item.photos);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const main = photos[0] ?? null;
+  const fallback = !main ? item.design?.image ?? null : null;
+
+  async function save(next: ImageRef[]) {
+    const before = photos;
+    setPhotos(next);
+    setSaving(true);
+    setError(null);
+    try {
+      await api.put(`/stock/items/${item.id}/photos`, { photoIds: next.map((photo) => photo.id) });
+      onSaved();
+    } catch (cause) {
+      setPhotos(before);
+      setError(errorMessage(cause));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader
+        title="Photos"
+        description={main ? "The main photo is what the tablets and stock list show." : "No photo of this piece yet."}
+        action={saving ? <Spinner className="size-4 text-navy" label="Saving photos" /> : null}
+      />
+      <CardBody className="grid gap-4">
+        {(main || fallback) && (
+          <div className="relative grid aspect-square w-full place-items-center overflow-hidden rounded-xl bg-[radial-gradient(circle_at_50%_40%,var(--color-surface),var(--color-sunk))]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={mediaUrl((main ?? fallback)!.url)} alt={item.design?.name ?? item.tagNumber} className="size-full object-contain" />
+            {fallback && <span className="absolute top-2 left-2 rounded-lg bg-white/90 px-2 py-1 text-[11px] font-semibold text-ash shadow-sm">Design photo</span>}
+          </div>
+        )}
+        {canEdit ? (
+          <PhotoStrip id={`piece-${item.id}-photos`} photos={photos} onChange={save} disabled={saving} />
+        ) : photos.length > 1 ? (
+          <div className="flex flex-wrap gap-2">
+            {photos.map((photo) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={photo.id} src={mediaUrl(photo.thumbnailUrl)} alt="" className="size-16 rounded-lg border border-gray-200 object-cover" />
+            ))}
+          </div>
+        ) : null}
+        {error && <Alert tone="risk">{error}</Alert>}
+      </CardBody>
+    </Card>
+  );
+}
+
 export default function ItemPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { hasRole } = useAuth();
@@ -243,12 +300,15 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
             )}
           </CardBody>
         </Card>
-        <Card>
-          <CardHeader title="Price at today's rate" description="What the counter and the tablets will quote." />
-          <CardBody>
-            <Price item={item} />
-          </CardBody>
-        </Card>
+        <div className="grid content-start gap-6">
+          <PiecePhotos item={item} canEdit={canEdit} onSaved={reload} />
+          <Card>
+            <CardHeader title="Price at today's rate" description="What the counter and the tablets will quote." />
+            <CardBody>
+              <Price item={item} />
+            </CardBody>
+          </Card>
+        </div>
       </div>
 
       <Card>

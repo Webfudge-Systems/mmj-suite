@@ -5,6 +5,7 @@ import { errorMessage, useApi, useResource } from "@webfudge/auth/components";
 import { Alert, Badge, Button, EmptyState, Spinner } from "@webfudge/ui";
 import type { FloorPiece } from "@webfudge/utils/api";
 import { formatRupees, formatWeight } from "@webfudge/utils/formatters";
+import { mediaUrl } from "@/lib/device";
 import { useFloor } from "@/lib/floor";
 
 /** Everything this salesperson has out of the trays, so nothing goes missing at day end. */
@@ -47,7 +48,11 @@ export default function MinePage() {
           {pieces.map((piece) => (
             <li key={piece.id} className="grid gap-3 rounded-xl border border-gray-100 bg-surface p-4 shadow-[var(--shadow-card)]">
               <div className="flex flex-wrap items-start justify-between gap-2">
-                <div className="grid">
+                {piece.photos[0] && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={mediaUrl(piece.photos[0].thumbnailUrl)} alt="" className="size-16 shrink-0 rounded-lg border border-gray-200 object-cover" />
+                )}
+                <div className="mr-auto grid">
                   <span className="font-semibold">{piece.design?.name}</span>
                   <span className="text-[13px] text-ash tabular-nums">
                     <span className="font-mono">{piece.tagNumber}</span> · {piece.purity} · {formatWeight(piece.netWeight)}

@@ -39,6 +39,7 @@ Variables:
 | `CORS_ORIGINS` | `https://www.mukundmaidjewellers.in,https://mukundmaidjewellers.in,https://office.mukundmaidjewellers.in,https://pos.mukundmaidjewellers.in,https://crm.mukundmaidjewellers.in,https://showroom.mukundmaidjewellers.in` |
 | `APP_KEYS` | four random strings, comma separated |
 | `API_TOKEN_SALT`, `ADMIN_JWT_SECRET`, `TRANSFER_TOKEN_SALT`, `JWT_SECRET`, `ENCRYPTION_KEY` | a random string each |
+| `SEED_DEMO_DATA` | optional. `true` loads demo trays, suppliers, ten DEMO- designs, about thirty pieces and four customers once, on the next start. Remove it afterwards. Clear the demo stock before real billing starts. |
 | `SEED_OWNER_EMAIL`, `SEED_OWNER_PASSWORD`, `SEED_OWNER_NAME` | the owner's real account, set by the owner. Used once, on the first boot of the empty database. Remove the password afterwards. |
 
 Generate each secret with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. Never reuse the local development values.

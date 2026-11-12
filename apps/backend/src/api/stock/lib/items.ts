@@ -75,6 +75,8 @@ export type PieceInput = {
   slot: string | null;
   legacyTag: string | null;
   notes: string | null;
+  /** Uploaded image ids. Checked against the upload library before saving. */
+  photoIds: number[];
 };
 
 /** Checks one line of a receipt or import. Throws StockRuleError or ValidationError with a readable message. */
@@ -105,6 +107,7 @@ export function parsePiece(raw: any): PieceInput {
     slot: slot ? normaliseCode(slot) : null,
     legacyTag: text(raw?.legacyTag, 64) ? normaliseCode(raw.legacyTag) : null,
     notes: text(raw?.notes, 1000),
+    photoIds: Array.isArray(raw?.photoIds) ? raw.photoIds.map(Number).filter((id: number) => Number.isInteger(id) && id > 0) : [],
   };
 }
 
@@ -180,6 +183,7 @@ export async function createPieces(strapi: any, staff: Staff, pieces: PieceInput
         status: "in_stock",
         slot: location ? piece.slot : null,
         notes: piece.notes,
+        ...(piece.photoIds?.length ? { photos: piece.photoIds } : {}),
         receivedAt: now,
         design: design.documentId,
         branch: options.branch.documentId,

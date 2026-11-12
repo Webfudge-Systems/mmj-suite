@@ -32,7 +32,7 @@ function Where({ piece }: { piece: FloorPiece }) {
   );
 }
 
-function PieceCard({ piece, design, onChanged }: { piece: FloorPiece; design: Detail; onChanged: () => void }) {
+function PieceCard({ piece, design, onChanged, onShowPhoto }: { piece: FloorPiece; design: Detail; onChanged: () => void; onShowPhoto: (photoId: number) => void }) {
   const api = useApi();
   const { staff } = useAuth();
   const { tray, addToTray, removeFromTray } = useFloor();
@@ -41,7 +41,7 @@ function PieceCard({ piece, design, onChanged }: { piece: FloorPiece; design: De
   const [open, setOpen] = useState(false);
   const mine = piece.status === "with_staff" && piece.heldBy?.id === staff?.id;
   const inTray = tray.some((entry) => entry.id === piece.id);
-  const trayPiece = { ...piece, design: { id: design.id, code: design.code, name: design.name, image: design.images[0]?.url ?? null } };
+  const trayPiece = { ...piece, design: { id: design.id, code: design.code, name: design.name, image: piece.photos[0]?.thumbnailUrl ?? design.images[0]?.url ?? null } };
 
   async function act(path: "/floor/pick" | "/floor/put-back", then?: () => void) {
     setBusy(true);
@@ -60,7 +60,18 @@ function PieceCard({ piece, design, onChanged }: { piece: FloorPiece; design: De
   return (
     <li className={cn("grid gap-3 rounded-xl border bg-surface p-4 shadow-[var(--shadow-card)]", inTray ? "border-gold ring-2 ring-gold" : "border-gray-100")}>
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="grid gap-1">
+        {piece.photos[0] && (
+          <button
+            type="button"
+            onClick={() => onShowPhoto(piece.photos[0].id)}
+            className="size-20 shrink-0 overflow-hidden rounded-lg border border-gray-200 shadow-sm"
+            aria-label={`Show the photo of ${piece.tagNumber}`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={mediaUrl(piece.photos[0].thumbnailUrl)} alt="" className="size-full object-cover" />
+          </button>
+        )}
+        <div className="mr-auto grid gap-1">
           <span className="text-2xl font-semibold text-navy tabular-nums">{piece.pricing ? formatRupees(piece.pricing.price) : "Ask at the counter"}</span>
           <span className="text-[14px] text-ash tabular-nums">
             {piece.purity} · {formatWeight(piece.grossWeight)} gross · {formatWeight(piece.netWeight)} net
@@ -148,7 +159,16 @@ export default function DesignPage({ params }: { params: Promise<{ id: string }>
   }
   if (error || !design) return <Alert tone="risk">{error ?? "This design could not be found."}</Alert>;
 
-  const image = design.images[photo] ?? design.images[0];
+  // The design's own photos first, then every piece's photos, so customers see the actual pieces too.
+  const gallery = [...design.images, ...design.pieces.flatMap((piece) => piece.photos)].filter(
+    (entry, index, all) => all.findIndex((other) => other.id === entry.id) === index,
+  );
+  const image = gallery[photo] ?? gallery[0];
+  const showPhoto = (photoId: number) => {
+    const index = gallery.findIndex((entry) => entry.id === photoId);
+    if (index >= 0) setPhoto(index);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <div className="grid gap-6">
@@ -165,9 +185,9 @@ export default function DesignPage({ params }: { params: Promise<{ id: string }>
               <span className="font-mono tracking-widest text-taupe">{design.code}</span>
             )}
           </div>
-          {design.images.length > 1 && (
+          {gallery.length > 1 && (
             <div className="flex gap-2 overflow-x-auto">
-              {design.images.map((entry, index) => (
+              {gallery.map((entry, index) => (
                 <button key={entry.id} type="button" onClick={() => setPhoto(index)} className={cn("size-20 shrink-0 overflow-hidden rounded-lg ring-2", index === photo ? "ring-gold" : "ring-transparent")}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={mediaUrl(entry.thumbnailUrl)} alt="" className="size-full object-cover" />
@@ -191,7 +211,7 @@ export default function DesignPage({ params }: { params: Promise<{ id: string }>
             </h2>
             <ul className="grid gap-3">
               {design.pieces.map((piece) => (
-                <PieceCard key={piece.id} piece={piece} design={design} onChanged={reload} />
+                <PieceCard key={piece.id} piece={piece} design={design} onChanged={reload} onShowPhoto={showPhoto} />
               ))}
             </ul>
             {design.otherBranches.length > 0 && (
