@@ -25,8 +25,18 @@ export type Customer = {
   pan: string | null;
   gstin: string | null;
   notes: string | null;
+  birthDate: string | null;
+  anniversaryDate: string | null;
+  loyaltyPoints: number;
+  tags: string[];
+  source: string | null;
+  /** The customer agreed to receive offers and campaign messages. */
+  marketingOptIn: boolean;
   createdAt: string;
 };
+
+/** A customer row on the customer list, with their buying history in brief. */
+export type CustomerWithStats = Customer & { stats: { bills: number; spent: number; lastBillAt: string | null } };
 
 export type CustomerRef = { id: number; name: string; phone: string; pan: string | null };
 
@@ -212,7 +222,7 @@ export type DaySummary = {
   in: Partial<Record<PaymentMode, number>>;
   out: Partial<Record<PaymentMode, number>>;
   expectedCash: number;
-  counts: { invoices: number; salesTotal: number; oldGoldTaken: number; oldGoldBought: number; advances: number; cancelled: number };
+  counts: { invoices: number; salesTotal: number; oldGoldTaken: number; oldGoldBought: number; advances: number; cancelled: number; schemeInstalments?: number; schemeCollected?: number };
   closed: { countedCash: number; difference: number; notes: string | null; closedBy: string | null; at: string } | null;
 };
 

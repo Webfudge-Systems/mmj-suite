@@ -86,7 +86,7 @@ export function BuyPanel({ product }: { product: Product }) {
 
       <p className="mt-5 text-[12px] leading-relaxed text-stone">
         {product.availability === "in-stock"
-          ? "Ready to ship in two working days. Free insured delivery above ₹25,000."
+          ? "In the showroom now. Reserve it and we hold it for your visit; you pay at the counter."
           : "Made to order in three to five weeks. We will call you to confirm the weight band before work begins."}
       </p>
     </div>

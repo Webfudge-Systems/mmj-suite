@@ -2,3 +2,4 @@
 @import "../../../../packages/ui/src/styles/theme.css";
 
 @source "../../../../packages/ui/src";
+@source "../../../../packages/auth/src";

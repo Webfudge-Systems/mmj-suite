@@ -3,6 +3,7 @@ import { financialYear, rupeesInWords, toPaise, toRupees } from "../../../utils/
 import { reserveSequence } from "../../../utils/sequence";
 import { branchIdsFor, requireBranch, setting, tagPrefix } from "../../../utils/staff";
 import { staffOf } from "../../stock/lib/common";
+import { earnForInvoice, reverseForInvoice } from "../../crm/lib/loyalty";
 import { buildBill, serializeQuote, type BillRequest } from "../lib/bill";
 import {
   BOOKING,
@@ -216,6 +217,7 @@ export default ({ strapi }: { strapi: any }) => ({
           data: { balance, status: balance <= 0 ? "used" : "open", usage: [...(note.usage ?? []), { invoice: number, amount: use.used, at: now.toISOString() }] },
         });
       }
+      await earnForInvoice(strapi, staff, { id: created.id, number, total: bill.total, customerId: customer.id });
       return created;
     });
 
@@ -317,6 +319,7 @@ export default ({ strapi }: { strapi: any }) => ({
         });
       }
       await strapi.db.query(INVOICE).update({ where: { id: invoice.id }, data: { status: "cancelled", cancelReason: reason, cancelledAt: now, cancelledBy: staff.id } });
+      await reverseForInvoice(strapi, staff, { id: invoice.id, number: invoice.number, customerId: invoice.customer?.id ?? null });
     });
 
     const saved = await strapi.db.query(INVOICE).findOne({ where: { id: invoice.id }, populate: { ...POPULATE, organization: { select: ["id"] } } });

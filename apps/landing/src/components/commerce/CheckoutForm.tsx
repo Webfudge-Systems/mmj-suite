@@ -5,39 +5,33 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Shell } from "@/components/ui/Shell";
 import { Button } from "@/components/ui/Button";
-import { Field, Select, TextArea } from "@/components/ui/Field";
+import { Field, TextArea } from "@/components/ui/Field";
 import { OrderSummary } from "@/components/commerce/OrderSummary";
 import { EmptyState } from "@/components/commerce/EmptyState";
 import { useCart } from "@/store/cart";
 import { useHydrated } from "@/store/ui";
 import { resolveLines } from "@/lib/cart";
-import { cn, formatPrice, formatWeight } from "@/lib/utils";
+import { sendEnquiry } from "@/lib/live-catalog";
+import { formatPrice, formatWeight } from "@/lib/utils";
+import { site } from "@/data/site";
 
-const payments = [
-  { value: "upi", label: "UPI", note: "GPay, PhonePe, Paytm" },
-  { value: "card", label: "Card", note: "Visa, Mastercard, RuPay" },
-  { value: "netbanking", label: "Net banking", note: "All major banks" },
-  { value: "showroom", label: "Pay at showroom", note: "Reserve and pay in Rahuri" },
-];
+/** Where the confirmation page finds the request number. */
+const RESERVATION_KEY = "mmj.reservation";
 
-const states = [
-  "Maharashtra",
-  "Gujarat",
-  "Karnataka",
-  "Madhya Pradesh",
-  "Telangana",
-  "Delhi",
-  "Other",
-].map((state) => ({ value: state, label: state }));
+function tomorrow() {
+  const date = new Date(Date.now() + 86400000);
+  return date.toISOString().slice(0, 10);
+}
 
 /**
- * No payment gateway is wired yet, so submitting clears the bag and hands off
- * to the confirmation page. The fields mirror what the counter actually asks.
+ * Reserve and visit. Gold is priced on the day it is bought, so instead of
+ * taking payment online the request goes to the shop's CRM; the team calls to
+ * confirm the pieces and today's rate, and the customer pays at the showroom.
  */
 export function CheckoutForm() {
   const router = useRouter();
-  const [payment, setPayment] = useState("upi");
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const cartLines = useCart((state) => state.lines);
   const clear = useCart((state) => state.clear);
@@ -51,18 +45,45 @@ export function CheckoutForm() {
   if (lines.length === 0) {
     return (
       <EmptyState
-        title="Nothing to check out"
-        body="Add a piece to your bag and the estimate will be waiting here."
+        title="Nothing to reserve"
+        body="Add a piece to your bag and we will hold it for your visit."
         primary={{ href: "/shop", label: "Shop all pieces" }}
       />
     );
   }
 
-  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const form = new FormData(event.currentTarget);
     setSubmitting(true);
-    clear();
-    router.push("/checkout/success");
+    setError(null);
+    try {
+      const { number } = await sendEnquiry({
+        name: String(form.get("name") ?? ""),
+        phone: String(form.get("phone") ?? ""),
+        email: String(form.get("email") ?? "") || undefined,
+        visitOn: String(form.get("visitOn") ?? "") || undefined,
+        message: String(form.get("note") ?? "") || undefined,
+        website: String(form.get("website") ?? "") || undefined,
+        items: lines.map((line) => ({
+          code: line.product.sku,
+          name: [line.product.name, line.size ? `size ${line.size}` : null].filter(Boolean).join(", "),
+          price: line.product.live?.priceOnRequest ? null : line.product.price,
+          quantity: line.quantity,
+          url: `${window.location.origin}/products/${line.slug}`,
+        })),
+      });
+      try {
+        sessionStorage.setItem(RESERVATION_KEY, number);
+      } catch {
+        // Private browsing: the confirmation simply shows without the number.
+      }
+      clear();
+      router.push("/checkout/success");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "We could not send your request. Please call the shop.");
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -70,62 +91,36 @@ export function CheckoutForm() {
       <form onSubmit={onSubmit} className="grid gap-10 lg:grid-cols-[1fr_minmax(0,380px)] lg:gap-14">
         <div className="space-y-12">
           <section>
-            <h2 className="eyebrow text-[10px]">Contact</h2>
+            <h2 className="eyebrow text-[10px]">Your details</h2>
+            <p className="mt-3 text-[13px] leading-relaxed text-ash">
+              We call within one working day to confirm the pieces, the weights and the day&apos;s rate, and set a time for your visit.
+            </p>
             <div className="mt-6 grid gap-5 sm:grid-cols-2">
               <Field label="Full name" name="name" required autoComplete="name" />
-              <Field label="Mobile" name="phone" type="tel" required autoComplete="tel" placeholder="+91" />
-              <Field label="Email" name="email" type="email" required autoComplete="email" className="sm:col-span-2" />
+              <Field label="Mobile" name="phone" type="tel" required autoComplete="tel" placeholder="10-digit mobile" inputMode="tel" pattern="[0-9 +-]{10,15}" />
+              <Field label="Email (optional)" name="email" type="email" autoComplete="email" />
+              <Field label="When would you like to visit?" name="visitOn" type="date" min={tomorrow()} />
             </div>
+            {/* Hidden from people; bots fill it in and are ignored. */}
+            <input type="text" name="website" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
           </section>
 
           <section>
-            <h2 className="eyebrow text-[10px]">Delivery address</h2>
-            <div className="mt-6 grid gap-5 sm:grid-cols-2">
-              <Field label="Address line 1" name="address1" required autoComplete="address-line1" className="sm:col-span-2" />
-              <Field label="Address line 2" name="address2" autoComplete="address-line2" className="sm:col-span-2" />
-              <Field label="City" name="city" required autoComplete="address-level2" />
-              <Field label="PIN code" name="pincode" required autoComplete="postal-code" />
-              <Select label="State" name="state" options={states} defaultValue="Maharashtra" />
-              <Field label="Landmark" name="landmark" />
-            </div>
-          </section>
-
-          <section>
-            <h2 className="eyebrow text-[10px]">Payment</h2>
-            <ul className="mt-6 grid gap-3 sm:grid-cols-2">
-              {payments.map((option) => (
-                <li key={option.value}>
-                  <label
-                    className={cn(
-                      "flex cursor-pointer items-start gap-3 border p-4 transition-colors",
-                      payment === option.value
-                        ? "border-ink bg-cream-deep"
-                        : "border-line hover:border-ink/40",
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      name="payment"
-                      value={option.value}
-                      checked={payment === option.value}
-                      onChange={() => setPayment(option.value)}
-                      className="mt-1 accent-ink"
-                    />
-                    <span>
-                      <span className="block text-[14px] text-ink">{option.label}</span>
-                      <span className="mt-0.5 block text-[11px] text-stone">{option.note}</span>
-                    </span>
-                  </label>
-                </li>
-              ))}
-            </ul>
+            <h2 className="eyebrow text-[10px]">Anything we should know</h2>
             <TextArea
-              label="Note for the workshop"
+              label="Note for the shop"
               name="note"
               rows={3}
-              placeholder="Engraving, sizing or a delivery date you need us to hit"
+              placeholder="Ring size, a weight you have in mind, old gold you want to exchange"
               className="mt-6"
             />
+          </section>
+
+          <section className="border border-line bg-cream-deep p-5 text-[13px] leading-relaxed text-ash">
+            <p className="text-ink">How payment works</p>
+            <p className="mt-2">
+              Nothing is charged online. You see and try the pieces at {site.name}, then pay at the counter by UPI, card or cash. The price is worked out at that day&apos;s published rate.
+            </p>
           </section>
         </div>
 
@@ -134,13 +129,7 @@ export function CheckoutForm() {
             {lines.map((line) => (
               <li key={`${line.slug}-${line.size ?? "one"}`} className="flex gap-3 p-4">
                 <span className="relative size-14 shrink-0 overflow-hidden bg-cream-deep">
-                  <Image
-                    src={line.product.images[0]}
-                    alt=""
-                    fill
-                    sizes="56px"
-                    className="object-cover"
-                  />
+                  <Image src={line.product.images[0]} alt="" fill sizes="56px" className="object-cover" />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[13px] text-ink">{line.product.name}</span>
@@ -149,19 +138,19 @@ export function CheckoutForm() {
                   </span>
                 </span>
                 <span className="shrink-0 text-[13px] tabular-nums text-ink">
-                  {formatPrice(line.product.price * line.quantity)}
+                  {line.product.live?.priceOnRequest ? "On request" : formatPrice(line.product.price * line.quantity)}
                 </span>
               </li>
             ))}
           </ul>
 
           <OrderSummary lines={lines}>
+            {error && <p className="mt-6 border border-[#e8b4b4] bg-[#fbeaea] p-3 text-[12px] text-[#8a2a2a]">{error}</p>}
             <Button type="submit" disabled={submitting} className="mt-7 w-full">
-              {submitting ? "Placing order" : "Place order"}
+              {submitting ? "Sending" : "Reserve and arrange a visit"}
             </Button>
             <p className="mt-4 text-center text-[11px] leading-relaxed text-stone">
-              This is a demonstration storefront. No payment is taken and no card
-              details are collected.
+              No payment is taken online. Prices are estimates at today&apos;s rate and are confirmed when you visit.
             </p>
           </OrderSummary>
         </div>

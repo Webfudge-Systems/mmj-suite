@@ -414,7 +414,7 @@ async function summarise(strapi: any, staff: any, branch: any, date: string) {
   const scope = { organization: { id: staff.organization.id }, branch: { id: branch.id } };
   const day = { ...scope, createdAt: { $gte: start, $lt: end } };
 
-  const [invoices, bookings, oldGold, creditNotes, cancelled, previous, closed] = await Promise.all([
+  const [invoices, bookings, oldGold, creditNotes, cancelled, previous, closed, schemePayments] = await Promise.all([
     strapi.db.query(INVOICE).findMany({ where: { ...scope, invoiceDate: { $gte: start, $lt: end } }, select: ["id", "number", "status", "total", "payments", "oldGoldValue"] }),
     strapi.db.query(BOOKING).findMany({ where: day, select: ["id", "payments", "usage"] }),
     strapi.db.query(OLD_GOLD).findMany({ where: { ...day, kind: "purchase" }, select: ["id", "payouts", "totalValue"] }),
@@ -422,6 +422,7 @@ async function summarise(strapi: any, staff: any, branch: any, date: string) {
     strapi.db.query(INVOICE).count({ where: { ...scope, status: "cancelled", cancelledAt: { $gte: start, $lt: end } } }),
     strapi.db.query(DAY_CLOSE).findOne({ where: { ...scope, date: { $lt: date } }, orderBy: { date: "desc" } }),
     strapi.db.query(DAY_CLOSE).findOne({ where: { ...scope, date }, populate: { closedBy: { select: ["id", "fullName", "username"] } } }),
+    strapi.db.query("api::scheme-payment.scheme-payment").findMany({ where: day, select: ["id", "amount", "payments"] }),
   ]);
 
   const inflow: Record<string, number> = {};
@@ -433,6 +434,7 @@ async function summarise(strapi: any, staff: any, branch: any, date: string) {
   // Money from an invoice cancelled today stays in the drawer until it is refunded as a credit note.
   for (const invoice of invoices) add(inflow, invoice.payments);
   for (const booking of bookings) add(inflow, booking.payments);
+  for (const payment of schemePayments) add(inflow, payment.payments);
   for (const record of oldGold) add(outflow, record.payouts);
   const inWindow = (at: string) => at >= start && at < end;
   for (const note of creditNotes) for (const refund of note.refunds ?? []) if (inWindow(refund.at)) add(outflow, refund.payouts);
@@ -455,6 +457,8 @@ async function summarise(strapi: any, staff: any, branch: any, date: string) {
       oldGoldTaken: toRupees(sumPaise(sales.map((invoice: any) => Number(invoice.oldGoldValue ?? 0)))),
       oldGoldBought: toRupees(sumPaise(oldGold.map((record: any) => Number(record.totalValue)))),
       advances: bookings.length,
+      schemeInstalments: schemePayments.length,
+      schemeCollected: toRupees(sumPaise(schemePayments.map((payment: any) => Number(payment.amount)))),
       cancelled,
     },
     closed: closed

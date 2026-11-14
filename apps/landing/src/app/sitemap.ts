@@ -3,7 +3,7 @@ import { site } from "@/data/site";
 import { categories, metalCounters } from "@/data/categories";
 import { collections } from "@/data/collections";
 import { journalPosts } from "@/data/journal";
-import { getProducts } from "@/lib/catalog";
+import { getProducts, ensureCatalog } from "@/lib/catalog";
 
 const staticPaths = [
   "/",
@@ -24,7 +24,8 @@ const staticPaths = [
 
 const occasions = ["bridal", "festive", "daily", "gifting", "mens"];
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  await ensureCatalog();
   const lastModified = new Date();
 
   const pages = [

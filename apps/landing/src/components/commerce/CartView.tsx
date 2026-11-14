@@ -53,7 +53,7 @@ export function CartView() {
         <div className="lg:sticky lg:top-32 lg:self-start">
           <OrderSummary lines={lines}>
             <ButtonLink href="/checkout" className="mt-7 w-full">
-              Proceed to checkout
+              Reserve and visit
             </ButtonLink>
             <p className="mt-4 text-center text-[11px] text-stone">
               Fifteen-day exchange. Lifetime buyback at the day's rate.

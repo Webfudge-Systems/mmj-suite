@@ -9,8 +9,16 @@ import { productSeeds } from "@/data/products";
 import { priceBreakup } from "@/lib/pricing";
 
 /**
- * Every read of catalogue data goes through this module. When Strapi is wired
- * up these become fetches and nothing above this layer has to change.
+ * Every read of catalogue data goes through this module.
+ *
+ * The catalogue is the shop's live stock: designs marked "Show on website" in
+ * the Back Office, priced at today's rate. Until any design is online (or when
+ * the backend cannot be reached) the sample catalogue is shown instead.
+ * CATALOG_SOURCE=sample or =live forces one or the other.
+ *
+ * Server pages call `await ensureCatalog()` before reading; the root layout
+ * hands the same list to the browser through CatalogProvider, so client
+ * components read it with the same functions.
  */
 
 /** Price is derived, never stored, so the card and the breakup cannot disagree. */
@@ -23,7 +31,37 @@ function priced(seed: ProductSeed): Product {
   return { ...seed, price, compareAtPrice };
 }
 
-const products: Product[] = productSeeds.map(priced);
+const sample: Product[] = productSeeds.map(priced);
+let products: Product[] = sample;
+let loadedAt = 0;
+let loading: Promise<Product[]> | null = null;
+
+/** Replaces the catalogue in memory. The browser calls this from CatalogProvider. */
+export function setCatalog(list: Product[]) {
+  products = list;
+}
+
+/** True when the shop's real stock is showing rather than the sample catalogue. */
+export function isLiveCatalog() {
+  return products !== sample && products.some((product) => product.live);
+}
+
+/** Loads the live catalogue on the server, at most once a minute. */
+export async function ensureCatalog(): Promise<Product[]> {
+  if (typeof window !== "undefined") return products;
+  const source = process.env.CATALOG_SOURCE ?? "auto";
+  if (source === "sample") return (products = sample);
+  if (Date.now() - loadedAt < 60_000) return products;
+  loading ??= (async () => {
+    const { fetchLiveProducts } = await import("./live-catalog");
+    const live = await fetchLiveProducts();
+    products = live && (live.length > 0 || source === "live") ? live : sample;
+    loadedAt = Date.now();
+    loading = null;
+    return products;
+  })();
+  return loading;
+}
 
 export function getProducts() {
   return products;
@@ -40,17 +78,16 @@ export function getProductsBySlugs(slugs: string[]) {
 }
 
 export function getBestsellers(limit = 4) {
-  return sortProducts(
-    products.filter((product) => product.bestseller),
-    "popularity",
-  ).slice(0, limit);
+  const best = products.filter((product) => product.bestseller);
+  // A new live catalogue has no sales yet: show the pieces with photos instead.
+  return sortProducts(best.length ? best : products.filter((product) => product.featured).concat(products), "popularity")
+    .filter((product, index, all) => all.indexOf(product) === index)
+    .slice(0, limit);
 }
 
 export function getNewArrivals(limit = 4) {
-  return sortProducts(
-    products.filter((product) => product.isNew),
-    "newest",
-  ).slice(0, limit);
+  const fresh = products.filter((product) => product.isNew);
+  return sortProducts(fresh.length ? fresh : products, "newest").slice(0, limit);
 }
 
 export function getFeatured(limit = 8) {
@@ -76,7 +113,7 @@ export function getRelated(product: Product, limit = 4) {
       candidate.category === product.category && !sameCollection.includes(candidate),
   );
 
-  return [...sameCollection, ...sameCategory, ...pool].slice(0, limit);
+  return [...sameCollection, ...sameCategory, ...pool].filter((candidate, index, all) => all.indexOf(candidate) === index).slice(0, limit);
 }
 
 function matches(product: Product, filters: CatalogFilters) {
@@ -156,6 +193,7 @@ export function facetCounts(list: Product[]) {
 }
 
 export function priceBounds() {
-  const prices = products.map((product) => product.price);
+  const prices = products.map((product) => product.price).filter((price) => price > 0);
+  if (!prices.length) return { min: 0, max: 0 };
   return { min: Math.min(...prices), max: Math.max(...prices) };
 }

@@ -5,11 +5,12 @@ import { Panel } from "@/components/ui/Panel";
 import { ButtonLink } from "@/components/ui/Button";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { ProductGrid } from "@/components/commerce/ProductGrid";
-import { getBestsellers } from "@/lib/catalog";
+import { ReservationNumber } from "@/components/commerce/ReservationNumber";
+import { getBestsellers, ensureCatalog } from "@/lib/catalog";
 import { site } from "@/data/site";
 
 export const metadata: Metadata = {
-  title: "Order placed",
+  title: "Reservation received",
   robots: { index: false },
 };
 
@@ -17,21 +18,22 @@ const steps = [
   {
     index: "01",
     title: "We call to confirm",
-    body: "Within one working day, to lock the rate and read back the weights on your estimate.",
+    body: "Within one working day, to read back the pieces and weights and agree a time for your visit.",
   },
   {
     index: "02",
-    title: "The workshop begins",
-    body: "In-stock pieces are checked and boxed. Made-to-order work takes three to five weeks.",
+    title: "We hold the pieces",
+    body: "Pieces in stock are set aside for you. Made-to-order work is quoted on the call.",
   },
   {
     index: "03",
-    title: "Hallmark and dispatch",
-    body: "Every piece is BIS assayed, photographed and sent insured to your door.",
+    title: "Try, then pay",
+    body: "See the pieces in the showroom and pay at the counter at that day's rate.",
   },
 ];
 
-export default function CheckoutSuccessPage() {
+export default async function CheckoutSuccessPage() {
+  await ensureCatalog();
   return (
     <>
       <Shell className="py-20 sm:py-28">
@@ -39,17 +41,18 @@ export default function CheckoutSuccessPage() {
           <span className="mx-auto grid size-12 place-items-center rounded-full bg-stock text-cream">
             <Check className="size-5" strokeWidth={2.5} />
           </span>
-          <p className="eyebrow mt-8 text-[9px] text-stone">Order received</p>
+          <p className="eyebrow mt-8 text-[9px] text-stone">Reservation received</p>
           <h1 className="mt-4 text-[clamp(1.75rem,4vw,2.5rem)]">Thank you</h1>
           <p className="mt-5 text-[14px] leading-relaxed text-ash">
-            Your estimate is on its way by email. If anything looks off, call us on{" "}
+            We will call you shortly. If you would rather talk now, call us on{" "}
             <a href={`tel:${site.phones[0].replace(/\s/g, "")}`} className="text-ink underline-offset-4 hover:underline">
               {site.phones[0]}
-            </a>{" "}
-            and we will correct it before the workshop starts.
+            </a>
+            .
           </p>
+          <ReservationNumber />
           <div className="mt-9 flex flex-wrap justify-center gap-3">
-            <ButtonLink href="/account">View your orders</ButtonLink>
+            <ButtonLink href="/stores">Find the showroom</ButtonLink>
             <ButtonLink href="/shop" variant="outline">
               Keep browsing
             </ButtonLink>
@@ -68,7 +71,7 @@ export default function CheckoutSuccessPage() {
       </Shell>
 
       <Panel tone="cream">
-        <SectionHeading label="Often bought together" />
+        <SectionHeading label="While you wait" />
         <ProductGrid products={getBestsellers(4)} className="mt-10" />
       </Panel>
     </>

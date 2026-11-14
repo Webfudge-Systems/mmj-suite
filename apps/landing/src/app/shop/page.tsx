@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ShopBrowser } from "@/components/shop/ShopBrowser";
-import { filterProducts } from "@/lib/catalog";
+import { filterProducts, ensureCatalog, getProducts } from "@/lib/catalog";
 import { parseFilters, parsePage, parseSort, type RawParams } from "@/lib/shop-params";
 
 export const metadata: Metadata = {
@@ -15,6 +15,7 @@ export default async function ShopPage({
 }: {
   searchParams: Promise<RawParams>;
 }) {
+  await ensureCatalog();
   const params = await searchParams;
   const filters = parseFilters(params);
   const products = filterProducts(filters, parseSort(params));
@@ -23,7 +24,7 @@ export default async function ShopPage({
     <>
       <PageHeader
         title="Every piece on the floor"
-        lead="Thirty-eight designs across five counters. Filter by metal, ornament or occasion, and open any piece to see exactly how its price is built."
+        lead={`${getProducts().length} ${getProducts().length === 1 ? "design" : "designs"} in the showroom. Filter by metal, ornament or occasion, and open any piece to see exactly how its price is built.`}
         trail={[{ label: "Home", href: "/" }, { label: "Shop" }]}
       />
       <ShopBrowser products={products} filters={filters} page={parsePage(params)} />

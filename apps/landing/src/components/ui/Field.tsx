@@ -12,6 +12,9 @@ export function Field({
   defaultValue,
   className,
   autoComplete,
+  inputMode,
+  pattern,
+  min,
 }: {
   label: string;
   name: string;
@@ -21,11 +24,17 @@ export function Field({
   defaultValue?: string;
   className?: string;
   autoComplete?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
+  pattern?: string;
+  min?: string;
 }) {
   return (
     <label className={cn("block", className)}>
       <span className="eyebrow mb-2 block text-[10px] text-ash">{label}</span>
       <input
+        inputMode={inputMode}
+        pattern={pattern}
+        min={min}
         name={name}
         type={type}
         placeholder={placeholder}

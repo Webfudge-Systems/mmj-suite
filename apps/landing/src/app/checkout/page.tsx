@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { CheckoutForm } from "@/components/commerce/CheckoutForm";
 
 export const metadata: Metadata = {
-  title: "Checkout",
+  title: "Reserve and visit",
   robots: { index: false },
 };
 
@@ -11,9 +11,9 @@ export default function CheckoutPage() {
   return (
     <>
       <PageHeader
-        title="Checkout"
-        lead="We call every order to confirm the weight band and the gold rate before the workshop begins."
-        trail={[{ label: "Home", href: "/" }, { label: "Bag", href: "/cart" }, { label: "Checkout" }]}
+        title="Reserve and visit"
+        lead="Tell us which pieces you like. We hold them and call to arrange your visit; you pay at the showroom at the day's rate."
+        trail={[{ label: "Home", href: "/" }, { label: "Bag", href: "/cart" }, { label: "Reserve" }]}
       />
       <CheckoutForm />
     </>

@@ -68,7 +68,7 @@ export function CartDrawer() {
               GST included. Gold rate locked at the time of order.
             </p>
             <ButtonLink href="/checkout" className="mt-5 w-full">
-              Checkout
+              Reserve and visit
             </ButtonLink>
             <Link
               href="/cart"

@@ -1,6 +1,5 @@
 import type { CartLine, Product } from "@/types";
 import { getProductBySlug } from "@/lib/catalog";
-import { shippingFor } from "@/lib/pricing";
 
 export type ResolvedLine = CartLine & { product: Product };
 
@@ -20,7 +19,8 @@ export function cartTotals(lines: ResolvedLine[]) {
     const was = line.product.compareAtPrice;
     return was ? sum + (was - line.product.price) * line.quantity : sum;
   }, 0);
-  const shipping = shippingFor(subtotal);
+  // Pieces are reserved for collection at the showroom, so there is no delivery charge.
+  const shipping = 0;
   const count = lines.reduce((sum, line) => sum + line.quantity, 0);
 
   /** Gross weight across the order, which is what the insurer needs. */

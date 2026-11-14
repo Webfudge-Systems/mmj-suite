@@ -1,0 +1,63 @@
+{
+  "kind": "collectionType",
+  "collectionName": "scheme_plans",
+  "info": {
+    "singularName": "scheme-plan",
+    "pluralName": "scheme-plans",
+    "displayName": "Scheme plan",
+    "description": "A gold savings scheme on offer: how many monthly instalments and what the shop adds at the end."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "months": {
+      "type": "integer",
+      "required": true,
+      "min": 1,
+      "max": 12
+    },
+    "minInstalment": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "bonusType": {
+      "type": "enumeration",
+      "enum": [
+        "instalment",
+        "percent",
+        "none"
+      ],
+      "required": true,
+      "default": "instalment"
+    },
+    "bonusValue": {
+      "type": "decimal",
+      "min": 0,
+      "default": 1
+    },
+    "graceDays": {
+      "type": "integer",
+      "min": 0,
+      "default": 7
+    },
+    "terms": {
+      "type": "text"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    }
+  }
+}

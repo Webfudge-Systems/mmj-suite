@@ -85,9 +85,33 @@ export type ProductSeed = {
   releasedAt: string;
 };
 
+/** A piece in the showroom right now, for live products from the Back Office. */
+export type LivePiece = {
+  tag: string;
+  purity: string;
+  grossWeight: number;
+  netWeight: number;
+  price: number | null;
+  photo: string | null;
+  branch: string | null;
+};
+
+/** Extra detail for products that come from the shop's real stock rather than the sample catalogue. */
+export type LiveDetail = {
+  /** No piece in stock to price from: the page asks the visitor to enquire. */
+  priceOnRequest: boolean;
+  priceTo: number | null;
+  inStock: number;
+  /** The counter's own breakup for the lightest piece in stock. */
+  breakup: { ratePerGram: number; metalValue: number; makingCharge: number; stoneValue: number; hallmark: number; gst: number; total: number } | null;
+  making: { type: "per_gram" | "percent" | "fixed"; value: number } | null;
+  pieces: LivePiece[];
+};
+
 export type Product = ProductSeed & {
   price: number;
   compareAtPrice?: number;
+  live?: LiveDetail;
 };
 
 /** The subset the valuation needs, so seeds and products both satisfy it. */

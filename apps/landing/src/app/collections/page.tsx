@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Shell } from "@/components/ui/Shell";
 import { Reveal } from "@/components/ui/Reveal";
 import { collections } from "@/data/collections";
-import { getByCollection } from "@/lib/catalog";
+import { getByCollection, ensureCatalog } from "@/lib/catalog";
 
 export const metadata: Metadata = {
   title: "Collections",
@@ -13,7 +13,8 @@ export const metadata: Metadata = {
     "Six MMJ collections, from the bridal vault to the men's line, each built so the gold tone and the weights match across every piece.",
 };
 
-export default function CollectionsPage() {
+export default async function CollectionsPage() {
+  await ensureCatalog();
   return (
     <>
       <PageHeader

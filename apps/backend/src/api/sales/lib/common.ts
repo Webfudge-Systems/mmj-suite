@@ -96,7 +96,8 @@ export async function cashTakenToday(strapi: any, staff: Staff, customerId: numb
   const window = { customer: { id: customerId }, createdAt: { $gte: start, $lt: end }, organization: { id: staff.organization.id } };
   const invoices = await strapi.db.query(INVOICE).findMany({ where: { ...window, status: "paid" }, select: ["id", "payments"] });
   const bookings = await strapi.db.query(BOOKING).findMany({ where: window, select: ["id", "payments"] });
-  const cash = [...invoices, ...bookings].flatMap((record: any) => (record.payments ?? []).filter((payment: Payment) => payment.mode === "cash").map((payment: Payment) => payment.amount));
+  const schemes = await strapi.db.query("api::scheme-payment.scheme-payment").findMany({ where: window, select: ["id", "payments"] });
+  const cash = [...invoices, ...bookings, ...schemes].flatMap((record: any) => (record.payments ?? []).filter((payment: Payment) => payment.mode === "cash").map((payment: Payment) => payment.amount));
   return sumRupees(cash);
 }
 

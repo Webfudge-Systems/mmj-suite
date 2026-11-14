@@ -1,0 +1,114 @@
+{
+  "kind": "collectionType",
+  "collectionName": "scheme_accounts",
+  "info": {
+    "singularName": "scheme-account",
+    "pluralName": "scheme-accounts",
+    "displayName": "Scheme account",
+    "description": "One customer's membership of a gold savings scheme."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "number": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "maxLength": 20
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "active",
+        "matured",
+        "redeemed",
+        "closed"
+      ],
+      "required": true,
+      "default": "active"
+    },
+    "monthlyAmount": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "months": {
+      "type": "integer",
+      "required": true
+    },
+    "bonusType": {
+      "type": "enumeration",
+      "enum": [
+        "instalment",
+        "percent",
+        "none"
+      ],
+      "required": true
+    },
+    "bonusValue": {
+      "type": "decimal",
+      "min": 0
+    },
+    "startDate": {
+      "type": "date",
+      "required": true
+    },
+    "paidTotal": {
+      "type": "decimal",
+      "min": 0,
+      "default": 0
+    },
+    "instalmentsPaid": {
+      "type": "integer",
+      "min": 0,
+      "default": 0
+    },
+    "bonusAmount": {
+      "type": "decimal",
+      "min": 0
+    },
+    "redeemedAt": {
+      "type": "datetime"
+    },
+    "redeemedAs": {
+      "type": "string",
+      "maxLength": 20
+    },
+    "note": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "plan": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::scheme-plan.scheme-plan"
+    },
+    "customer": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::customer.customer"
+    },
+    "booking": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::booking.booking"
+    },
+    "by": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "branch": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::branch.branch"
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    }
+  }
+}

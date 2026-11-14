@@ -78,7 +78,13 @@ export function ProductCard({
           {product.purity} &middot; {formatWeight(product.grossWeight)}
         </p>
         <p className="mt-2 flex items-baseline gap-2">
-          <span className="text-[14px] tabular-nums text-ink">{formatPrice(product.price)}</span>
+          <span className="text-[14px] tabular-nums text-ink">
+            {product.live?.priceOnRequest
+              ? "Price on request"
+              : product.live?.priceTo && product.live.priceTo > product.price
+                ? `From ${formatPrice(product.price)}`
+                : formatPrice(product.price)}
+          </span>
           {product.compareAtPrice && (
             <span className="text-[11px] tabular-nums text-stone line-through">
               {formatPrice(product.compareAtPrice)}

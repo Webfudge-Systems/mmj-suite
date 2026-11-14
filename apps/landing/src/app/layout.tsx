@@ -8,6 +8,8 @@ import { SearchOverlay } from "@/components/layout/SearchOverlay";
 import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/commerce/CartDrawer";
 import { site } from "@/data/site";
+import { CatalogProvider } from "@/components/catalog/CatalogProvider";
+import { ensureCatalog } from "@/lib/catalog";
 
 /** Official MMJ brand typeface — Open Sauce One (SemiBold = logo weight). */
 const openSauce = localFont({
@@ -139,9 +141,10 @@ const organizationJsonLd = {
   priceRange: "₹₹₹",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const products = await ensureCatalog();
   return (
     <html
       lang="en-IN"
@@ -149,6 +152,7 @@ export default function RootLayout({
       className={openSauce.variable}
     >
       <body className="font-sans antialiased">
+        <CatalogProvider products={products}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
@@ -172,6 +176,7 @@ export default function RootLayout({
 
         <main id="main">{children}</main>
         <Footer />
+        </CatalogProvider>
       </body>
     </html>
   );

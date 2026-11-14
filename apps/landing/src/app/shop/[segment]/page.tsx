@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ShopBrowser } from "@/components/shop/ShopBrowser";
-import { filterProducts } from "@/lib/catalog";
+import { filterProducts, ensureCatalog } from "@/lib/catalog";
 import { categories, getCategory, getMetalCounter, metalCounters } from "@/data/categories";
 import { parseFilters, parsePage, parseSort, type RawParams } from "@/lib/shop-params";
 import type { CatalogFilters, Occasion } from "@/types";
@@ -107,6 +107,7 @@ export default async function ShopSegmentPage({
   params: Promise<{ segment: string }>;
   searchParams: Promise<RawParams>;
 }) {
+  await ensureCatalog();
   const { segment } = await params;
   const resolved = resolve(segment);
   if (!resolved) notFound();

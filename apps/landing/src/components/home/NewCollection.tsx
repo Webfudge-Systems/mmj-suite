@@ -2,9 +2,10 @@ import { Panel } from "@/components/ui/Panel";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { ArrowCta } from "@/components/ui/Button";
 import { ProductGrid } from "@/components/commerce/ProductGrid";
-import { getNewArrivals } from "@/lib/catalog";
+import { ensureCatalog, getNewArrivals } from "@/lib/catalog";
 
-export function NewCollection() {
+export async function NewCollection() {
+  await ensureCatalog();
   const products = getNewArrivals(4);
 
   return (

@@ -5,10 +5,12 @@ import Link from "next/link";
 import { ClipboardList, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { errorMessage, useApi, useBranch } from "@webfudge/auth/components";
-import { Alert, Badge, Button, Card, CardBody, CardHeader, Field, Input, PageHeader, ScanInput, Spinner, Table, Td, Th, Tr, buttonClass } from "@webfudge/ui";
+import { Alert, Badge, Button, Card, CardBody, CardHeader, Field, Input, PageHeader, ScanInput, Spinner, Table, Td, Th, Tr, buttonClass, type ScanSuggestion } from "@webfudge/ui";
 import type { Customer, CustomerDetail, Estimate, Invoice, Quote, StockItem } from "@webfudge/utils/api";
+import { ITEM_STATUS_LABELS } from "@webfudge/utils/api";
 import { formatINR, formatWeight } from "@webfudge/utils/formatters";
 import { CustomerPicker } from "@/components/customer-picker";
+import { mediaUrl } from "@/lib/env";
 import { OldGoldEditor, toOldGold, type OldGoldRow } from "@/components/old-gold-lines";
 import { PaymentsEditor, newPaymentRow, paidPaise, toPayments, type PaymentRow } from "@/components/payments";
 
@@ -23,8 +25,8 @@ function Row({ label, value, strong, tone }: { label: string; value: number; str
   );
 }
 
-export default function NewBillPage({ searchParams }: { searchParams: Promise<{ estimate?: string }> }) {
-  const { estimate: estimateParam } = use(searchParams);
+export default function NewBillPage({ searchParams }: { searchParams: Promise<{ estimate?: string; customer?: string }> }) {
+  const { estimate: estimateParam, customer: customerParam } = use(searchParams);
   const router = useRouter();
   const api = useApi();
   const { branch } = useBranch();
@@ -63,6 +65,19 @@ export default function NewBillPage({ searchParams }: { searchParams: Promise<{ 
       active = false;
     };
   }, [api, estimateParam]);
+
+  // "Start a bill" from a customer's page opens the bill with them already chosen.
+  useEffect(() => {
+    if (!customerParam || estimateParam) return;
+    let active = true;
+    api
+      .get<{ data: Customer }>(`/sales/customers/${customerParam}`)
+      .then(({ data }) => active && setCustomer(data))
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [api, customerParam, estimateParam]);
 
   useEffect(() => {
     if (!customer) return;
@@ -111,6 +126,26 @@ export default function NewBillPage({ searchParams }: { searchParams: Promise<{ 
   }, [api, request]);
 
   const shownQuote = pieces.length ? quote : null;
+
+  /** Pieces at this branch matching what is typed (tag, old tag, HUID or design), for the scan box. */
+  async function findPieces(query: string): Promise<ScanSuggestion[]> {
+    if (!branch) return [];
+    const { data } = await api.get<{ data: StockItem[] }>(`/stock/items?branchId=${branch.id}&pageSize=8&q=${encodeURIComponent(query)}`);
+    return data.map((item) => {
+      const photo = item.photos?.[0] ?? item.design?.image ?? null;
+      const onBill = pieces.some((piece) => piece.id === item.id);
+      const reservedElsewhere = item.status === "reserved" && !estimate?.lines.some((line) => line.itemId === item.id);
+      const sellable = ["in_stock", "with_staff", "reserved"].includes(item.status) && !reservedElsewhere;
+      return {
+        code: item.tagNumber,
+        title: item.tagNumber,
+        detail: [item.design?.name, item.purity, formatWeight(item.netWeight), item.location?.fullCode].filter(Boolean).join(" · "),
+        aside: onBill ? "On this bill" : !sellable ? (reservedElsewhere ? "On another estimate" : ITEM_STATUS_LABELS[item.status]) : item.status === "with_staff" ? "With salesperson" : undefined,
+        imageUrl: photo ? mediaUrl(photo.thumbnailUrl) : null,
+        disabled: onBill || !sellable,
+      };
+    });
+  }
 
   async function scan(code: string) {
     setScanError(null);
@@ -224,7 +259,7 @@ export default function NewBillPage({ searchParams }: { searchParams: Promise<{ 
           <Card>
             <CardHeader title="Pieces" description="Scan each tag. The bill is priced at today's rate." />
             <CardBody className="grid gap-3">
-              <ScanInput id="bill-scan" onScan={scan} autoFocus={!estimateParam} />
+              <ScanInput id="bill-scan" onScan={scan} onSearch={findPieces} autoFocus={!estimateParam} placeholder="Scan a tag, or type part of a tag or design name" />
               {scanError && <Alert tone="risk">{scanError}</Alert>}
             </CardBody>
             {pieces.length > 0 && (

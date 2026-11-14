@@ -1,4 +1,5 @@
 import type { Core } from "@strapi/strapi";
+import { crmRoutes } from "./api/crm/routes/crm";
 import { floorRoutes } from "./api/floor/routes/floor";
 import { salesRoutes } from "./api/sales/routes/sales";
 import { stockRoutes } from "./api/stock/routes/stock";
@@ -40,6 +41,7 @@ const staffActions = [
   ...stockRoutes.map((route) => `api::stock.${route.handler}`),
   ...salesRoutes.map((route) => `api::sales.${route.handler}`),
   ...floorRoutes.map((route) => `api::floor.${route.handler}`),
+  ...crmRoutes.map((route) => `api::crm.${route.handler}`),
 ];
 
 async function grant(strapi: Core.Strapi, roleType: string, actions: string[]) {

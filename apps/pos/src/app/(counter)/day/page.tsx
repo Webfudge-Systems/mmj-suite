@@ -51,6 +51,7 @@ export default function DayPage() {
               ["Sales", formatINR(day.counts.salesTotal)],
               ["Old gold taken", formatINR(day.counts.oldGoldTaken)],
               ["Old gold bought", formatINR(day.counts.oldGoldBought)],
+              ["Gold scheme instalments", formatINR(day.counts.schemeCollected ?? 0)],
             ].map(([label, value]) => (
               <div key={label as string} className="grid gap-1 rounded-[var(--radius-panel)] border border-line bg-surface px-4 py-3">
                 <span className="text-lg font-semibold text-navy tabular-nums">{value}</span>

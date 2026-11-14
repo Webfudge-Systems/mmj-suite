@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Shell } from "@/components/ui/Shell";
 import { PillLink } from "@/components/ui/Pill";
 import { ShopBrowser } from "@/components/shop/ShopBrowser";
-import { searchProducts } from "@/lib/catalog";
+import { searchProducts, ensureCatalog } from "@/lib/catalog";
 import { parseFilters, parsePage, parseSort, type RawParams } from "@/lib/shop-params";
 
 export const metadata: Metadata = {
@@ -18,6 +18,7 @@ export default async function SearchPage({
 }: {
   searchParams: Promise<RawParams>;
 }) {
+  await ensureCatalog();
   const params = await searchParams;
   const filters = parseFilters(params);
   const query = filters.query?.trim() ?? "";

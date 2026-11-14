@@ -2,6 +2,9 @@ import { errors } from "@strapi/utils";
 import { staffOf } from "../../stock/lib/common";
 import { BOOKING, CREDIT_NOTE, CUSTOMER, ESTIMATE_ROLES, INVOICE, normalisePan, normalisePhone } from "../lib/common";
 
+/** A YYYY-MM-DD date, or null. */
+const isoDate = (value: unknown) => (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null);
+
 const text = (value: unknown, max: number) => (typeof value === "string" && value.trim() ? value.trim().slice(0, max) : null);
 
 export function serializeCustomer(customer: any) {
@@ -16,6 +19,12 @@ export function serializeCustomer(customer: any) {
     pan: customer.pan ?? null,
     gstin: customer.gstin ?? null,
     notes: customer.notes ?? null,
+    birthDate: customer.birthDate ?? null,
+    anniversaryDate: customer.anniversaryDate ?? null,
+    loyaltyPoints: Number(customer.loyaltyPoints ?? 0),
+    tags: Array.isArray(customer.tags) ? customer.tags : [],
+    source: customer.source ?? null,
+    marketingOptIn: customer.marketingOptIn === true,
     createdAt: customer.createdAt,
   };
 }
@@ -25,13 +34,54 @@ export default ({ strapi }: { strapi: any }) => ({
   async list(ctx: any) {
     const staff = staffOf(ctx);
     const q = text(ctx.query.q, 60);
+    const page = Math.max(Number(ctx.query.page) || 1, 1);
+    const pageSize = Math.min(Math.max(Number(ctx.query.pageSize) || 30, 1), 100);
     const where: any = { organization: { id: staff.organization.id } };
     if (q) {
       const digits = q.replace(/\D/g, "");
       where.$or = [{ name: { $containsi: q } }, ...(digits.length >= 3 ? [{ phone: { $contains: digits } }] : [])];
     }
-    const rows = await strapi.db.query(CUSTOMER).findMany({ where, orderBy: { updatedAt: "desc" }, limit: 30 });
-    ctx.body = { data: rows.map(serializeCustomer) };
+    const result = await strapi.db.query(CUSTOMER).findPage({ where, orderBy: q ? { name: "asc" } : { updatedAt: "desc" }, page, pageSize });
+    let rows: any[] = result.results;
+
+    // Names that start with what was typed come first, then a word inside the name, then the rest.
+    if (q && !/^\d+$/.test(q)) {
+      const needle = q.toLowerCase();
+      const rank = (name: string) => {
+        const lower = String(name ?? "").toLowerCase();
+        if (lower.startsWith(needle)) return 0;
+        if (lower.split(/[\s–-]+/).some((word) => word.startsWith(needle))) return 1;
+        return 2;
+      };
+      rows = [...rows].sort((a, b) => rank(a.name) - rank(b.name));
+    }
+
+    // Bills, spend and last visit for the customer list, worked out in one query for the page.
+    const stats = new Map<number, { bills: number; spent: number; lastBillAt: string | null }>();
+    if (ctx.query.stats === "true" && rows.length) {
+      const invoices = await strapi.db.query(INVOICE).findMany({
+        where: { customer: { id: { $in: rows.map((row) => row.id) } }, status: { $ne: "cancelled" } },
+        select: ["id", "total", "invoiceDate"],
+        populate: { customer: { select: ["id"] } },
+      });
+      for (const invoice of invoices) {
+        const id = invoice.customer?.id;
+        if (!id) continue;
+        const entry = stats.get(id) ?? { bills: 0, spent: 0, lastBillAt: null };
+        entry.bills += 1;
+        entry.spent += Number(invoice.total ?? 0);
+        if (!entry.lastBillAt || String(invoice.invoiceDate) > entry.lastBillAt) entry.lastBillAt = invoice.invoiceDate;
+        stats.set(id, entry);
+      }
+    }
+
+    ctx.body = {
+      data: rows.map((row) => ({
+        ...serializeCustomer(row),
+        ...(ctx.query.stats === "true" ? { stats: stats.get(row.id) ?? { bills: 0, spent: 0, lastBillAt: null } } : {}),
+      })),
+      meta: { pagination: result.pagination },
+    };
   },
 
   /** The customer with what the counter needs: open advances, open credit notes, recent bills. */
@@ -88,6 +138,12 @@ export default ({ strapi }: { strapi: any }) => ({
       pan: normalisePan(body.pan),
       gstin: text(body.gstin, 15)?.toUpperCase() ?? null,
       notes: text(body.notes, 1000),
+      // CRM fields: only changed when sent, so the counter's shorter form leaves them alone.
+      ...(body.birthDate !== undefined ? { birthDate: isoDate(body.birthDate) } : {}),
+      ...(body.anniversaryDate !== undefined ? { anniversaryDate: isoDate(body.anniversaryDate) } : {}),
+      ...(body.tags !== undefined ? { tags: Array.isArray(body.tags) ? body.tags.map((tag: unknown) => String(tag).trim().slice(0, 30)).filter(Boolean).slice(0, 20) : [] } : {}),
+      ...(body.source !== undefined ? { source: text(body.source, 30) } : {}),
+      ...(body.marketingOptIn !== undefined ? { marketingOptIn: body.marketingOptIn === true } : {}),
     };
 
     let saved;

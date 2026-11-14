@@ -5,7 +5,7 @@ import { Shell } from "@/components/ui/Shell";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { ShopBrowser } from "@/components/shop/ShopBrowser";
 import { collections, getCollection } from "@/data/collections";
-import { filterProducts } from "@/lib/catalog";
+import { filterProducts, ensureCatalog } from "@/lib/catalog";
 import { parseFilters, parsePage, parseSort, type RawParams } from "@/lib/shop-params";
 
 export function generateStaticParams() {
@@ -35,6 +35,7 @@ export default async function CollectionPage({
   params: Promise<{ slug: string }>;
   searchParams: Promise<RawParams>;
 }) {
+  await ensureCatalog();
   const { slug } = await params;
   const collection = getCollection(slug);
   if (!collection) notFound();

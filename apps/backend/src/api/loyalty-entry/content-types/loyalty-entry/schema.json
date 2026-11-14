@@ -1,0 +1,62 @@
+{
+  "kind": "collectionType",
+  "collectionName": "loyalty_entries",
+  "info": {
+    "singularName": "loyalty-entry",
+    "pluralName": "loyalty-entries",
+    "displayName": "Loyalty entry",
+    "description": "One change to a customer's loyalty points. Append-only: corrections are new entries."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "kind": {
+      "type": "enumeration",
+      "enum": [
+        "earn",
+        "reverse",
+        "redeem",
+        "adjust"
+      ],
+      "required": true
+    },
+    "points": {
+      "type": "integer",
+      "required": true
+    },
+    "balance": {
+      "type": "integer",
+      "required": true
+    },
+    "reference": {
+      "type": "string",
+      "maxLength": 40
+    },
+    "note": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "customer": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::customer.customer"
+    },
+    "invoice": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::invoice.invoice"
+    },
+    "by": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    }
+  }
+}

@@ -45,6 +45,27 @@
     "notes": {
       "type": "text"
     },
+    "birthDate": {
+      "type": "date"
+    },
+    "anniversaryDate": {
+      "type": "date"
+    },
+    "loyaltyPoints": {
+      "type": "integer",
+      "default": 0
+    },
+    "tags": {
+      "type": "json"
+    },
+    "source": {
+      "type": "string",
+      "maxLength": 30
+    },
+    "marketingOptIn": {
+      "type": "boolean",
+      "default": false
+    },
     "branch": {
       "type": "relation",
       "relation": "manyToOne",

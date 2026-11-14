@@ -12,7 +12,9 @@ import { BuyPanel } from "@/components/product/BuyPanel";
 import { PriceBreakup } from "@/components/product/PriceBreakup";
 import { ProductDetails } from "@/components/product/ProductDetails";
 import { ProductGrid } from "@/components/commerce/ProductGrid";
-import { getProductBySlug, getProducts, getRelated } from "@/lib/catalog";
+import { ensureCatalog, getProductBySlug, getProducts, getRelated, isLiveCatalog } from "@/lib/catalog";
+import { fetchLiveProduct } from "@/lib/live-catalog";
+import { LivePieces } from "@/components/product/LivePieces";
 import { categoryLabels } from "@/data/categories";
 import { getCollection } from "@/data/collections";
 import { ratingSummary } from "@/data/reviews";
@@ -20,8 +22,18 @@ import { site } from "@/data/site";
 import { formatPrice, formatWeight } from "@/lib/utils";
 import type { Product } from "@/types";
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  await ensureCatalog();
   return getProducts().map((product) => ({ slug: product.slug }));
+}
+
+/** Live products are fetched fresh with each piece in stock; sample products come from the catalogue. */
+async function loadProduct(slug: string): Promise<Product | undefined> {
+  await ensureCatalog();
+  const known = getProductBySlug(slug);
+  if (known && !known.live) return known;
+  if (known || isLiveCatalog()) return (await fetchLiveProduct(slug)) ?? known;
+  return undefined;
 }
 
 export async function generateMetadata({
@@ -30,12 +42,12 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await loadProduct(slug);
   if (!product) return {};
 
   return {
     title: product.name,
-    description: `${product.tagline}. ${product.purity}, ${formatWeight(product.grossWeight)} gross, BIS hallmarked. ${formatPrice(product.price)} with the full price breakup shown.`,
+    description: `${product.tagline}. ${product.purity}, ${formatWeight(product.grossWeight)} gross, BIS hallmarked. ${product.live?.priceOnRequest ? "Price on request" : formatPrice(product.price)} with the full price breakup shown.`,
     openGraph: { images: [product.images[0]], type: "website" },
   };
 }
@@ -46,7 +58,7 @@ export default async function ProductPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await loadProduct(slug);
   if (!product) notFound();
 
   const collection = getCollection(product.collection);
@@ -95,16 +107,23 @@ export default async function ProductPage({
             </h1>
             <p className="mt-3 text-[14px] leading-relaxed text-ash">{product.tagline}</p>
 
-            <div className="mt-5 flex items-center gap-3">
-              <Stars rating={ratingSummary.average} size={13} />
-              <span className="text-[12px] text-stone">
-                {ratingSummary.average} &middot; {ratingSummary.count} reviews
-              </span>
-            </div>
+            {/* The sample reviews belong to the sample catalogue, not to real pieces. */}
+            {!product.live && (
+              <div className="mt-5 flex items-center gap-3">
+                <Stars rating={ratingSummary.average} size={13} />
+                <span className="text-[12px] text-stone">
+                  {ratingSummary.average} &middot; {ratingSummary.count} reviews
+                </span>
+              </div>
+            )}
 
             <div className="mt-7 flex flex-wrap items-baseline gap-3">
               <span className="text-[26px] tabular-nums text-ink">
-                {formatPrice(product.price)}
+                {product.live?.priceOnRequest
+                  ? "Price on request"
+                  : product.live?.priceTo && product.live.priceTo > product.price
+                    ? `From ${formatPrice(product.price)}`
+                    : formatPrice(product.price)}
               </span>
               {product.compareAtPrice && (
                 <span className="text-[15px] tabular-nums text-stone line-through">
@@ -113,7 +132,9 @@ export default async function ProductPage({
               )}
               {discount && <SaleBadge percent={discount} />}
             </div>
-            <p className="mt-2 text-[11px] text-stone">Inclusive of GST and hallmarking</p>
+            <p className="mt-2 text-[11px] text-stone">
+              {product.live?.priceOnRequest ? "None in store right now. Ask us and we will have one made." : "At today's rate, inclusive of GST and hallmarking"}
+            </p>
 
             <div className="mt-6 flex flex-wrap items-center gap-4">
               <StockDot availability={product.availability} />
@@ -122,6 +143,7 @@ export default async function ProductPage({
             </div>
 
             <BuyPanel product={product} />
+            {product.live && product.live.pieces.length > 0 && <LivePieces pieces={product.live.pieces} />}
 
             <div className="mt-9 space-y-3 border-t border-line pt-7">
               {product.description.map((paragraph) => (
@@ -166,7 +188,7 @@ function jsonLd(product: Product) {
     description: product.tagline,
     sku: product.sku,
     mpn: product.designNumber,
-    image: product.images.map((image) => `${site.url}${image}`),
+    image: product.images.map((image) => (image.startsWith("http") ? image : `${site.url}${image}`)),
     brand: { "@type": "Brand", name: site.name },
     weight: { "@type": "QuantitativeValue", value: product.grossWeight, unitCode: "GRM" },
     material: product.purity,
@@ -180,10 +202,8 @@ function jsonLd(product: Product) {
           : "https://schema.org/PreOrder",
       url: `${site.url}/products/${product.slug}`,
     },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: ratingSummary.average,
-      reviewCount: ratingSummary.count,
-    },
+    ...(product.live
+      ? {}
+      : { aggregateRating: { "@type": "AggregateRating", ratingValue: ratingSummary.average, reviewCount: ratingSummary.count } }),
   };
 }

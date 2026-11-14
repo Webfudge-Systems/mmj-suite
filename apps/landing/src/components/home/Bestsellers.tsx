@@ -5,13 +5,14 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { ArrowCta } from "@/components/ui/Button";
 import { Reveal } from "@/components/ui/Reveal";
 import { ProductCard } from "@/components/commerce/ProductCard";
-import { getBestsellers } from "@/lib/catalog";
+import { ensureCatalog, getBestsellers } from "@/lib/catalog";
 
 /**
  * Four tiles, but the third slot is a lifestyle crop rather than a product,
  * which is how the reference breaks up the row.
  */
-export function Bestsellers() {
+export async function Bestsellers() {
+  await ensureCatalog();
   const products = getBestsellers(3);
 
   return (

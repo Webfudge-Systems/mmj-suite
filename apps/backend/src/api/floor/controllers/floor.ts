@@ -17,7 +17,7 @@ const ON_FLOOR = ["in_stock", "with_staff", "reserved"];
 type Card = NonNullable<Awaited<ReturnType<typeof latestRateCard>>>;
 
 /** Today's price of one piece, as the counter would bill it before any discount. Never includes cost. */
-function priceOf(item: any, card: Card, hallmark: number) {
+export function priceOf(item: any, card: Card, hallmark: number) {
   const rate = card.rates.find((line: { purity: string }) => line.purity === item.purity)?.ratePerGram;
   if (!rate || !item.making) return null;
   const line = priceLine({
