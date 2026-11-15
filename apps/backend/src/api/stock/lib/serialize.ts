@@ -33,6 +33,7 @@ export function serializeItem(item: any, { cost }: { cost: boolean }) {
     tagNumber: item.tagNumber,
     legacyTag: item.legacyTag ?? null,
     huid: item.huid ?? null,
+    rfid: item.rfid ?? null,
     metal: item.metal,
     purity: item.purity,
     grossWeight: num(item.grossWeight),

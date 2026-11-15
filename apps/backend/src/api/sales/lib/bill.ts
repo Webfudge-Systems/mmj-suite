@@ -154,7 +154,8 @@ export async function buildBill(strapi: any, staff: Staff, request: BillRequest,
   for (const item of items) {
     if (item.branch?.id !== branchId) fail(`${item.tagNumber} is at ${item.branch?.name}. Transfer it here first.`);
     if (item.status === "reserved" && !estimateIds.has(item.id)) fail(`${item.tagNumber} is reserved on another estimate.`);
-    if (!["in_stock", "with_staff", "reserved"].includes(item.status)) fail(`${item.tagNumber} is ${item.status.replace("_", " ")} and cannot be sold.`);
+    // A piece the customer kept from an approval is billed straight from "on approval".
+    if (!["in_stock", "with_staff", "reserved", "on_approval"].includes(item.status)) fail(`${item.tagNumber} is ${item.status.replace("_", " ")} and cannot be sold.`);
   }
 
   // Advances: rate locks first (they change the line prices), amounts later.

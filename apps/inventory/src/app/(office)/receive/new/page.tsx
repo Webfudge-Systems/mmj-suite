@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { use, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@webfudge/auth/components";
@@ -51,7 +51,10 @@ function net(line: Line): number | null {
   return Math.round((gross - stone) * 1000) / 1000;
 }
 
-export default function ReceivePage() {
+export default function ReceivePage({ searchParams }: { searchParams: Promise<{ jobWork?: string; karigar?: string; job?: string }> }) {
+  const params = use(searchParams);
+  // Opened from a karigar job: the pieces count against that job.
+  const jobWorkId = Number(params.jobWork) || null;
   const router = useRouter();
   const api = useApi();
   const { hasRole } = useAuth();
@@ -60,9 +63,9 @@ export default function ReceivePage() {
   const { locations } = useLocations(branch?.id);
   const scale = useScale();
 
-  const [source, setSource] = useState<"purchase" | "karigar">("purchase");
+  const [source, setSource] = useState<"purchase" | "karigar">(jobWorkId ? "karigar" : "purchase");
   const suppliers = useResource<{ data: Supplier[] }>(`/stock/suppliers?kind=${source === "karigar" ? "karigar" : "supplier"}`);
-  const [supplierId, setSupplierId] = useState("");
+  const [supplierId, setSupplierId] = useState(params.karigar ?? "");
   const [billNumber, setBillNumber] = useState("");
   const [billDate, setBillDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState("");
@@ -90,6 +93,7 @@ export default function ReceivePage() {
         branchId: branch.id,
         source,
         supplierId: Number(supplierId) || undefined,
+        ...(jobWorkId ? { jobWorkId } : {}),
         billNumber,
         billDate,
         notes,
@@ -115,7 +119,7 @@ export default function ReceivePage() {
 
   return (
     <form onSubmit={submit} className="grid gap-6" noValidate>
-      <PageHeader title="Receive pieces" description={`Into ${branch?.name ?? "this branch"}. Each line becomes one tagged piece.`} />
+      <PageHeader title="Receive pieces" description={jobWorkId ? `Pieces back from the karigar for job ${params.job ?? ""}. They count against the gold given.` : `Into ${branch?.name ?? "this branch"}. Each line becomes one tagged piece.`} />
 
       <Card>
         <CardHeader title="Delivery" />

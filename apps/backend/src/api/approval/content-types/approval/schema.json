@@ -1,0 +1,73 @@
+{
+  "kind": "collectionType",
+  "collectionName": "approvals",
+  "info": {
+    "singularName": "approval",
+    "pluralName": "approvals",
+    "displayName": "Approval",
+    "description": "Pieces given to a customer or dealer to choose from at home, tracked until each comes back or is billed."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "number": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "maxLength": 20
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "open",
+        "closed"
+      ],
+      "required": true,
+      "default": "open"
+    },
+    "partyName": {
+      "type": "string"
+    },
+    "partyPhone": {
+      "type": "string",
+      "maxLength": 15
+    },
+    "dueBackOn": {
+      "type": "date"
+    },
+    "lines": {
+      "type": "json"
+    },
+    "note": {
+      "type": "text"
+    },
+    "log": {
+      "type": "json"
+    },
+    "closedAt": {
+      "type": "datetime"
+    },
+    "customer": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::customer.customer"
+    },
+    "by": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "branch": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::branch.branch"
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    }
+  }
+}

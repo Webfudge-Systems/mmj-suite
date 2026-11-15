@@ -69,6 +69,8 @@ export type StockItem = {
   tagNumber: string;
   legacyTag: string | null;
   huid: string | null;
+  /** RFID tag code, for the pilot. Scanned like a barcode. */
+  rfid: string | null;
   metal: Metal;
   purity: Purity;
   grossWeight: number;

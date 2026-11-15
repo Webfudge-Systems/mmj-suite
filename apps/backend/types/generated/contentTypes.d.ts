@@ -396,6 +396,52 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiApprovalApproval extends Struct.CollectionTypeSchema {
+  collectionName: "approvals";
+  info: {
+    description: "Pieces given to a customer or dealer to choose from at home, tracked until each comes back or is billed.";
+    displayName: "Approval";
+    pluralName: "approvals";
+    singularName: "approval";
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    branch: Schema.Attribute.Relation<"manyToOne", "api::branch.branch">;
+    by: Schema.Attribute.Relation<"manyToOne", "plugin::users-permissions.user">;
+    closedAt: Schema.Attribute.DateTime;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+    customer: Schema.Attribute.Relation<"manyToOne", "api::customer.customer">;
+    dueBackOn: Schema.Attribute.Date;
+    lines: Schema.Attribute.JSON;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<"oneToMany", "api::approval.approval"> &
+      Schema.Attribute.Private;
+    log: Schema.Attribute.JSON;
+    note: Schema.Attribute.Text;
+    number: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 20;
+      }>;
+    organization: Schema.Attribute.Relation<"manyToOne", "api::organization.organization">;
+    partyName: Schema.Attribute.String;
+    partyPhone: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 15;
+      }>;
+    publishedAt: Schema.Attribute.DateTime;
+    status: Schema.Attribute.Enumeration<["open", "closed"]> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<"open">;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+  };
+}
+
 export interface ApiAuditLogAuditLog extends Struct.CollectionTypeSchema {
   collectionName: "audit_logs";
   info: {
@@ -1049,6 +1095,11 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
       }>;
     receipt: Schema.Attribute.Relation<"manyToOne", "api::stock-receipt.stock-receipt">;
     receivedAt: Schema.Attribute.DateTime;
+    rfid: Schema.Attribute.String &
+      Schema.Attribute.Unique &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 64;
+      }>;
     slot: Schema.Attribute.String &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 8;
@@ -1090,6 +1141,62 @@ export interface ApiItemItem extends Struct.CollectionTypeSchema {
       }>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+  };
+}
+
+export interface ApiJobWorkJobWork extends Struct.CollectionTypeSchema {
+  collectionName: "job_works";
+  info: {
+    description: "Metal issued to a karigar to make pieces, the pieces received back, and the fine-metal settlement.";
+    displayName: "Job work";
+    pluralName: "job-works";
+    singularName: "job-work";
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    branch: Schema.Attribute.Relation<"manyToOne", "api::branch.branch">;
+    by: Schema.Attribute.Relation<"manyToOne", "plugin::users-permissions.user">;
+    closedAt: Schema.Attribute.DateTime;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+    description: Schema.Attribute.Text;
+    dueOn: Schema.Attribute.Date;
+    issues: Schema.Attribute.JSON;
+    karigar: Schema.Attribute.Relation<"manyToOne", "api::supplier.supplier">;
+    labourCharge: Schema.Attribute.Decimal &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<"oneToMany", "api::job-work.job-work"> &
+      Schema.Attribute.Private;
+    log: Schema.Attribute.JSON;
+    number: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 20;
+      }>;
+    organization: Schema.Attribute.Relation<"manyToOne", "api::organization.organization">;
+    publishedAt: Schema.Attribute.DateTime;
+    status: Schema.Attribute.Enumeration<["open", "closed"]> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<"open">;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+    wastagePercent: Schema.Attribute.Decimal &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
   };
 }
 
@@ -1680,6 +1787,94 @@ export interface ApiSequenceSequence extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiServiceOrderServiceOrder extends Struct.CollectionTypeSchema {
+  collectionName: "service_orders";
+  info: {
+    description: "A repair of a customer's own piece, or a custom piece made to order, from intake to delivery.";
+    displayName: "Service order";
+    pluralName: "service-orders";
+    singularName: "service-order";
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    booking: Schema.Attribute.Relation<"manyToOne", "api::booking.booking">;
+    branch: Schema.Attribute.Relation<"manyToOne", "api::branch.branch">;
+    by: Schema.Attribute.Relation<"manyToOne", "plugin::users-permissions.user">;
+    charge: Schema.Attribute.Decimal &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+    customer: Schema.Attribute.Relation<"manyToOne", "api::customer.customer">;
+    deliveredAt: Schema.Attribute.DateTime;
+    description: Schema.Attribute.Text & Schema.Attribute.Required;
+    dueOn: Schema.Attribute.Date;
+    estimate: Schema.Attribute.Decimal &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    itemDescription: Schema.Attribute.String;
+    karigar: Schema.Attribute.Relation<"manyToOne", "api::supplier.supplier">;
+    kind: Schema.Attribute.Enumeration<["repair", "custom"]> & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<"oneToMany", "api::service-order.service-order"> &
+      Schema.Attribute.Private;
+    log: Schema.Attribute.JSON;
+    number: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 20;
+      }>;
+    organization: Schema.Attribute.Relation<"manyToOne", "api::organization.organization">;
+    paidTotal: Schema.Attribute.Decimal &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
+    payments: Schema.Attribute.JSON;
+    photos: Schema.Attribute.Media<"images", true>;
+    publishedAt: Schema.Attribute.DateTime;
+    purity: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 8;
+      }>;
+    status: Schema.Attribute.Enumeration<
+      ["received", "in_work", "ready", "delivered", "cancelled"]
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<"received">;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+    weightIn: Schema.Attribute.Decimal &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    weightOut: Schema.Attribute.Decimal &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+  };
+}
+
 export interface ApiStockAuditStockAudit extends Struct.CollectionTypeSchema {
   collectionName: "stock_audits";
   info: {
@@ -1762,6 +1957,8 @@ export interface ApiStockMovementStockMovement extends Struct.CollectionTypeSche
         "sold",
         "returned",
         "sale_cancelled",
+        "approval_out",
+        "approval_back",
       ]
     > &
       Schema.Attribute.Required;
@@ -1788,6 +1985,7 @@ export interface ApiStockReceiptStockReceipt extends Struct.CollectionTypeSchema
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
     items: Schema.Attribute.Relation<"oneToMany", "api::item.item">;
+    jobWork: Schema.Attribute.Relation<"manyToOne", "api::job-work.job-work">;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<"oneToMany", "api::stock-receipt.stock-receipt"> &
       Schema.Attribute.Private;
@@ -2397,6 +2595,7 @@ declare module "@strapi/strapi" {
       "admin::transfer-token": AdminTransferToken;
       "admin::transfer-token-permission": AdminTransferTokenPermission;
       "admin::user": AdminUser;
+      "api::approval.approval": ApiApprovalApproval;
       "api::audit-log.audit-log": ApiAuditLogAuditLog;
       "api::booking.booking": ApiBookingBooking;
       "api::branch.branch": ApiBranchBranch;
@@ -2412,6 +2611,7 @@ declare module "@strapi/strapi" {
       "api::global.global": ApiGlobalGlobal;
       "api::invoice.invoice": ApiInvoiceInvoice;
       "api::item.item": ApiItemItem;
+      "api::job-work.job-work": ApiJobWorkJobWork;
       "api::journal-post.journal-post": ApiJournalPostJournalPost;
       "api::location.location": ApiLocationLocation;
       "api::loyalty-entry.loyalty-entry": ApiLoyaltyEntryLoyaltyEntry;
@@ -2424,6 +2624,7 @@ declare module "@strapi/strapi" {
       "api::scheme-payment.scheme-payment": ApiSchemePaymentSchemePayment;
       "api::scheme-plan.scheme-plan": ApiSchemePlanSchemePlan;
       "api::sequence.sequence": ApiSequenceSequence;
+      "api::service-order.service-order": ApiServiceOrderServiceOrder;
       "api::stock-audit.stock-audit": ApiStockAuditStockAudit;
       "api::stock-movement.stock-movement": ApiStockMovementStockMovement;
       "api::stock-receipt.stock-receipt": ApiStockReceiptStockReceipt;

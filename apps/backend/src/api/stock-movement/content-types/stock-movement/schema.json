@@ -28,7 +28,9 @@
         "released",
         "sold",
         "returned",
-        "sale_cancelled"
+        "sale_cancelled",
+        "approval_out",
+        "approval_back"
       ],
       "required": true
     },

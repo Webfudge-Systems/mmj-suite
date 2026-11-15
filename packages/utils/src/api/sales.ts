@@ -222,7 +222,7 @@ export type DaySummary = {
   in: Partial<Record<PaymentMode, number>>;
   out: Partial<Record<PaymentMode, number>>;
   expectedCash: number;
-  counts: { invoices: number; salesTotal: number; oldGoldTaken: number; oldGoldBought: number; advances: number; cancelled: number; schemeInstalments?: number; schemeCollected?: number };
+  counts: { invoices: number; salesTotal: number; oldGoldTaken: number; oldGoldBought: number; advances: number; cancelled: number; schemeInstalments?: number; schemeCollected?: number; ordersCollected?: number };
   closed: { countedCash: number; difference: number; notes: string | null; closedBy: string | null; at: string } | null;
 };
 

@@ -55,7 +55,7 @@ export function requireId(value: unknown, label: string): number {
 /** Where-clause matching a scanned or typed code against tag number, old tag or HUID. */
 export function codeWhere(code: string) {
   const value = normaliseCode(code);
-  return { $or: [{ tagNumber: value }, { legacyTag: value }, { huid: value }] };
+  return { $or: [{ tagNumber: value }, { legacyTag: value }, { huid: value }, { rfid: value }] };
 }
 
 export function notFound(what: string): never {

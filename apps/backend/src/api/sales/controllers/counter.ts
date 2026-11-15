@@ -435,6 +435,9 @@ async function summarise(strapi: any, staff: any, branch: any, date: string) {
   for (const invoice of invoices) add(inflow, invoice.payments);
   for (const booking of bookings) add(inflow, booking.payments);
   for (const payment of schemePayments) add(inflow, payment.payments);
+  const orders = await strapi.db.query("api::service-order.service-order").findMany({ where: { ...scope, updatedAt: { $gte: start } }, select: ["id", "payments"] });
+  const orderPayments = orders.flatMap((order: any) => (order.payments ?? []).filter((payment: any) => payment.at >= start && payment.at < end));
+  add(inflow, orderPayments);
   for (const record of oldGold) add(outflow, record.payouts);
   const inWindow = (at: string) => at >= start && at < end;
   for (const note of creditNotes) for (const refund of note.refunds ?? []) if (inWindow(refund.at)) add(outflow, refund.payouts);
@@ -459,6 +462,7 @@ async function summarise(strapi: any, staff: any, branch: any, date: string) {
       advances: bookings.length,
       schemeInstalments: schemePayments.length,
       schemeCollected: toRupees(sumPaise(schemePayments.map((payment: any) => Number(payment.amount)))),
+      ordersCollected: toRupees(sumPaise(orderPayments.map((payment: any) => Number(payment.amount)))),
       cancelled,
     },
     closed: closed

@@ -21,6 +21,8 @@ export type MovementInput = {
     | "released"
     | "sold"
     | "returned"
+    | "approval_out"
+    | "approval_back"
     | "sale_cancelled";
   item: number;
   fromStatus?: string | null;

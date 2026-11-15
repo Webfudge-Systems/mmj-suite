@@ -1,0 +1,123 @@
+{
+  "kind": "collectionType",
+  "collectionName": "service_orders",
+  "info": {
+    "singularName": "service-order",
+    "pluralName": "service-orders",
+    "displayName": "Service order",
+    "description": "A repair of a customer's own piece, or a custom piece made to order, from intake to delivery."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "number": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "maxLength": 20
+    },
+    "kind": {
+      "type": "enumeration",
+      "enum": [
+        "repair",
+        "custom"
+      ],
+      "required": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "received",
+        "in_work",
+        "ready",
+        "delivered",
+        "cancelled"
+      ],
+      "required": true,
+      "default": "received"
+    },
+    "description": {
+      "type": "text",
+      "required": true
+    },
+    "itemDescription": {
+      "type": "string"
+    },
+    "purity": {
+      "type": "string",
+      "maxLength": 8
+    },
+    "weightIn": {
+      "type": "decimal",
+      "min": 0
+    },
+    "weightOut": {
+      "type": "decimal",
+      "min": 0
+    },
+    "estimate": {
+      "type": "decimal",
+      "min": 0
+    },
+    "charge": {
+      "type": "decimal",
+      "min": 0
+    },
+    "payments": {
+      "type": "json"
+    },
+    "paidTotal": {
+      "type": "decimal",
+      "min": 0,
+      "default": 0
+    },
+    "dueOn": {
+      "type": "date"
+    },
+    "deliveredAt": {
+      "type": "datetime"
+    },
+    "log": {
+      "type": "json"
+    },
+    "photos": {
+      "type": "media",
+      "multiple": true,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "customer": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::customer.customer"
+    },
+    "karigar": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::supplier.supplier"
+    },
+    "booking": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::booking.booking"
+    },
+    "by": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "branch": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::branch.branch"
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    }
+  }
+}

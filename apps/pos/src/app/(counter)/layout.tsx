@@ -8,10 +8,7 @@ import {
   ClipboardList,
   Coins,
   FilePlus2,
-  Gem,
-  PiggyBank,
   ReceiptText,
-  Sparkles,
   Undo2,
   Users,
   Wallet,
@@ -29,15 +26,7 @@ const nav: NavItem[] = [
   { href: "/old-gold", label: "Old gold", icon: Coins },
   { href: "/advances", label: "Advances & bookings", icon: Wallet },
   { href: "/returns", label: "Returns & credit notes", icon: Undo2 },
-  {
-    label: "Coming soon",
-    icon: Sparkles,
-    children: [
-      { href: "/orders", label: "Custom orders", icon: Gem, soon: true },
-      { href: "/repairs", label: "Repairs", icon: Wrench, soon: true },
-      { href: "/schemes", label: "Scheme collections", icon: PiggyBank, soon: true },
-    ],
-  },
+  { href: "/orders", label: "Repairs & orders", icon: Wrench },
 ];
 
 const system: NavItem[] = [{ href: "/day", label: "Day close", icon: CalendarCheck }];

@@ -98,6 +98,15 @@ export default ({ strapi }: { strapi: any }) => ({
       throw new errors.ValidationError(source === "karigar" ? "Choose the karigar." : "Choose the supplier.");
     }
 
+    // Pieces a karigar made from metal the shop gave: the receipt counts against that job.
+    let jobWork: any = null;
+    if (idOf(body.jobWorkId)) {
+      jobWork = await strapi.db.query("api::job-work.job-work").findOne({ where: { id: idOf(body.jobWorkId), ...orgWhere(staff) }, populate: { karigar: { select: ["id"] } } });
+      if (!jobWork) throw new errors.ValidationError("That karigar job does not exist.");
+      if (jobWork.status !== "open") throw new errors.ValidationError(`${jobWork.number} is closed. Open a new job for more work.`);
+      if (supplier && jobWork.karigar?.id !== supplier.id) throw new errors.ValidationError(`${jobWork.number} belongs to another karigar.`);
+    }
+
     const pieces = parseLines(body.lines);
     if (!canSeeCost(staff) && pieces.some((piece) => piece.costPrice !== null)) {
       throw new errors.ForbiddenError("Your role cannot enter cost prices.");
@@ -122,6 +131,7 @@ export default ({ strapi }: { strapi: any }) => ({
         notes: text(body.notes, 1000),
         supplier: supplier?.documentId ?? null,
         branch: branch.documentId,
+        ...(jobWork ? { jobWork: jobWork.documentId } : {}),
       });
       const created = await createPieces(strapi, staff, pieces, {
         branch,

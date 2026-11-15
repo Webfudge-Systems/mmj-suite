@@ -17,7 +17,6 @@ import {
   PackagePlus,
   Send,
   Settings,
-  Sparkles,
   Tags,
   Truck,
 } from "lucide-react";
@@ -37,23 +36,17 @@ const nav: NavItem[] = [
       { href: "/tags", label: "Tags & labels", icon: Tags },
       { href: "/locations", label: "Trays & locations", icon: MapPin },
       { href: "/audit", label: "Stock audit", icon: ClipboardCheck },
+      { href: "/media", label: "Media studio", icon: Camera, soon: true },
     ],
   },
   { href: "/receive", label: "Receive stock", icon: PackagePlus },
   { href: "/transfers", label: "Transfers", icon: ArrowLeftRight },
   { href: "/catalogue", label: "Catalogue", icon: Gem },
   { href: "/suppliers", label: "Suppliers & karigars", icon: Truck },
+  { href: "/karigar", label: "Karigar jobs", icon: Hammer },
+  { href: "/approvals", label: "Approvals out", icon: Send },
   { href: "/rates", label: "Rates & pricing", icon: IndianRupee },
-  {
-    label: "Coming soon",
-    icon: Sparkles,
-    children: [
-      { href: "/karigar", label: "Karigar job work", icon: Hammer, soon: true },
-      { href: "/approvals", label: "Approvals out", icon: Send, soon: true },
-      { href: "/media", label: "Media studio", icon: Camera, soon: true },
-      { href: "/reports", label: "Reports", icon: BarChart3, soon: true },
-    ],
-  },
+  { href: "/reports", label: "Reports", icon: BarChart3 },
 ];
 
 const system: NavItem[] = [{ href: "/settings", label: "Settings", icon: Settings }];

@@ -97,7 +97,10 @@ export async function cashTakenToday(strapi: any, staff: Staff, customerId: numb
   const invoices = await strapi.db.query(INVOICE).findMany({ where: { ...window, status: "paid" }, select: ["id", "payments"] });
   const bookings = await strapi.db.query(BOOKING).findMany({ where: window, select: ["id", "payments"] });
   const schemes = await strapi.db.query("api::scheme-payment.scheme-payment").findMany({ where: window, select: ["id", "payments"] });
-  const cash = [...invoices, ...bookings, ...schemes].flatMap((record: any) => (record.payments ?? []).filter((payment: Payment) => payment.mode === "cash").map((payment: Payment) => payment.amount));
+  // Repair and order payments are stamped with when they were taken, so look inside each order.
+  const orders = await strapi.db.query("api::service-order.service-order").findMany({ where: { customer: { id: customerId }, organization: { id: staff.organization.id }, updatedAt: { $gte: start } }, select: ["id", "payments"] });
+  const orderPayments = orders.flatMap((order: any) => (order.payments ?? []).filter((payment: any) => payment.at >= start && payment.at < end));
+  const cash = [...invoices, ...bookings, ...schemes, { payments: orderPayments }].flatMap((record: any) => (record.payments ?? []).filter((payment: Payment) => payment.mode === "cash").map((payment: Payment) => payment.amount));
   return sumRupees(cash);
 }
 

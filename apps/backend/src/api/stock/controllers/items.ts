@@ -116,6 +116,15 @@ export default ({ strapi }: { strapi: any }) => ({
         set("huid", item.huid, huid);
       }
       if (body.legacyTag !== undefined) set("legacyTag", item.legacyTag, text(body.legacyTag, 64) ? normaliseCode(body.legacyTag) : null);
+      if (body.rfid !== undefined) {
+        // RFID pilot: readers type the tag's code like a barcode scanner, so it is stored and scanned the same way.
+        const rfid = text(body.rfid, 64) ? normaliseCode(body.rfid) : null;
+        if (rfid && rfid !== item.rfid) {
+          const taken = await strapi.db.query(ITEM).findOne({ where: { rfid, id: { $ne: item.id }, ...orgWhere(staff) } });
+          if (taken) throw new StockRuleError(`RFID ${rfid} is already on piece ${taken.tagNumber}.`);
+        }
+        set("rfid", item.rfid, rfid);
+      }
       if (body.stoneValue !== undefined) {
         const value = toNumber(body.stoneValue, NaN);
         if (!Number.isFinite(value) || value < 0) throw new StockRuleError("Stone value cannot be negative.");

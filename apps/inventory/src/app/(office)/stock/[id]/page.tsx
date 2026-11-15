@@ -91,6 +91,7 @@ function EditForm({ item, onSaved }: { item: StockItem; onSaved: (item: StockIte
   const [stoneValue, setStoneValue] = useState(String(item.stoneValue));
   const [cost, setCost] = useState(item.costPrice == null ? "" : String(item.costPrice));
   const [legacyTag, setLegacyTag] = useState(item.legacyTag ?? "");
+  const [rfid, setRfid] = useState(item.rfid ?? "");
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -108,6 +109,7 @@ function EditForm({ item, onSaved }: { item: StockItem; onSaved: (item: StockIte
         making,
         stoneValue,
         legacyTag,
+        rfid,
         reason,
         ...(canCost ? { costPrice: cost } : {}),
       });
@@ -150,6 +152,9 @@ function EditForm({ item, onSaved }: { item: StockItem; onSaved: (item: StockIte
           <Input id="edit-cost" inputMode="decimal" value={cost} onChange={(event) => setCost(event.target.value)} className="tabular-nums" />
         </Field>
       )}
+      <Field label="RFID tag" htmlFor="edit-rfid" hint="Scan the RFID tag with the reader to fill this in.">
+        <Input id="edit-rfid" value={rfid} onChange={(event) => setRfid(event.target.value)} className="font-mono uppercase" />
+      </Field>
       <Field label="Old tag number" htmlFor="edit-legacy">
         <Input id="edit-legacy" value={legacyTag} onChange={(event) => setLegacyTag(event.target.value)} className="font-mono uppercase" />
       </Field>
@@ -251,6 +256,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
     ["Supplier", item.supplier?.name ?? "—"],
     ["Received", item.receivedAt ? formatDateTime(item.receivedAt) : "—"],
     ["Old tag", item.legacyTag ?? "—"],
+    ["RFID tag", item.rfid ?? "—"],
   ];
 
   return (

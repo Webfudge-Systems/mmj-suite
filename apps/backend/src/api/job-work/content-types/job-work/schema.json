@@ -1,0 +1,75 @@
+{
+  "kind": "collectionType",
+  "collectionName": "job_works",
+  "info": {
+    "singularName": "job-work",
+    "pluralName": "job-works",
+    "displayName": "Job work",
+    "description": "Metal issued to a karigar to make pieces, the pieces received back, and the fine-metal settlement."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "number": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "maxLength": 20
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "open",
+        "closed"
+      ],
+      "required": true,
+      "default": "open"
+    },
+    "description": {
+      "type": "text"
+    },
+    "dueOn": {
+      "type": "date"
+    },
+    "wastagePercent": {
+      "type": "decimal",
+      "min": 0,
+      "default": 0
+    },
+    "labourCharge": {
+      "type": "decimal",
+      "min": 0
+    },
+    "issues": {
+      "type": "json"
+    },
+    "log": {
+      "type": "json"
+    },
+    "closedAt": {
+      "type": "datetime"
+    },
+    "karigar": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::supplier.supplier"
+    },
+    "by": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "branch": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::branch.branch"
+    },
+    "organization": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::organization.organization"
+    }
+  }
+}

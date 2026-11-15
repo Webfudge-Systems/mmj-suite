@@ -26,6 +26,11 @@
       "type": "string",
       "maxLength": 6
     },
+    "rfid": {
+      "type": "string",
+      "maxLength": 64,
+      "unique": true
+    },
     "metal": {
       "type": "enumeration",
       "enum": [
