@@ -5,7 +5,7 @@ import { Gift, Inbox, Megaphone, PiggyBank, Plus, Users } from "lucide-react";
 import { useAuth, useResource } from "@webfudge/auth/components";
 import { Card, CardHeader, KpiCard, PageHeader, Spinner, buttonClass } from "@webfudge/ui";
 import type { CrmDashboard } from "@webfudge/utils/api";
-import { formatINR } from "@webfudge/utils/formatters";
+import { formatINR, formatRupees } from "@webfudge/utils/formatters";
 import { ReminderList } from "@/components/crm";
 
 export default function DashboardPage() {
@@ -61,7 +61,7 @@ export default function DashboardPage() {
                 value={stats.schemes.active}
                 icon={PiggyBank}
                 tone={stats.schemes.behind ? "warn" : "ok"}
-                subtitle={stats.schemes.behind ? `${stats.schemes.behind} behind · ${formatINR(stats.schemes.held)} held` : `${formatINR(stats.schemes.held)} held`}
+                subtitle={stats.schemes.behind ? `${stats.schemes.behind} behind · ${formatRupees(stats.schemes.held)} held` : `${formatRupees(stats.schemes.held)} held`}
               />
             </Link>
             <Link href="/loyalty" className="rounded-xl">
@@ -72,7 +72,7 @@ export default function DashboardPage() {
                 value={stats.loyalty.pointsOutstanding.toLocaleString("en-IN")}
                 icon={Gift}
                 tone="gold"
-                subtitle={stats.loyalty.enabled ? `Worth ${formatINR(stats.loyalty.valueOutstanding)} · ${stats.loyalty.members} members` : "Loyalty is switched off"}
+                subtitle={stats.loyalty.enabled ? `Worth ${formatRupees(stats.loyalty.valueOutstanding)} · ${stats.loyalty.members} members` : "Loyalty is switched off"}
               />
             </Link>
           </div>

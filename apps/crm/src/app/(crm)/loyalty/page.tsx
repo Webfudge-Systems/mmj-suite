@@ -6,7 +6,7 @@ import { useResource } from "@webfudge/auth/components";
 import { Alert, Card, CardHeader, EmptyState, KpiCard, PageHeader, Spinner, Table, Td, Th, Tr, buttonClass } from "@webfudge/ui";
 import type { CrmDashboard, LoyaltyEntry, LoyaltyRules } from "@webfudge/utils/api";
 import { LOYALTY_KIND_LABELS } from "@webfudge/utils/api";
-import { formatDateTime, formatINR } from "@webfudge/utils/formatters";
+import { formatDateTime, formatRupees } from "@webfudge/utils/formatters";
 
 export default function LoyaltyPage() {
   const ledger = useResource<{ data: LoyaltyEntry[] }>("/crm/loyalty");
@@ -31,8 +31,8 @@ export default function LoyaltyPage() {
       {rules && !rules.enabled && <Alert tone="warn" title="Loyalty is switched off">New bills earn no points. Switch it on in Settings.</Alert>}
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <KpiCard compact title="Earn rate" value={rules ? `1 pt / ${formatINR(rules.rupeesPerPoint)}` : "–"} icon={Gift} subtitle="Of the bill total" />
-        <KpiCard compact title="Points out" value={totals ? totals.pointsOutstanding.toLocaleString("en-IN") : "–"} icon={Gift} tone="gold" subtitle={totals ? `Worth ${formatINR(totals.valueOutstanding)}` : undefined} />
+        <KpiCard compact title="Earn rate" value={rules ? `1 pt / ${formatRupees(rules.rupeesPerPoint)}` : "–"} icon={Gift} subtitle="Of the bill total" />
+        <KpiCard compact title="Points out" value={totals ? totals.pointsOutstanding.toLocaleString("en-IN") : "–"} icon={Gift} tone="gold" subtitle={totals ? `Worth ${formatRupees(totals.valueOutstanding)}` : undefined} />
         <KpiCard compact title="Members with points" value={totals?.members ?? "–"} icon={Gift} tone="ok" subtitle={rules ? `Redeem from ${rules.minRedeem} points` : undefined} />
       </div>
 

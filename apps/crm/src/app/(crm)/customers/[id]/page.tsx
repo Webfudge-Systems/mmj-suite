@@ -7,7 +7,7 @@ import { errorMessage, useApi, useAuth, useBranch, useResource } from "@webfudge
 import { Alert, Badge, Button, Card, CardBody, CardHeader, EmptyState, Field, Input, KpiCard, PageHeader, Spinner, Table, Td, Textarea, Th, Tr, buttonClass } from "@webfudge/ui";
 import type { CustomerProfile, LoyaltyRules } from "@webfudge/utils/api";
 import { LOYALTY_KIND_LABELS } from "@webfudge/utils/api";
-import { formatDate, formatDateTime, formatINR } from "@webfudge/utils/formatters";
+import { formatDate, formatDateTime, formatINR, formatRupees } from "@webfudge/utils/formatters";
 import { Avatar, EnquiryBadge, SchemeBadge, WhatsAppButton } from "@/components/crm";
 
 function EditCustomer({ customer, onSaved, onCancel }: { customer: CustomerProfile; onSaved: () => void; onCancel: () => void }) {
@@ -285,8 +285,8 @@ export default function CustomerPage({ params }: { params: Promise<{ id: string 
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard compact title="Bills" value={customer.summary.bills} icon={ReceiptText} subtitle={customer.summary.lastBillAt ? `Last on ${formatDate(customer.summary.lastBillAt)}` : "No bills yet"} />
-        <KpiCard compact title="Total bought" value={formatINR(customer.summary.spent)} icon={ShoppingBag} tone="ok" subtitle={`${customer.summary.pieces} pieces`} />
-        <KpiCard compact title="Points" value={customer.loyaltyPoints.toLocaleString("en-IN")} icon={Gift} tone="gold" subtitle={`Worth ${formatINR(customer.summary.pointsValue)}`} />
+        <KpiCard compact title="Total bought" value={formatRupees(customer.summary.spent)} icon={ShoppingBag} tone="ok" subtitle={`${customer.summary.pieces} pieces`} />
+        <KpiCard compact title="Points" value={customer.loyaltyPoints.toLocaleString("en-IN")} icon={Gift} tone="gold" subtitle={`Worth ${formatRupees(customer.summary.pointsValue)}`} />
         <KpiCard
           compact
           title="Gold schemes"

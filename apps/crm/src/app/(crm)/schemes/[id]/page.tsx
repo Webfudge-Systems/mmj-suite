@@ -7,7 +7,7 @@ import { errorMessage, useApi, useAuth, useBranch, useResource } from "@webfudge
 import { Alert, Button, Card, CardBody, CardHeader, Field, Input, KpiCard, PageHeader, Select, Spinner, Table, Td, Th, Tr, cn } from "@webfudge/ui";
 import type { PaymentMode, SchemeAccountDetail } from "@webfudge/utils/api";
 import { PAYMENT_MODE_LABELS } from "@webfudge/utils/api";
-import { formatDate, formatDateTime, formatINR } from "@webfudge/utils/formatters";
+import { formatDate, formatDateTime, formatINR, formatRupees } from "@webfudge/utils/formatters";
 import { PaymentPicker, SchemeBadge, WhatsAppButton, bonusLabel } from "@/components/crm";
 
 function whatsappFor(account: SchemeAccountDetail) {
@@ -100,9 +100,9 @@ export default function SchemePage({ params }: { params: Promise<{ id: string }>
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard compact title="Saved so far" value={formatINR(account.paidTotal)} icon={Wallet} subtitle={`${account.instalmentsPaid} of ${account.months} instalments`} />
-        <KpiCard compact title="Monthly" value={formatINR(account.monthlyAmount)} icon={Wallet} tone="navy" subtitle={account.nextDueOn ? `Next due ${formatDate(account.nextDueOn)}` : account.status === "matured" ? "All paid" : "No more instalments"} />
-        <KpiCard compact title="Shop adds at the end" value={formatINR(account.bonusAmount ?? account.bonusOnMaturity)} icon={CircleCheck} tone="gold" subtitle={bonusLabel(account)} />
+        <KpiCard compact title="Saved so far" value={formatRupees(account.paidTotal)} icon={Wallet} subtitle={`${account.instalmentsPaid} of ${account.months} instalments`} />
+        <KpiCard compact title="Monthly" value={formatRupees(account.monthlyAmount)} icon={Wallet} tone="navy" subtitle={account.nextDueOn ? `Next due ${formatDate(account.nextDueOn)}` : account.status === "matured" ? "All paid" : "No more instalments"} />
+        <KpiCard compact title="Shop adds at the end" value={formatRupees(account.bonusAmount ?? account.bonusOnMaturity)} icon={CircleCheck} tone="gold" subtitle={bonusLabel(account)} />
         <KpiCard
           compact
           title={account.status === "redeemed" || account.status === "closed" ? "Turned into" : "Behind"}
