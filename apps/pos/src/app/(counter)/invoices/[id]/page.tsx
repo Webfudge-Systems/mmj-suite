@@ -4,185 +4,9 @@ import { use, useState } from "react";
 import Link from "next/link";
 import { errorMessage, useApi, useAuth, useResource } from "@webfudge/auth/components";
 import { Alert, Badge, Button, Card, CardBody, CardHeader, Field, Input, PageHeader, Spinner, buttonClass } from "@webfudge/ui";
-import { PAYMENT_MODE_LABELS, type Invoice } from "@webfudge/utils/api";
-import { formatDate, formatDateTime, formatINR, formatWeight } from "@webfudge/utils/formatters";
-
-const MAKING = { per_gram: "/g", percent: "%", fixed: "" } as const;
-
-/** The tax invoice as printed on A4. */
-function TaxInvoice({ invoice }: { invoice: Invoice }) {
-  const cell = "border border-black/60 px-1.5 py-1 align-top";
-  const head = `${cell} bg-black/5 text-left font-semibold`;
-  return (
-    <article className="invoice mx-auto grid w-full max-w-[210mm] gap-3 bg-white p-6 text-[10.5px] leading-snug text-black print:max-w-none print:p-0">
-      <header className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-black pb-3">
-        <div className="grid gap-0.5">
-          <span className="text-[17px] font-bold tracking-wide">{invoice.seller.name}</span>
-          {invoice.seller.address && <span>{invoice.seller.address}</span>}
-          <span>
-            {invoice.seller.phone ? `Phone ${invoice.seller.phone}` : ""}
-            {invoice.seller.email ? ` · ${invoice.seller.email}` : ""}
-          </span>
-          <span className="font-semibold">GSTIN {invoice.seller.gstin ?? "not set — add it in Back Office › Settings"}</span>
-        </div>
-        <div className="grid justify-items-end gap-0.5 text-right">
-          <span className="text-[15px] font-bold">TAX INVOICE</span>
-          <span>
-            No. <b className="font-mono">{invoice.number}</b>
-          </span>
-          <span>Date {formatDateTime(invoice.invoiceDate)}</span>
-          {invoice.status === "cancelled" && <span className="text-[13px] font-bold">CANCELLED</span>}
-        </div>
-      </header>
-
-      <section className="grid grid-cols-2 gap-4">
-        <div className="grid gap-0.5">
-          <span className="font-semibold">Billed to</span>
-          <span>{invoice.customer.name}</span>
-          <span>Mobile {invoice.customer.phone}</span>
-          {invoice.customer.address && <span>{invoice.customer.address}</span>}
-          {invoice.customer.pan && <span>PAN {invoice.customer.pan}</span>}
-          {invoice.customer.gstin && <span>GSTIN {invoice.customer.gstin}</span>}
-        </div>
-        <div className="grid content-start justify-items-end gap-0.5 text-right">
-          {invoice.seller.gstin && <span>Place of supply: state code {invoice.seller.gstin.slice(0, 2)}</span>}
-          <span>
-            Rates of {formatDate(invoice.rates.effectiveFrom)}:{" "}
-            {invoice.rates.lines
-              .filter((line) => invoice.lines.some((entry) => entry.purity === line.purity))
-              .map((line) => `${line.purity} ${formatINR(line.ratePerGram)}/g`)
-              .join(", ")}
-          </span>
-        </div>
-      </section>
-
-      <table className="w-full border-collapse tabular-nums">
-        <thead>
-          <tr>
-            <th className={head}>#</th>
-            <th className={head}>Description · HSN 7113</th>
-            <th className={head}>Purity · HUID</th>
-            <th className={`${head} text-right`}>Gross wt</th>
-            <th className={`${head} text-right`}>Net wt</th>
-            <th className={`${head} text-right`}>Rate/g</th>
-            <th className={`${head} text-right`}>Metal</th>
-            <th className={`${head} text-right`}>Making</th>
-            <th className={`${head} text-right`}>Stones, HM</th>
-            <th className={`${head} text-right`}>Taxable</th>
-          </tr>
-        </thead>
-        <tbody>
-          {invoice.lines.map((line, index) => (
-            <tr key={line.itemId}>
-              <td className={cell}>{index + 1}</td>
-              <td className={cell}>
-                {line.description}
-                <span className="block font-mono text-[9.5px]">{line.tagNumber}</span>
-                {line.returnedAt && <span className="block font-semibold">Returned on {line.creditNoteNumber}</span>}
-              </td>
-              <td className={cell}>
-                {line.purity}
-                {line.huid && <span className="block font-mono">{line.huid}</span>}
-              </td>
-              <td className={`${cell} text-right`}>{formatWeight(line.grossWeight)}</td>
-              <td className={`${cell} text-right`}>{formatWeight(line.netWeight)}</td>
-              <td className={`${cell} text-right`}>{formatINR(line.ratePerGram)}</td>
-              <td className={`${cell} text-right`}>{formatINR(line.metalValue)}</td>
-              <td className={`${cell} text-right`}>
-                {formatINR(line.makingCharge - line.makingDiscount)}
-                <span className="block text-[9px]">
-                  {line.making.type === "percent" ? `${line.making.value}${MAKING.percent}` : `₹${line.making.value}${MAKING[line.making.type]}`}
-                  {line.makingDiscount ? ` less ${formatINR(line.makingDiscount)}` : ""}
-                </span>
-              </td>
-              <td className={`${cell} text-right`}>{formatINR(line.stoneValue + line.otherCharges)}</td>
-              <td className={`${cell} text-right`}>{formatINR(line.taxableValue)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <section className="grid grid-cols-[1fr_260px] gap-4">
-        <div className="grid content-start gap-2">
-          <p>
-            <b>Amount in words:</b> {invoice.amountInWords}
-          </p>
-          {invoice.oldGold && (
-            <div>
-              <b>Old gold received ({invoice.oldGold.number}):</b>
-              {invoice.oldGold.lines.map((line, index) => (
-                <span key={index} className="block">
-                  {line.description}: gross {formatWeight(line.grossWeight)}, less {formatWeight(line.lessWeight)}, tested {line.fineness}, fine {formatWeight(line.fineWeight)} at{" "}
-                  {formatINR(line.pureRate)}/g less {line.deductionPercent}% = {formatINR(line.value)}
-                </span>
-              ))}
-            </div>
-          )}
-          <div>
-            <b>Paid:</b>{" "}
-            {invoice.payments.length
-              ? invoice.payments.map((payment) => `${PAYMENT_MODE_LABELS[payment.mode]} ${formatINR(payment.amount)}${payment.reference ? ` (${payment.reference})` : ""}`).join(", ")
-              : "Nothing further"}
-          </div>
-          {invoice.notes && <p>{invoice.notes}</p>}
-          <p className="text-[9.5px]">
-            Prices are worked out on the day&apos;s rate for each purity. Hallmarked pieces carry the BIS HUID shown. Exchange and buyback as per the shop&apos;s policy. Subject to
-            the shop&apos;s local jurisdiction.
-          </p>
-        </div>
-        <table className="w-full border-collapse self-start tabular-nums">
-          <tbody>
-            {[
-              ["Taxable value", invoice.taxableValue],
-              ["CGST 1.5%", invoice.cgst],
-              ["SGST 1.5%", invoice.sgst],
-              ["Round off", invoice.roundOff],
-            ].map(([label, value]) => (
-              <tr key={label as string}>
-                <td className={cell}>{label}</td>
-                <td className={`${cell} text-right`}>{formatINR(value as number)}</td>
-              </tr>
-            ))}
-            <tr>
-              <td className={`${cell} font-bold`}>Invoice total</td>
-              <td className={`${cell} text-right font-bold`}>{formatINR(invoice.total)}</td>
-            </tr>
-            {invoice.oldGoldValue > 0 && (
-              <tr>
-                <td className={cell}>Less old gold</td>
-                <td className={`${cell} text-right`}>{formatINR(invoice.oldGoldValue)}</td>
-              </tr>
-            )}
-            {invoice.creditNoteUsed > 0 && (
-              <tr>
-                <td className={cell}>Less credit notes</td>
-                <td className={`${cell} text-right`}>{formatINR(invoice.creditNoteUsed)}</td>
-              </tr>
-            )}
-            {invoice.advanceUsed > 0 && (
-              <tr>
-                <td className={cell}>Less advances</td>
-                <td className={`${cell} text-right`}>{formatINR(invoice.advanceUsed)}</td>
-              </tr>
-            )}
-            <tr>
-              <td className={`${cell} font-bold`}>Amount paid</td>
-              <td className={`${cell} text-right font-bold`}>{formatINR(invoice.amountDue)}</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-
-      <footer className="mt-8 flex justify-between gap-4">
-        <span>Customer&apos;s signature</span>
-        <span className="text-right">
-          For {invoice.seller.name}
-          <span className="block pt-8">Authorised signatory{invoice.cashier ? ` (${invoice.cashier})` : ""}</span>
-        </span>
-      </footer>
-    </article>
-  );
-}
+import type { Invoice } from "@webfudge/utils/api";
+import { formatDateTime, formatINR } from "@webfudge/utils/formatters";
+import { TaxInvoice } from "@/components/tax-invoice";
 
 export default function InvoicePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string }> }) {
   const { id } = use(params);
@@ -268,8 +92,10 @@ export default function InvoicePage({ params, searchParams }: { params: Promise<
           </Card>
         )}
       </div>
-      <div className="overflow-x-auto rounded-[var(--radius-panel)] border border-line print:overflow-visible print:border-0">
-        <TaxInvoice invoice={invoice} />
+      <div className="overflow-x-auto rounded-[var(--radius-panel)] border border-line bg-gray-100 p-4 sm:p-6 print:overflow-visible print:border-0 print:bg-white print:p-0">
+        <div className="mx-auto w-fit shadow-xl print:shadow-none">
+          <TaxInvoice invoice={invoice} />
+        </div>
       </div>
     </div>
   );

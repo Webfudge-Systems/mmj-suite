@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent, type KeyboardEvent } from "react";
 import { Search, UserPlus } from "lucide-react";
 import { errorMessage, useApi } from "@webfudge/auth/components";
-import { Alert, Button, Field, Input, cn } from "@webfudge/ui";
+import { Alert, Button, Field, Input, Textarea, cn } from "@webfudge/ui";
 import { ApiError, type Customer } from "@webfudge/utils/api";
 
 type Props = {
@@ -214,6 +214,7 @@ function NewCustomer({ initialPhone, initialName, needPan, onSaved, onCancel }: 
   const [name, setName] = useState(initialName);
   const [phone, setPhone] = useState(initialPhone);
   const [city, setCity] = useState("");
+  const [address, setAddress] = useState("");
   const [pan, setPan] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -223,7 +224,7 @@ function NewCustomer({ initialPhone, initialName, needPan, onSaved, onCancel }: 
     setBusy(true);
     setError(null);
     try {
-      const { data } = await api.post<{ data: Customer }>("/sales/customers", { name, phone, city, pan });
+      const { data } = await api.post<{ data: Customer }>("/sales/customers", { name, phone, address, city, pan });
       onSaved(data);
     } catch (cause) {
       // The number is already on file: open that customer instead.
@@ -246,6 +247,9 @@ function NewCustomer({ initialPhone, initialName, needPan, onSaved, onCancel }: 
       </Field>
       <Field label="Mobile" htmlFor="new-customer-phone">
         <Input id="new-customer-phone" inputMode="tel" value={phone} onChange={(event) => setPhone(event.target.value)} />
+      </Field>
+      <Field label="Address" htmlFor="new-customer-address" className="sm:col-span-2" hint="House, street, area and PIN code. Printed on the bill.">
+        <Textarea id="new-customer-address" value={address} onChange={(event) => setAddress(event.target.value)} rows={2} className="min-h-14" />
       </Field>
       <Field label="City" htmlFor="new-customer-city">
         <Input id="new-customer-city" value={city} onChange={(event) => setCity(event.target.value)} />
