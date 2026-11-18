@@ -67,6 +67,23 @@ export const num = (value: unknown) => (value === null || value === undefined ? 
 /** Up to this many photos per piece. */
 export const MAX_PHOTOS = 8;
 
+/** Up to this many bill or challan files per receipt. */
+export const MAX_ATTACHMENTS = 10;
+
+/** Keeps the ids that are uploaded images or PDFs (bills, challans), in the order given. Throws when any id is not one. */
+export async function documentIds(strapi: any, raw: unknown): Promise<number[]> {
+  if (!Array.isArray(raw)) return [];
+  const ids = [...new Set(raw.map(idOf).filter((id): id is number => id !== null))];
+  if (ids.length > MAX_ATTACHMENTS) throw new errors.ValidationError(`Attach at most ${MAX_ATTACHMENTS} files to a receipt.`);
+  if (!ids.length) return [];
+  const files = await strapi.db.query("plugin::upload.file").findMany({ where: { id: { $in: ids } }, select: ["id", "mime"] });
+  const allowed = new Set(
+    files.filter((file: any) => String(file.mime ?? "").startsWith("image/") || String(file.mime ?? "") === "application/pdf").map((file: any) => file.id),
+  );
+  if (ids.some((id) => !allowed.has(id))) throw new errors.ValidationError("Attach bills as photos or PDF files. One of the files is missing or of another kind.");
+  return ids;
+}
+
 /** Keeps the ids that are uploaded images, in the order given. Throws when any id is not one. */
 export async function imageIds(strapi: any, raw: unknown): Promise<number[]> {
   if (!Array.isArray(raw)) return [];

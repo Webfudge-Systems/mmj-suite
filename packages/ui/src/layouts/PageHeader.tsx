@@ -29,7 +29,8 @@ export function PageHeader({ title, description, actions, breadcrumb, showBack, 
   return (
     <Card variant="glass" className={cn("relative z-20 p-5 sm:p-6 print:hidden", className)}>
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
-        <div className="min-w-0 flex-1">
+        {/* basis-80: when the actions do not fit beside the title, they wrap below it instead of squeezing it. */}
+        <div className="min-w-0 flex-1 basis-80">
           {back && (
             <button
               type="button"

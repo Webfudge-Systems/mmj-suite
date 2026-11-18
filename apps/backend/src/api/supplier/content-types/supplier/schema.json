@@ -35,6 +35,15 @@
     "city": {
       "type": "string"
     },
+    "contactPerson": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "address": {
+      "type": "text"
+    },
     "notes": {
       "type": "text"
     },

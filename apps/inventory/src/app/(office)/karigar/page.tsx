@@ -3,11 +3,11 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Hammer, Plus } from "lucide-react";
-import { PURITIES } from "@webfudge/config";
+import { Hammer, Plus, Printer } from "lucide-react";
 import { Alert, Badge, Button, Card, CardBody, CardHeader, EmptyState, Field, Input, PageHeader, Select, Spinner, Table, Tabs, Td, Textarea, Th, Tr } from "@webfudge/ui";
 import type { JobWork, Supplier } from "@webfudge/utils/api";
 import { formatDate } from "@webfudge/utils/formatters";
+import { IssueLines, toDrafts, useIssueRows } from "@/components/issue-lines";
 import { errorMessage, useApi, useResource } from "@/lib/api";
 import { useBranch } from "@/lib/branch";
 
@@ -17,16 +17,17 @@ function grams(value: number) {
   return `${value.toFixed(3)} g`;
 }
 
-function NewJob({ onSaved, onCancel }: { onSaved: (job: JobWork) => void; onCancel: () => void }) {
+function NewJob({ onSaved, onCancel }: { onSaved: (job: JobWork, print: boolean) => void; onCancel: () => void }) {
   const api = useApi();
   const { branch } = useBranch();
   const karigars = useResource<{ data: Supplier[] }>("/stock/suppliers?kind=karigar");
-  const [form, setForm] = useState({ karigarId: "", description: "", dueOn: "", wastagePercent: "2", purity: "24KT", grossWeight: "", note: "" });
+  const [form, setForm] = useState({ karigarId: "", description: "", dueOn: "", wastagePercent: "2" });
+  const lines = useIssueRows(["metal"]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const set = (key: keyof typeof form) => (value: string) => setForm((current) => ({ ...current, [key]: value }));
 
-  async function submit(event: FormEvent) {
+  async function submit(event: Pick<FormEvent, "preventDefault">, print = false) {
     event.preventDefault();
     setBusy(true);
     setError(null);
@@ -37,9 +38,9 @@ function NewJob({ onSaved, onCancel }: { onSaved: (job: JobWork) => void; onCanc
         description: form.description,
         dueOn: form.dueOn || null,
         wastagePercent: Number(form.wastagePercent || 0),
-        ...(form.grossWeight ? { issue: { purity: form.purity, grossWeight: Number(form.grossWeight), note: form.note } } : {}),
+        issues: toDrafts(lines.rows),
       });
-      onSaved(data);
+      onSaved(data, print);
     } catch (cause) {
       setError(errorMessage(cause));
       setBusy(false);
@@ -70,26 +71,22 @@ function NewJob({ onSaved, onCancel }: { onSaved: (job: JobWork) => void; onCanc
           <Field label="What to make" htmlFor="job-description" className="sm:col-span-2 lg:col-span-4">
             <Textarea id="job-description" value={form.description} onChange={(event) => set("description")(event.target.value)} placeholder="Like: 4 pairs of jhumkas, about 6 g each, design ER-0012" />
           </Field>
-          <Field label="Metal given: purity" htmlFor="job-purity">
-            <Select id="job-purity" value={form.purity} onChange={(event) => set("purity")(event.target.value)}>
-              {PURITIES.map((purity) => (
-                <option key={purity.code} value={purity.code}>
-                  {purity.label}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Weight given (g)" htmlFor="job-weight" hint="Leave empty to record the metal later.">
-            <Input id="job-weight" inputMode="decimal" value={form.grossWeight} onChange={(event) => set("grossWeight")(event.target.value)} placeholder="40.000" />
-          </Field>
-          <Field label="Note" htmlFor="job-note" className="sm:col-span-2">
-            <Input id="job-note" value={form.note} onChange={(event) => set("note")(event.target.value)} placeholder="Bar number, old gold lot" />
-          </Field>
+          <div className="grid gap-2 sm:col-span-2 lg:col-span-4">
+            <p className="text-[13px] font-semibold text-ink">
+              Given now <span className="font-normal text-ash">· add a line for each lot of metal or stones. Leave weights empty to record them later.</span>
+            </p>
+            <IssueLines rows={lines.rows} onChange={lines.setRows} idPrefix="job" />
+          </div>
           {error && <Alert tone="risk" className="sm:col-span-2 lg:col-span-4">{error}</Alert>}
-          <div className="flex gap-2 sm:col-span-2 lg:col-span-4">
+          <div className="flex flex-wrap items-center gap-2 sm:col-span-2 lg:col-span-4">
             <Button type="submit" loading={busy} disabled={!form.karigarId}>
               Open job
             </Button>
+            <Button type="button" variant="secondary" loading={busy} disabled={!form.karigarId} onClick={(event) => submit(event, true)}>
+              <Printer className="size-4" aria-hidden />
+              Open job and print note
+            </Button>
+            {!form.karigarId && <span className="text-[12.5px] text-ash">Choose the karigar first.</span>}
             <Button variant="ghost" onClick={onCancel}>
               Cancel
             </Button>
@@ -120,7 +117,7 @@ export default function KarigarPage() {
         }
       />
 
-      {adding && <NewJob onSaved={(job) => router.push(`/karigar/${job.id}`)} onCancel={() => setAdding(false)} />}
+      {adding && <NewJob onSaved={(job, print) => router.push(`/karigar/${job.id}${print ? "?print=1" : ""}`)} onCancel={() => setAdding(false)} />}
 
       <Tabs<View>
         label="Job status"
@@ -168,7 +165,10 @@ export default function KarigarPage() {
                   <Td className="max-w-64">
                     <span className="line-clamp-2 text-[13px]">{job.description || "—"}</span>
                   </Td>
-                  <Td align="right">{grams(job.totals?.issuedFine ?? 0)}</Td>
+                  <Td align="right">
+                    {grams(job.totals?.issuedFine ?? 0)}
+                    {job.totals?.metal && job.totals.metal !== "gold" ? <span className="text-[12px] text-ash"> {job.totals.metal}</span> : null}
+                  </Td>
                   <Td align="right">{job.totals?.receivedPieces ?? 0}</Td>
                   <Td align="right" className={(job.totals?.balanceFine ?? 0) < 0 ? "text-risk" : undefined}>
                     {grams(job.totals?.balanceFine ?? 0)}

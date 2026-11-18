@@ -14,7 +14,29 @@ const POPULATE = {
   by: { select: ["id", "fullName", "username"] },
 };
 
-type Issue = { at: string; by: string | null; purity: string; grossWeight: number; fineWeight: number; note: string | null };
+/** One handover to the karigar: metal (counted in fine weight) or stones (counted by pieces and weight). Older entries have no kind and are metal. */
+type Issue = {
+  at: string;
+  by: string | null;
+  kind?: "metal" | "stone";
+  purity?: string;
+  grossWeight?: number;
+  fineWeight?: number;
+  name?: string;
+  pieces?: number;
+  weight?: number;
+  unit?: "ct" | "g";
+  note: string | null;
+};
+
+const METAL_OF: Record<string, "gold" | "silver" | "platinum"> = { "24KT": "gold", "22KT": "gold", "18KT": "gold", "14KT": "gold", "950PT": "platinum", "999": "silver", "925": "silver" };
+const isMetal = (issue: Issue) => issue.kind !== "stone";
+const metalOf = (purity: string | undefined) => METAL_OF[String(purity)] ?? "gold";
+
+function describe(issue: Issue) {
+  if (isMetal(issue)) return `${issue.grossWeight} g ${issue.purity} (${issue.fineWeight} g fine)`;
+  return `${issue.pieces ? `${issue.pieces} pcs ` : ""}${issue.name}${issue.weight ? `, ${issue.weight} ${issue.unit}` : ""}`;
+}
 
 /**
  * The fine-metal account with the karigar: metal given, metal that came back in
@@ -26,22 +48,63 @@ async function account(strapi: any, job: any) {
   const items = receipts.length
     ? await strapi.db.query(ITEM).findMany({
         where: { receipt: { id: { $in: receipts.map((receipt: any) => receipt.id) } } },
-        select: ["id", "tagNumber", "purity", "grossWeight", "netWeight", "status"],
+        select: ["id", "tagNumber", "purity", "grossWeight", "netWeight", "stoneWeight", "status"],
         populate: { design: { select: ["id", "code", "name"] }, receipt: { select: ["id", "number"] } },
       })
     : [];
-  const issuedFine = round3(issues.reduce((sum, issue) => sum + Number(issue.fineWeight), 0));
-  const receivedFine = round3(items.reduce((sum: number, item: any) => sum + fineWeight(item.purity, Number(item.netWeight)), 0));
-  const wastageAllowed = round3((receivedFine * Number(job.wastagePercent ?? 0)) / 100);
+  const wastage = Number(job.wastagePercent ?? 0);
+
+  // Each metal keeps its own fine balance: gold and silver are never added together.
+  const metals = new Map<string, { metal: string; issuedGross: number; issuedFine: number; receivedPieces: number; receivedNet: number; receivedFine: number }>();
+  const slot = (metal: string) => {
+    if (!metals.has(metal)) metals.set(metal, { metal, issuedGross: 0, issuedFine: 0, receivedPieces: 0, receivedNet: 0, receivedFine: 0 });
+    return metals.get(metal)!;
+  };
+  for (const issue of issues.filter(isMetal)) {
+    const entry = slot(metalOf(issue.purity));
+    entry.issuedGross += Number(issue.grossWeight ?? 0);
+    entry.issuedFine += Number(issue.fineWeight ?? 0);
+  }
+  for (const item of items) {
+    const entry = slot(metalOf(item.purity));
+    entry.receivedPieces += 1;
+    entry.receivedNet += Number(item.netWeight);
+    entry.receivedFine += fineWeight(item.purity, Number(item.netWeight));
+  }
+  const order = ["gold", "silver", "platinum"];
+  const byMetal = [...metals.values()]
+    .map((entry) => {
+      const receivedFine = round3(entry.receivedFine);
+      const wastageAllowed = round3((receivedFine * wastage) / 100);
+      const issuedFine = round3(entry.issuedFine);
+      return { metal: entry.metal, issuedGross: round3(entry.issuedGross), issuedFine, receivedPieces: entry.receivedPieces, receivedNet: round3(entry.receivedNet), receivedFine, wastageAllowed, balanceFine: round3(issuedFine - receivedFine - wastageAllowed) };
+    })
+    .sort((x, y) => order.indexOf(x.metal) - order.indexOf(y.metal));
+  // The headline figures are the job's main metal: gold whenever gold is involved.
+  const main = byMetal[0] ?? { metal: "gold", issuedGross: 0, issuedFine: 0, receivedPieces: 0, receivedNet: 0, receivedFine: 0, wastageAllowed: 0, balanceFine: 0 };
+
+  const stones = new Map<string, { name: string; unit: string; pieces: number; weight: number }>();
+  for (const issue of issues.filter((entry) => !isMetal(entry))) {
+    const key = `${String(issue.name).toLowerCase()}|${issue.unit}`;
+    const entry = stones.get(key) ?? { name: String(issue.name), unit: String(issue.unit ?? "ct"), pieces: 0, weight: 0 };
+    entry.pieces += Number(issue.pieces ?? 0);
+    entry.weight = round3(entry.weight + Number(issue.weight ?? 0));
+    stones.set(key, entry);
+  }
+
   return {
-    issuedGross: round3(issues.reduce((sum, issue) => sum + Number(issue.grossWeight), 0)),
-    issuedFine,
+    metal: main.metal,
+    issuedGross: main.issuedGross,
+    issuedFine: main.issuedFine,
     receivedPieces: items.length,
     receivedNet: round3(items.reduce((sum: number, item: any) => sum + Number(item.netWeight), 0)),
-    receivedFine,
-    wastageAllowed,
-    /** Fine metal still with the karigar. Negative means the shop owes the karigar metal. */
-    balanceFine: round3(issuedFine - receivedFine - wastageAllowed),
+    receivedFine: main.receivedFine,
+    wastageAllowed: main.wastageAllowed,
+    /** Fine metal of the main metal still with the karigar. Negative means the shop owes the karigar metal. */
+    balanceFine: main.balanceFine,
+    byMetal,
+    stonesGiven: [...stones.values()],
+    stoneWeightBack: round3(items.reduce((sum: number, item: any) => sum + Number(item.stoneWeight ?? 0), 0)),
     receipts: receipts.map((receipt: any) => ({ id: receipt.id, number: receipt.number, createdAt: receipt.createdAt })),
     pieces: items.map((item: any) => ({
       id: item.id,
@@ -83,10 +146,27 @@ async function load(strapi: any, staff: any, id: unknown) {
 }
 
 function parseIssue(body: any, staff: any): Issue {
+  const base = { at: new Date().toISOString(), by: staff.fullName || staff.username, note: text(body?.note, 300) };
+  if (body?.kind === "stone") {
+    const name = text(body?.name, 80);
+    if (!name) throw new errors.ValidationError("Name the stones given, like Ruby or CZ.");
+    const pieces = Math.round(Number(body?.pieces || 0));
+    const weight = round3(Number(body?.weight || 0));
+    if (pieces < 0 || weight < 0) throw new errors.ValidationError("Stone counts and weights cannot be negative.");
+    if (!(pieces > 0) && !(weight > 0)) throw new errors.ValidationError(`Enter how many ${name} were given, or their weight.`);
+    return { ...base, kind: "stone", name, pieces: pieces > 0 ? pieces : 0, weight: weight > 0 ? weight : 0, unit: body?.unit === "g" ? "g" : "ct" };
+  }
   const purity = String(body?.purity ?? "").toUpperCase();
   const grossWeight = round3(Number(body?.grossWeight));
   if (!(grossWeight > 0)) throw new errors.ValidationError("Enter the weight of metal given.");
-  return { at: new Date().toISOString(), by: staff.fullName || staff.username, purity, grossWeight, fineWeight: fineWeight(purity, grossWeight), note: text(body?.note, 300) };
+  return { ...base, kind: "metal", purity, grossWeight, fineWeight: fineWeight(purity, grossWeight) };
+}
+
+/** Several lines at once as `issues: [...]`, or a single line as `issue`. */
+function parseIssues(body: any, staff: any): Issue[] {
+  const raw = Array.isArray(body?.issues) ? body.issues : body?.issue ? [body.issue] : [];
+  if (raw.length > 30) throw new errors.ValidationError("Record at most 30 lines at a time.");
+  return raw.map((line: any) => parseIssue(line, staff));
 }
 
 export default ({ strapi }: { strapi: any }) => ({
@@ -99,7 +179,7 @@ export default ({ strapi }: { strapi: any }) => ({
     const data = [];
     for (const job of jobs) {
       const totals = await account(strapi, job);
-      data.push({ ...serialize(job), totals: { issuedFine: totals.issuedFine, receivedFine: totals.receivedFine, receivedPieces: totals.receivedPieces, balanceFine: totals.balanceFine } });
+      data.push({ ...serialize(job), totals: { metal: totals.metal, issuedFine: totals.issuedFine, receivedFine: totals.receivedFine, receivedPieces: totals.receivedPieces, balanceFine: totals.balanceFine } });
     }
     ctx.body = { data };
   },
@@ -120,7 +200,7 @@ export default ({ strapi }: { strapi: any }) => ({
     if (!karigar) throw new errors.ValidationError("Choose the karigar.");
     const wastagePercent = Number(body.wastagePercent ?? 0);
     if (!(wastagePercent >= 0 && wastagePercent <= 20)) throw new errors.ValidationError("Wastage is a percentage between 0 and 20.");
-    const issues = body.issue ? [parseIssue(body.issue, staff)] : [];
+    const issues = parseIssues(body, staff);
     const created = await strapi.documents(JOB_WORK).create({
       data: {
         number: await nextNumber(strapi, staff, "job-work", "JW"),
@@ -129,7 +209,7 @@ export default ({ strapi }: { strapi: any }) => ({
         dueOn: isoDate(body.dueOn),
         wastagePercent,
         issues,
-        log: [logEntry(staff, issues.length ? `Job opened; ${issues[0].grossWeight} g ${issues[0].purity} given` : "Job opened")],
+        log: [logEntry(staff, issues.length ? `Job opened; given ${issues.map(describe).join(", ")}` : "Job opened")],
         karigar: karigar.documentId,
         by: staff.documentId,
         branch: branch.documentId,
@@ -140,18 +220,21 @@ export default ({ strapi }: { strapi: any }) => ({
     ctx.body = { data: serialize(await load(strapi, staff, created.id)) };
   },
 
-  /** Records more metal handed to the karigar. */
+  /** Records more metal or stones handed to the karigar, one or several lines at once. */
   async issue(ctx: any) {
     const staff = staffOf(ctx);
     requireRole(staff, STOCK_ROLES, "give metal to karigars");
     const job = await load(strapi, staff, ctx.params.id);
     if (job.status !== "open") throw new errors.ValidationError(`${job.number} is closed.`);
-    const issue = parseIssue(ctx.request.body, staff);
+    const body = ctx.request.body ?? {};
+    const added = Array.isArray(body.issues) || body.issue ? parseIssues(body, staff) : [parseIssue(body, staff)];
+    if (!added.length) throw new errors.ValidationError("Add at least one line of metal or stones.");
+    const notes = added.map((issue) => `${describe(issue)}${issue.note ? `: ${issue.note}` : ""}`);
     await strapi.db.query(JOB_WORK).update({
       where: { id: job.id },
       data: {
-        issues: [...(Array.isArray(job.issues) ? job.issues : []), issue],
-        log: [...(Array.isArray(job.log) ? job.log : []), logEntry(staff, `${issue.grossWeight} g ${issue.purity} given (${issue.fineWeight} g fine)${issue.note ? `: ${issue.note}` : ""}`)],
+        issues: [...(Array.isArray(job.issues) ? job.issues : []), ...added],
+        log: [...(Array.isArray(job.log) ? job.log : []), logEntry(staff, `Given ${notes.join("; ")}`)],
       },
     });
     const updated = await load(strapi, staff, job.id);
@@ -195,7 +278,11 @@ export default ({ strapi }: { strapi: any }) => ({
     if (labourCharge !== null && !(labourCharge >= 0)) throw new errors.ValidationError("Labour charge cannot be negative.");
     const totals = await account(strapi, job);
     const settlement = text(body.note, 500);
-    const balance = totals.balanceFine === 0 ? "nothing outstanding" : totals.balanceFine > 0 ? `${totals.balanceFine} g fine still with the karigar` : `${-totals.balanceFine} g fine owed to the karigar`;
+    const balance = totals.byMetal.length
+      ? totals.byMetal
+          .map((entry) => (entry.balanceFine === 0 ? `${entry.metal} square` : entry.balanceFine > 0 ? `${entry.balanceFine} g fine ${entry.metal} still with the karigar` : `${-entry.balanceFine} g fine ${entry.metal} owed to the karigar`))
+          .join(", ")
+      : "nothing outstanding";
     await strapi.db.query(JOB_WORK).update({
       where: { id: job.id },
       data: {

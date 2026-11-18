@@ -1979,6 +1979,7 @@ export interface ApiStockReceiptStockReceipt extends Struct.CollectionTypeSchema
     draftAndPublish: false;
   };
   attributes: {
+    attachments: Schema.Attribute.Media<"images" | "files", true>;
     billDate: Schema.Attribute.Date;
     billNumber: Schema.Attribute.String;
     branch: Schema.Attribute.Relation<"manyToOne", "api::branch.branch">;
@@ -2083,9 +2084,12 @@ export interface ApiSupplierSupplier extends Struct.CollectionTypeSchema {
     draftAndPublish: false;
   };
   attributes: {
+    address: Schema.Attribute.Text;
     city: Schema.Attribute.String;
+    contactPerson: Schema.Attribute.String;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
+    email: Schema.Attribute.String;
     gstin: Schema.Attribute.String &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 15;

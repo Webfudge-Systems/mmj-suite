@@ -266,7 +266,8 @@ export function AppShell({ appName, nav, system = [], activeHref, LinkComponent 
         <div className={cn(!hidden && "lg:hidden")}>{topBar}</div>
         <div className="flex min-h-0 flex-1 overflow-hidden print:block print:overflow-visible">
           {!hidden && <aside className="z-20 hidden shrink-0 lg:block print:hidden">{sidebar(false)}</aside>}
-          <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-white print:overflow-visible">
+          {/* relative: hidden (sr-only) inputs inside pages anchor here, so they scroll with the page instead of stretching the window. */}
+          <main className="relative min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-white print:overflow-visible">
             <div className="p-4 md:p-6 print:p-0">{children}</div>
           </main>
         </div>

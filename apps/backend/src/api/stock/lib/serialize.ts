@@ -88,6 +88,18 @@ export const DESIGN_POPULATE = {
   images: true,
 };
 
+/** A bill, challan or other file attached to a record: an image or a PDF. */
+export function serializeFile(file: any) {
+  return {
+    id: file.id,
+    name: file.name ?? "file",
+    url: file.url,
+    mime: file.mime ?? null,
+    size: file.size === undefined || file.size === null ? null : Number(file.size),
+    thumbnailUrl: String(file.mime ?? "").startsWith("image/") ? (file.formats?.thumbnail?.url ?? file.url) : null,
+  };
+}
+
 export function serializeSupplier(supplier: any) {
   return {
     id: supplier.id,
@@ -96,6 +108,9 @@ export function serializeSupplier(supplier: any) {
     phone: supplier.phone ?? null,
     gstin: supplier.gstin ?? null,
     city: supplier.city ?? null,
+    contactPerson: supplier.contactPerson ?? null,
+    email: supplier.email ?? null,
+    address: supplier.address ?? null,
     notes: supplier.notes ?? null,
     isActive: supplier.isActive !== false,
   };

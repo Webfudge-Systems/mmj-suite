@@ -18,6 +18,7 @@ export const stockRoutes = [
   route("GET", "/stock/suppliers", "catalogue.listSuppliers"),
   route("POST", "/stock/suppliers", "catalogue.saveSupplier"),
   route("PUT", "/stock/suppliers/:id", "catalogue.saveSupplier"),
+  route("GET", "/stock/suppliers/:id", "catalogue.getSupplier"),
 
   route("GET", "/stock/locations", "locations.list"),
   route("GET", "/stock/locations/lookup", "locations.lookup"),
@@ -36,6 +37,7 @@ export const stockRoutes = [
   route("GET", "/stock/receipts", "receipts.list"),
   route("POST", "/stock/receipts", "receipts.create"),
   route("GET", "/stock/receipts/:id", "receipts.get"),
+  route("PUT", "/stock/receipts/:id/attachments", "receipts.attachments"),
   route("POST", "/stock/import", "receipts.importRows"),
 
   route("GET", "/stock/transfers", "transfers.list"),

@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@webfudge/auth/components";
 import { PURITIES } from "@webfudge/config";
 import { Alert, Badge, Button, Card, CardBody, CardHeader, Field, Input, PageHeader, Select, Textarea } from "@webfudge/ui";
-import type { Design, ImageRef, MakingCharge, Supplier } from "@webfudge/utils/api";
+import type { Design, FileRef, ImageRef, MakingCharge, Supplier } from "@webfudge/utils/api";
 import { formatWeight } from "@webfudge/utils/formatters";
+import { Attachments } from "@/components/attachments";
 import { PhotoStrip } from "@/components/photos";
 import { DesignPicker, LocationSelect, MakingInput, useLocations } from "@/components/pickers";
 import { errorMessage, useApi, useResource } from "@/lib/api";
@@ -51,7 +52,7 @@ function net(line: Line): number | null {
   return Math.round((gross - stone) * 1000) / 1000;
 }
 
-export default function ReceivePage({ searchParams }: { searchParams: Promise<{ jobWork?: string; karigar?: string; job?: string }> }) {
+export default function ReceivePage({ searchParams }: { searchParams: Promise<{ jobWork?: string; karigar?: string; job?: string; supplier?: string; source?: string }> }) {
   const params = use(searchParams);
   // Opened from a karigar job: the pieces count against that job.
   const jobWorkId = Number(params.jobWork) || null;
@@ -63,12 +64,14 @@ export default function ReceivePage({ searchParams }: { searchParams: Promise<{ 
   const { locations } = useLocations(branch?.id);
   const scale = useScale();
 
-  const [source, setSource] = useState<"purchase" | "karigar">(jobWorkId ? "karigar" : "purchase");
+  // Opened from a supplier's page: that supplier is already chosen.
+  const [source, setSource] = useState<"purchase" | "karigar">(jobWorkId || params.source === "karigar" ? "karigar" : "purchase");
   const suppliers = useResource<{ data: Supplier[] }>(`/stock/suppliers?kind=${source === "karigar" ? "karigar" : "supplier"}`);
-  const [supplierId, setSupplierId] = useState(params.karigar ?? "");
+  const [supplierId, setSupplierId] = useState(params.karigar ?? params.supplier ?? "");
   const [billNumber, setBillNumber] = useState("");
   const [billDate, setBillDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState("");
+  const [attachments, setAttachments] = useState<FileRef[]>([]);
   const [lines, setLines] = useState<Line[]>(() => [blankLine(null)]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -97,6 +100,7 @@ export default function ReceivePage({ searchParams }: { searchParams: Promise<{ 
         billNumber,
         billDate,
         notes,
+        attachmentIds: attachments.map((file) => file.id),
         lines: lines.map((line) => ({
           designId: line.design?.id,
           purity: line.purity,
@@ -165,6 +169,12 @@ export default function ReceivePage({ searchParams }: { searchParams: Promise<{ 
           <Field label="Notes" htmlFor="receive-notes" className="sm:col-span-2 lg:col-span-4">
             <Textarea id="receive-notes" value={notes} onChange={(event) => setNotes(event.target.value)} className="min-h-12" />
           </Field>
+          <div className="grid gap-1.5 sm:col-span-2 lg:col-span-4">
+            <p className="text-[13px] font-semibold text-ink">
+              {source === "karigar" ? "Karigar's challan" : "Supplier's bill or challan"} <span className="font-normal text-ash">· optional, photo or PDF. Kept with the receipt and on the supplier&apos;s page.</span>
+            </p>
+            <Attachments id="receive-bill-files" files={attachments} onChange={setAttachments} />
+          </div>
         </CardBody>
       </Card>
 

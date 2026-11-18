@@ -47,8 +47,48 @@ export type Supplier = {
   phone: string | null;
   gstin: string | null;
   city: string | null;
+  contactPerson?: string | null;
+  email?: string | null;
+  address?: string | null;
   notes: string | null;
   isActive: boolean;
+};
+
+/** A bill, challan or other uploaded file: an image or a PDF. */
+export type FileRef = { id: number; name: string; url: string; mime: string | null; size: number | null; thumbnailUrl: string | null };
+
+/** A receipt as listed on a supplier's page. */
+export type SupplierReceipt = {
+  id: number;
+  number: string;
+  source: "purchase" | "karigar" | "opening_stock";
+  billNumber: string | null;
+  billDate: string | null;
+  createdAt: string;
+  branch: BranchRef | null;
+  receivedBy: string | null;
+  jobWork: { id: number; number: string } | null;
+  attachments: FileRef[];
+  pieces: number;
+  netWeight: number;
+  /** Only for roles that may see cost prices. */
+  cost?: number;
+};
+
+export type SupplierDetail = Supplier & {
+  stats: {
+    receipts: number;
+    pieces: number;
+    netReceived: number;
+    inStock: number;
+    netInStock: number;
+    sold: number;
+    costTotal?: number;
+    lastReceivedAt: string | null;
+    /** Supplier bills with no bill or challan file attached. */
+    billsMissing: number;
+  };
+  receipts: SupplierReceipt[];
 };
 
 export type LocationRef = { id: number; code: string; fullCode: string; name: string | null; kind: LocationKind };
@@ -116,6 +156,7 @@ export type Receipt = {
   billNumber: string | null;
   billDate: string | null;
   notes: string | null;
+  attachments?: FileRef[];
   createdAt: string;
   branch: BranchRef | null;
   supplier: { id: number; name: string; kind: string } | null;

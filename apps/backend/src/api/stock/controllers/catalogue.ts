@@ -6,6 +6,8 @@ import {
   CATEGORY,
   COLLECTION,
   DESIGN,
+  ITEM,
+  RECEIPT,
   SUPPLIER,
   idOf,
   notFound,
@@ -15,7 +17,12 @@ import {
   staffOf,
   text,
 } from "../lib/common";
-import { DESIGN_POPULATE, serializeDesign, serializeSupplier } from "../lib/serialize";
+import { canSeeCost } from "../../../utils/staff";
+import { DESIGN_POPULATE, serializeDesign, serializeFile, serializeSupplier } from "../lib/serialize";
+
+const round3 = (value: number) => Math.round(value * 1000) / 1000;
+const SOLD = new Set(["sold"]);
+const GONE = new Set(["sold", "melted"]);
 
 const METALS: Metal[] = ["gold", "silver", "platinum"];
 const OCCASIONS = ["bridal", "festive", "daily", "gifting", "mens"];
@@ -210,6 +217,81 @@ export default ({ strapi }: { strapi: any }) => {
     ctx.body = { data: rows.map(serializeSupplier) };
   },
 
+  /** One supplier or karigar: details, everything received from them, and how those pieces are doing. */
+  async getSupplier(ctx: any) {
+    const staff = staffOf(ctx);
+    const supplier = await strapi.db.query(SUPPLIER).findOne({ where: { id: idOf(ctx.params.id), ...orgWhere(staff) } });
+    if (!supplier) notFound("Supplier");
+    const cost = canSeeCost(staff);
+
+    const receipts = await strapi.db.query(RECEIPT).findMany({
+      where: { ...orgWhere(staff), supplier: { id: supplier.id } },
+      orderBy: { createdAt: "desc" },
+      limit: 200,
+      populate: {
+        branch: { select: ["id", "code", "name"] },
+        receivedBy: { select: ["id", "fullName", "username"] },
+        attachments: { select: ["id", "name", "url", "mime", "size", "formats"] },
+        jobWork: { select: ["id", "number"] },
+      },
+    });
+    const items = receipts.length
+      ? await strapi.db.query(ITEM).findMany({
+          where: { ...orgWhere(staff), receipt: { id: { $in: receipts.map((receipt: any) => receipt.id) } } },
+          select: ["id", "status", "netWeight", "grossWeight", "costPrice"],
+          populate: { receipt: { select: ["id"] } },
+          limit: 50000,
+        })
+      : [];
+
+    const perReceipt = new Map<number, { pieces: number; net: number; cost: number }>();
+    for (const item of items) {
+      const key = item.receipt?.id;
+      if (!key) continue;
+      const entry = perReceipt.get(key) ?? { pieces: 0, net: 0, cost: 0 };
+      entry.pieces += 1;
+      entry.net += Number(item.netWeight ?? 0);
+      entry.cost += Number(item.costPrice ?? 0);
+      perReceipt.set(key, entry);
+    }
+
+    const inStock = items.filter((item: any) => !GONE.has(item.status));
+    ctx.body = {
+      data: {
+        ...serializeSupplier(supplier),
+        stats: {
+          receipts: receipts.length,
+          pieces: items.length,
+          netReceived: round3(items.reduce((sum: number, item: any) => sum + Number(item.netWeight ?? 0), 0)),
+          inStock: inStock.length,
+          netInStock: round3(inStock.reduce((sum: number, item: any) => sum + Number(item.netWeight ?? 0), 0)),
+          sold: items.filter((item: any) => SOLD.has(item.status)).length,
+          ...(cost ? { costTotal: Math.round(items.reduce((sum: number, item: any) => sum + Number(item.costPrice ?? 0), 0) * 100) / 100 } : {}),
+          lastReceivedAt: receipts[0]?.createdAt ?? null,
+          billsMissing: receipts.filter((receipt: any) => receipt.source === "purchase" && !(receipt.attachments ?? []).length).length,
+        },
+        receipts: receipts.map((receipt: any) => {
+          const totals = perReceipt.get(receipt.id) ?? { pieces: 0, net: 0, cost: 0 };
+          return {
+            id: receipt.id,
+            number: receipt.number,
+            source: receipt.source,
+            billNumber: receipt.billNumber ?? null,
+            billDate: receipt.billDate ?? null,
+            createdAt: receipt.createdAt,
+            branch: receipt.branch ? { id: receipt.branch.id, code: receipt.branch.code, name: receipt.branch.name } : null,
+            receivedBy: receipt.receivedBy ? receipt.receivedBy.fullName || receipt.receivedBy.username : null,
+            jobWork: receipt.jobWork ? { id: receipt.jobWork.id, number: receipt.jobWork.number } : null,
+            attachments: (receipt.attachments ?? []).map(serializeFile),
+            pieces: totals.pieces,
+            netWeight: round3(totals.net),
+            ...(cost ? { cost: Math.round(totals.cost * 100) / 100 } : {}),
+          };
+        }),
+      },
+    };
+  },
+
   async saveSupplier(ctx: any) {
     const staff = staffOf(ctx);
     requireRole(staff, CATALOGUE_EDITOR_ROLES, "edit suppliers");
@@ -229,6 +311,16 @@ export default ({ strapi }: { strapi: any }) => {
       notes: text(body.notes, 1000),
       isActive: body.isActive !== false,
     };
+    // Optional contact details: only touched when the form sends them, so older forms keep them.
+    const email = body.email === undefined ? undefined : text(body.email, 120);
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new errors.ValidationError("That email address does not look right.");
+    Object.assign(
+      data,
+      body.contactPerson === undefined ? {} : { contactPerson: text(body.contactPerson, 120) },
+      email === undefined ? {} : { email },
+      body.address === undefined ? {} : { address: text(body.address, 500) },
+    );
+    if (body.notes === undefined) delete (data as any).notes;
 
     const id = idOf(ctx.params.id);
     let saved;

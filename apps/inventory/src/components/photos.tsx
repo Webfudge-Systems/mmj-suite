@@ -19,7 +19,7 @@ const MAX_SIDE = 1600;
  * the shop's 4G backup. Falls back to the original file when the browser
  * cannot read it (for example some HEIC photos).
  */
-async function shrink(file: File): Promise<File> {
+export async function shrink(file: File): Promise<File> {
   if (!file.type.startsWith("image/") || file.type === "image/gif") return file;
   try {
     const bitmap = await createImageBitmap(file);

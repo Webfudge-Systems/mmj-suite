@@ -35,6 +35,15 @@
     "notes": {
       "type": "text"
     },
+    "attachments": {
+      "type": "media",
+      "multiple": true,
+      "required": false,
+      "allowedTypes": [
+        "images",
+        "files"
+      ]
+    },
     "supplier": {
       "type": "relation",
       "relation": "manyToOne",

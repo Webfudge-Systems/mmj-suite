@@ -5,7 +5,42 @@ export type LogEntry = { at: string; by: string | null; text: string };
 
 /* Karigar job work */
 
-export type MetalIssue = { at: string; by: string | null; purity: string; grossWeight: number; fineWeight: number; note: string | null };
+/**
+ * One handover to a karigar. Metal lines carry purity and weights; stone lines
+ * carry a name, a count and a weight in carats or grams. Older lines have no kind
+ * and are metal.
+ */
+export type MetalIssue = {
+  at: string;
+  by: string | null;
+  kind?: "metal" | "stone";
+  purity?: string;
+  grossWeight?: number;
+  fineWeight?: number;
+  name?: string;
+  pieces?: number;
+  weight?: number;
+  unit?: "ct" | "g";
+  note: string | null;
+};
+
+/** A line being typed into a "give to karigar" form, before it is saved. */
+export type IssueDraft =
+  | { kind: "metal"; purity: string; grossWeight: number; note?: string }
+  | { kind: "stone"; name: string; pieces: number; weight: number; unit: "ct" | "g"; note?: string };
+
+export type KarigarMetal = "gold" | "silver" | "platinum";
+
+export type MetalAccount = {
+  metal: KarigarMetal;
+  issuedGross: number;
+  issuedFine: number;
+  receivedPieces: number;
+  receivedNet: number;
+  receivedFine: number;
+  wastageAllowed: number;
+  balanceFine: number;
+};
 
 export type JobWork = {
   id: number;
@@ -22,10 +57,12 @@ export type JobWork = {
   branch: { id: number; name: string; code: string } | null;
   by: string | null;
   createdAt: string;
-  totals?: { issuedFine: number; receivedFine: number; receivedPieces: number; balanceFine: number };
+  totals?: { metal?: KarigarMetal; issuedFine: number; receivedFine: number; receivedPieces: number; balanceFine: number };
 };
 
 export type JobWorkAccount = {
+  /** The metal the headline figures are in: gold whenever gold is involved. */
+  metal: KarigarMetal;
   issuedGross: number;
   issuedFine: number;
   receivedPieces: number;
@@ -34,6 +71,11 @@ export type JobWorkAccount = {
   wastageAllowed: number;
   /** Fine metal still with the karigar; negative when the shop owes the karigar. */
   balanceFine: number;
+  /** One fine account per metal handled in the job. */
+  byMetal: MetalAccount[];
+  stonesGiven: { name: string; unit: string; pieces: number; weight: number }[];
+  /** Stone weight set in the pieces that came back, in grams. */
+  stoneWeightBack: number;
   receipts: { id: number; number: string; createdAt: string }[];
   pieces: { id: number; tagNumber: string; purity: string; grossWeight: number; netWeight: number; fineWeight: number; status: string; design: { id: number; code: string; name: string } | null; receipt: string | null }[];
 };

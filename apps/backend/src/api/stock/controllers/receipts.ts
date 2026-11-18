@@ -3,14 +3,14 @@ import { STOCK_EDITOR_ROLES } from "../../../utils/constants";
 import { reserveSequence } from "../../../utils/sequence";
 import { formatDesignCode, metalForPurity, normaliseCode, StockRuleError } from "../../../utils/stock";
 import { canSeeCost, requireBranch, type Staff } from "../../../utils/staff";
-import { CATEGORY, DESIGN, ITEM, LOCATION, RECEIPT, SUPPLIER, idOf, imageIds, notFound, orgWhere, paging, requireRole, staffOf, text } from "../lib/common";
+import { CATEGORY, DESIGN, ITEM, LOCATION, RECEIPT, SUPPLIER, documentIds, idOf, imageIds, notFound, orgWhere, paging, requireRole, staffOf, text } from "../lib/common";
 import { assertUniqueCodes, createPieces, parsePiece, type PieceInput } from "../lib/items";
-import { ITEM_POPULATE, serializeItem } from "../lib/serialize";
+import { ITEM_POPULATE, serializeFile, serializeItem } from "../lib/serialize";
 
 const MAX_LINES = 500;
 const SOURCES = ["purchase", "karigar", "opening_stock"];
 
-function serializeReceipt(receipt: any, items?: any[], cost = false) {
+export function serializeReceipt(receipt: any, items?: any[], cost = false) {
   return {
     id: receipt.id,
     number: receipt.number,
@@ -18,6 +18,7 @@ function serializeReceipt(receipt: any, items?: any[], cost = false) {
     billNumber: receipt.billNumber ?? null,
     billDate: receipt.billDate ?? null,
     notes: receipt.notes ?? null,
+    attachments: (receipt.attachments ?? []).map(serializeFile),
     createdAt: receipt.createdAt,
     branch: receipt.branch ? { id: receipt.branch.id, code: receipt.branch.code, name: receipt.branch.name } : null,
     supplier: receipt.supplier ? { id: receipt.supplier.id, name: receipt.supplier.name, kind: receipt.supplier.kind } : null,
@@ -26,10 +27,11 @@ function serializeReceipt(receipt: any, items?: any[], cost = false) {
   };
 }
 
-const RECEIPT_POPULATE = {
+export const RECEIPT_POPULATE = {
   branch: { select: ["id", "code", "name"] },
   supplier: { select: ["id", "name", "kind"] },
   receivedBy: { select: ["id", "fullName", "username"] },
+  attachments: { select: ["id", "name", "url", "mime", "size", "formats"] },
 };
 
 async function newReceipt(strapi: any, staff: Staff, data: any) {
@@ -80,6 +82,18 @@ export default ({ strapi }: { strapi: any }) => ({
     ctx.body = { data: serializeReceipt(receipt, items, canSeeCost(staff)) };
   },
 
+  /** Sets the bill or challan files of a receipt, for bills that arrive after the goods. */
+  async attachments(ctx: any) {
+    const staff = staffOf(ctx);
+    requireRole(staff, STOCK_EDITOR_ROLES, "attach bills to receipts");
+    const receipt = await strapi.db.query(RECEIPT).findOne({ where: { id: idOf(ctx.params.id), ...orgWhere(staff) } });
+    if (!receipt) notFound("Receipt");
+    const attachments = await documentIds(strapi, ctx.request.body?.attachmentIds);
+    await strapi.documents(RECEIPT).update({ documentId: receipt.documentId, data: { attachments } });
+    const updated = await strapi.db.query(RECEIPT).findOne({ where: { id: receipt.id }, populate: RECEIPT_POPULATE });
+    ctx.body = { data: serializeReceipt(updated) };
+  },
+
   /** Receives goods: one supplier bill or karigar delivery, many pieces. */
   async create(ctx: any) {
     const staff = staffOf(ctx);
@@ -122,6 +136,7 @@ export default ({ strapi }: { strapi: any }) => ({
 
     const billDate = text(body.billDate, 10);
     if (billDate && !/^\d{4}-\d{2}-\d{2}$/.test(billDate)) throw new errors.ValidationError("Enter the bill date as a date.");
+    const attachments = await documentIds(strapi, body.attachmentIds);
 
     const result = await strapi.db.transaction(async () => {
       const receipt = await newReceipt(strapi, staff, {
@@ -129,6 +144,7 @@ export default ({ strapi }: { strapi: any }) => ({
         billNumber: text(body.billNumber, 40),
         billDate,
         notes: text(body.notes, 1000),
+        attachments,
         supplier: supplier?.documentId ?? null,
         branch: branch.documentId,
         ...(jobWork ? { jobWork: jobWork.documentId } : {}),
