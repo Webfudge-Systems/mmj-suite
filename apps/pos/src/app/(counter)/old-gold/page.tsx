@@ -5,6 +5,7 @@ import { errorMessage, useApi, useBranch, useResource } from "@webfudge/auth/com
 import { Alert, Badge, Button, Card, CardBody, CardHeader, EmptyState, Field, Input, PageHeader, Table, Td, Th, Tr } from "@webfudge/ui";
 import { PAYMENT_MODE_LABELS, type Customer, type OldGoldLine, type OldGoldRecord } from "@webfudge/utils/api";
 import { formatDateTime, formatINR, formatWeight } from "@webfudge/utils/formatters";
+import { CashOverrideNotice, useCashOverride } from "@/components/cash-override";
 import { CustomerPicker } from "@/components/customer-picker";
 import { OldGoldEditor, newOldGoldRow, toOldGold, type OldGoldRow } from "@/components/old-gold-lines";
 import { PaymentsEditor, newPaymentRow, paidPaise, toPayments, type PaymentRow } from "@/components/payments";
@@ -22,8 +23,16 @@ export default function OldGoldPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<OldGoldRecord | null>(null);
+  const override = useCashOverride();
 
   const lines = useMemo(() => toOldGold(rows), [rows]);
+
+  // A changed payout makes any earlier refusal stale: clear it, and the cash warning with it.
+  function changePayouts(next: PaymentRow[]) {
+    setPayouts(next);
+    setError(null);
+    override.reset();
+  }
 
   // The server values the metal at today's rate as soon as it is weighed and tested.
   useEffect(() => {
@@ -52,15 +61,23 @@ export default function OldGoldPage() {
     setBusy(true);
     setError(null);
     try {
-      const { data } = await api.post<{ data: OldGoldRecord }>("/sales/old-gold", { branchId: branch.id, customerId: customer?.id, lines, idProof, payouts: toPayments(payouts) });
+      const { data } = await api.post<{ data: OldGoldRecord }>("/sales/old-gold", {
+        branchId: branch.id,
+        customerId: customer?.id,
+        lines,
+        idProof,
+        payouts: toPayments(payouts),
+        ...(override.value ? { cashOverride: override.value } : {}),
+      });
       setDone(data);
       setRows([newOldGoldRow()]);
       setPayouts([newPaymentRow("bank_transfer")]);
+      override.reset();
       setValuation(null);
       setIdProof("");
       history.reload();
     } catch (cause) {
-      setError(errorMessage(cause));
+      if (!override.catchLimit(cause)) setError(errorMessage(cause));
     } finally {
       setBusy(false);
     }
@@ -93,12 +110,19 @@ export default function OldGoldPage() {
       {shown && (
         <Card>
           <CardBody className="grid max-w-xl gap-4">
-            <PaymentsEditor rows={payouts} onChange={setPayouts} due={shown.total} label={`Pay the customer ${formatINR(shown.total)}`} />
+            <PaymentsEditor rows={payouts} onChange={changePayouts} due={shown.total} label={`Pay the customer ${formatINR(shown.total)}`} />
+            <CashOverrideNotice state={override} />
             {error && <Alert tone="risk">{error}</Alert>}
-            <Button variant="gold" onClick={save} loading={busy} disabled={!customer || idProof.trim().length < 4 || paidPaise(payouts) !== Math.round(shown.total * 100)} className="justify-self-start">
-              Record purchase and pay
+            <Button
+              variant="gold"
+              onClick={save}
+              loading={busy}
+              disabled={!customer || idProof.trim().length < 4 || paidPaise(payouts) !== Math.round(shown.total * 100) || override.blocking}
+              className="justify-self-start"
+            >
+              {override.value ? "Approve cash and record purchase" : "Record purchase and pay"}
             </Button>
-            <p className="text-[12px] text-ash">Cash payouts above ₹10,000 to one person must go by bank transfer or UPI.</p>
+            {!override.limit && <p className="text-[12px] text-ash">Cash payouts above ₹10,000 to one person should go by bank transfer or UPI. A manager can approve more in cash.</p>}
           </CardBody>
         </Card>
       )}

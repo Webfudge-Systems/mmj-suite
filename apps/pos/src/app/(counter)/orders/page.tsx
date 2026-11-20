@@ -1,156 +1,96 @@
 "use client";
 
-import { use, useState, type FormEvent } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Wrench } from "lucide-react";
-import { errorMessage, useApi, useBranch, useResource } from "@webfudge/auth/components";
-import { PURITIES } from "@webfudge/config";
-import { Alert, Button, Card, CardBody, CardHeader, EmptyState, Field, Input, PageHeader, Select, Spinner, Table, Tabs, Td, Textarea, Th, Tr, cn } from "@webfudge/ui";
-import type { Customer, OrderKind, PaymentMode, ServiceOrder } from "@webfudge/utils/api";
-import { PAYMENT_MODE_LABELS } from "@webfudge/utils/api";
+import { AlarmClock, CircleCheckBig, Hammer, IndianRupee, Plus, Wrench } from "lucide-react";
+import { useResource } from "@webfudge/auth/components";
+import {
+  Card,
+  EmptyState,
+  KpiCard,
+  PageHeader,
+  ResultsCount,
+  Spinner,
+  Table,
+  Tabs,
+  Td,
+  Th,
+  ToolbarActions,
+  ToolbarExport,
+  ToolbarFilter,
+  ToolbarLinkClass,
+  ToolbarSearch,
+  Tr,
+  buttonClass,
+} from "@webfudge/ui";
+import type { ServiceOrder } from "@webfudge/utils/api";
+import { ORDER_STATUS_LABELS } from "@webfudge/utils/api";
+import { downloadCsv } from "@webfudge/utils/csv";
 import { formatDate, formatINR } from "@webfudge/utils/formatters";
-import { CustomerPicker } from "@/components/customer-picker";
 import { OrderBadge } from "@/components/order-badge";
+import { mediaUrl } from "@/lib/env";
 
-type View = "open" | "ready" | "delivered" | "all";
+type View = "open" | "ready" | "late" | "delivered" | "all";
 
-function NewOrder({ onSaved, onCancel }: { onSaved: (order: ServiceOrder) => void; onCancel: () => void }) {
-  const api = useApi();
-  const { branch } = useBranch();
-  const [kind, setKind] = useState<OrderKind>("repair");
-  const [customer, setCustomer] = useState<Customer | null>(null);
-  const [form, setForm] = useState({ description: "", itemDescription: "", purity: "22KT", weightIn: "", estimate: "", dueOn: "", advance: "", mode: "cash" as PaymentMode, reference: "" });
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const set = (key: keyof typeof form) => (value: string) => setForm((current) => ({ ...current, [key]: value }));
+const OPEN = ["received", "in_work", "ready"];
 
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    setBusy(true);
-    setError(null);
-    try {
-      const { data } = await api.post<{ data: ServiceOrder }>("/orders", {
-        branchId: branch?.id,
-        kind,
-        customerId: customer?.id,
-        description: form.description,
-        itemDescription: form.itemDescription,
-        purity: form.purity,
-        weightIn: form.weightIn,
-        estimate: form.estimate,
-        dueOn: form.dueOn || null,
-        payments: Number(form.advance) > 0 ? [{ mode: form.mode, amount: Number(form.advance), reference: form.reference || null }] : [],
-      });
-      onSaved(data);
-    } catch (cause) {
-      setError(errorMessage(cause));
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Card>
-      <CardHeader title="Take in a repair or order" description="Give the customer the order number. Weigh repairs in front of them." />
-      <CardBody>
-        <form onSubmit={submit} className="grid gap-4" noValidate>
-          <div className="flex gap-2">
-            {(["repair", "custom"] as const).map((value) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setKind(value)}
-                className={cn("rounded-lg border px-3 py-1.5 text-[13px] font-semibold", kind === value ? "border-transparent bg-navy text-white shadow-md" : "border-gray-200 text-gray-700")}
-              >
-                {value === "repair" ? "Repair of their piece" : "Custom piece to make"}
-              </button>
-            ))}
-          </div>
-          <Field label="Customer" htmlFor="customer-search">
-            <CustomerPicker value={customer} onChange={setCustomer} />
-          </Field>
-          <Field label={kind === "repair" ? "What needs doing" : "What to make"} htmlFor="order-description">
-            <Textarea
-              id="order-description"
-              value={form.description}
-              onChange={(event) => set("description")(event.target.value)}
-              placeholder={kind === "repair" ? "Like: solder broken link, replace clasp, polish" : "Like: name pendant 'Aarav' in 22KT, about 5 g, by 1 Feb"}
-            />
-          </Field>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {kind === "repair" && (
-              <Field label="Their piece" htmlFor="order-item">
-                <Input id="order-item" value={form.itemDescription} onChange={(event) => set("itemDescription")(event.target.value)} placeholder="Gold chain with pendant" />
-              </Field>
-            )}
-            <Field label="Purity" htmlFor="order-purity">
-              <Select id="order-purity" value={form.purity} onChange={(event) => set("purity")(event.target.value)}>
-                {PURITIES.map((purity) => (
-                  <option key={purity.code} value={purity.code}>
-                    {purity.label}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            {kind === "repair" && (
-              <Field label="Weight taken in (g)" htmlFor="order-weight">
-                <Input id="order-weight" inputMode="decimal" value={form.weightIn} onChange={(event) => set("weightIn")(event.target.value)} />
-              </Field>
-            )}
-            <Field label="Estimate (₹)" htmlFor="order-estimate">
-              <Input id="order-estimate" inputMode="decimal" value={form.estimate} onChange={(event) => set("estimate")(event.target.value)} />
-            </Field>
-            <Field label="Promised for" htmlFor="order-due">
-              <Input id="order-due" type="date" value={form.dueOn} onChange={(event) => set("dueOn")(event.target.value)} />
-            </Field>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Field label="Advance received (₹)" htmlFor="order-advance" hint="Optional. Counted in today's day close.">
-              <Input id="order-advance" inputMode="decimal" value={form.advance} onChange={(event) => set("advance")(event.target.value)} />
-            </Field>
-            {Number(form.advance) > 0 && (
-              <>
-                <Field label="Paid by" htmlFor="order-mode">
-                  <Select id="order-mode" value={form.mode} onChange={(event) => set("mode")(event.target.value)}>
-                    {(Object.keys(PAYMENT_MODE_LABELS) as PaymentMode[]).map((mode) => (
-                      <option key={mode} value={mode}>
-                        {PAYMENT_MODE_LABELS[mode]}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-                {form.mode !== "cash" && (
-                  <Field label="Reference" htmlFor="order-reference">
-                    <Input id="order-reference" value={form.reference} onChange={(event) => set("reference")(event.target.value)} />
-                  </Field>
-                )}
-              </>
-            )}
-          </div>
-          {error && <Alert tone="risk">{error}</Alert>}
-          <div className="flex gap-2">
-            <Button type="submit" loading={busy} disabled={!customer || !form.description.trim()}>
-              Save order
-            </Button>
-            <Button variant="ghost" onClick={onCancel}>
-              Cancel
-            </Button>
-          </div>
-        </form>
-      </CardBody>
-    </Card>
-  );
-}
-
-export default function OrdersPage({ searchParams }: { searchParams: Promise<{ new?: string }> }) {
+export default function OrdersPage({ searchParams }: { searchParams: Promise<{ new?: string; customer?: string }> }) {
   const params = use(searchParams);
   const router = useRouter();
   const [view, setView] = useState<View>("open");
-  const [adding, setAdding] = useState(params.new === "1");
-  const status = view === "all" ? "" : view;
-  const orders = useResource<{ data: ServiceOrder[] }>(`/orders?status=${status}`);
-  const rows = orders.data?.data ?? [];
+  const [q, setQ] = useState("");
+  const [filters, setFilters] = useState<Record<string, string>>({ kind: "" });
+  const orders = useResource<{ data: ServiceOrder[] }>("/orders");
+  const all = useMemo(() => orders.data?.data ?? [], [orders.data]);
   const today = new Date().toISOString().slice(0, 10);
+
+  // Older links open the new-order form with ?new=1.
+  useEffect(() => {
+    if (params.new === "1") router.replace(`/orders/new${params.customer ? `?customer=${params.customer}` : ""}`);
+  }, [params.new, params.customer, router]);
+
+  const isLate = (order: ServiceOrder) => Boolean(order.dueOn && order.dueOn < today && OPEN.includes(order.status));
+  const open = all.filter((order) => OPEN.includes(order.status));
+  const counts = {
+    open: open.length,
+    ready: all.filter((order) => order.status === "ready").length,
+    late: all.filter(isLate).length,
+    delivered: all.filter((order) => order.status === "delivered").length,
+    all: all.length,
+  };
+  const toCollect = open.reduce((sum, order) => sum + (order.balanceDue ?? 0), 0);
+
+  const needle = q.trim().toLowerCase();
+  const rows = all.filter((order) => {
+    if (view === "open" && !OPEN.includes(order.status)) return false;
+    if (view === "ready" && order.status !== "ready") return false;
+    if (view === "late" && !isLate(order)) return false;
+    if (view === "delivered" && order.status !== "delivered") return false;
+    if (filters.kind && order.kind !== filters.kind) return false;
+    if (!needle) return true;
+    return [order.number, order.customer?.name, order.customer?.phone, order.description, order.itemDescription].some((value) => value?.toLowerCase().includes(needle));
+  });
+
+  function exportCsv() {
+    downloadCsv(`orders-${today}`, [
+      ["Order", "Kind", "Customer", "Mobile", "Work", "Status", "Promised", "Charge (₹)", "Paid (₹)", "Balance (₹)", "Karigar", "Taken in"],
+      ...rows.map((order) => [
+        order.number,
+        order.kind === "repair" ? "Repair" : "Custom",
+        order.customer?.name,
+        order.customer?.phone,
+        order.description,
+        ORDER_STATUS_LABELS[order.status],
+        order.dueOn,
+        order.charge,
+        order.paidTotal,
+        order.balanceDue,
+        order.karigar?.name,
+        order.createdAt.slice(0, 10),
+      ]),
+    ]);
+  }
 
   return (
     <div className="grid gap-6">
@@ -158,25 +98,56 @@ export default function OrdersPage({ searchParams }: { searchParams: Promise<{ n
         title="Repairs & custom orders"
         description="From the counter to the karigar and back. The customer collects and pays here."
         actions={
-          <Button onClick={() => setAdding((value) => !value)}>
+          <Link href="/orders/new" className={buttonClass("primary")}>
             <Plus className="size-4" aria-hidden />
-            New
-          </Button>
+            New repair or order
+          </Link>
         }
       />
-      {adding && <NewOrder onSaved={(order) => router.push(`/orders/${order.id}`)} onCancel={() => setAdding(false)} />}
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard compact title="In progress" value={counts.open} icon={Hammer} subtitle={`${open.filter((order) => order.kind === "repair").length} repairs · ${open.filter((order) => order.kind === "custom").length} custom`} />
+        <KpiCard compact title="Ready to collect" value={counts.ready} icon={CircleCheckBig} tone="ok" subtitle="Tell them on WhatsApp" />
+        <KpiCard compact title="Past promised date" value={counts.late} icon={AlarmClock} tone={counts.late ? "risk" : "navy"} subtitle={counts.late ? "Call the karigar or the customer" : "All on time"} />
+        <KpiCard compact title="To collect" value={formatINR(toCollect)} icon={IndianRupee} tone="gold" subtitle="Balance on open orders" />
+      </div>
 
       <Tabs<View>
         label="Order status"
         active={view}
         onChange={setView}
         tabs={[
-          { key: "open", label: "In progress" },
-          { key: "ready", label: "Ready to collect" },
-          { key: "delivered", label: "Delivered" },
-          { key: "all", label: "All" },
+          { key: "open", label: "In progress", count: counts.open },
+          { key: "ready", label: "Ready", count: counts.ready },
+          { key: "late", label: "Late", count: counts.late },
+          { key: "delivered", label: "Delivered", count: counts.delivered },
+          { key: "all", label: "All", count: counts.all },
         ]}
+        actions={
+          <ToolbarActions>
+            <ToolbarSearch value={q} onChange={setQ} placeholder="Order, customer or work…" />
+            <ToolbarFilter
+              groups={[
+                {
+                  key: "kind",
+                  label: "Kind",
+                  options: [
+                    { value: "repair", label: "Repairs" },
+                    { value: "custom", label: "Custom pieces" },
+                  ],
+                },
+              ]}
+              value={filters}
+              onChange={setFilters}
+            />
+            <ToolbarExport onExport={exportCsv} />
+            <Link href="/orders/new" className={ToolbarLinkClass(true)} title="New repair or order" aria-label="New repair or order">
+              <Plus className="size-[18px]" aria-hidden />
+            </Link>
+          </ToolbarActions>
+        }
       />
+      {orders.data && <ResultsCount shown={rows.length} total={all.length} noun="order" />}
 
       <Card className="overflow-hidden">
         {orders.loading && !orders.data ? (
@@ -186,14 +157,15 @@ export default function OrdersPage({ searchParams }: { searchParams: Promise<{ n
         ) : orders.error ? (
           <p className="p-5 text-sm text-risk">{orders.error}</p>
         ) : !rows.length ? (
-          <EmptyState icon={Wrench} title="Nothing here" description="Repairs and custom orders you take in appear here." />
+          <EmptyState icon={Wrench} title="Nothing here" description={needle || filters.kind ? "Nothing matches. Clear the search or filter." : "Repairs and custom orders you take in appear here."} />
         ) : (
-          <Table minWidth={820}>
+          <Table minWidth={900}>
             <thead>
               <tr>
                 <Th>Order</Th>
                 <Th>Customer</Th>
                 <Th>Work</Th>
+                <Th>Karigar</Th>
                 <Th>Promised</Th>
                 <Th align="right">Balance due</Th>
                 <Th>Status</Th>
@@ -201,26 +173,45 @@ export default function OrdersPage({ searchParams }: { searchParams: Promise<{ n
             </thead>
             <tbody>
               {rows.map((order) => {
-                const late = order.dueOn && order.dueOn < today && !["delivered", "cancelled"].includes(order.status);
+                const late = isLate(order);
+                const photo = order.photos[0];
                 return (
                   <Tr key={order.id} className="cursor-pointer" onClick={() => router.push(`/orders/${order.id}`)}>
                     <Td>
-                      <Link href={`/orders/${order.id}`} className="grid leading-tight" onClick={(event) => event.stopPropagation()}>
-                        <span className="font-mono font-semibold hover:underline">{order.number}</span>
-                        <span className="text-[12px] text-ash">{order.kind === "repair" ? "Repair" : "Custom"}</span>
+                      <Link href={`/orders/${order.id}`} className="flex items-center gap-3" onClick={(event) => event.stopPropagation()}>
+                        <span className="grid size-10 shrink-0 place-items-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50 text-gray-400">
+                          {photo ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={mediaUrl(photo.thumbnailUrl)} alt="" className="size-full object-cover" loading="lazy" />
+                          ) : order.kind === "repair" ? (
+                            <Wrench className="size-4" aria-hidden />
+                          ) : (
+                            <Hammer className="size-4" aria-hidden />
+                          )}
+                        </span>
+                        <span className="grid leading-tight">
+                          <span className="font-mono font-semibold text-ink hover:underline">{order.number}</span>
+                          <span className="text-[12px] text-ash">{order.kind === "repair" ? "Repair" : "Custom"}</span>
+                        </span>
                       </Link>
                     </Td>
                     <Td>
                       <span className="grid leading-tight">
-                        <span className="font-semibold">{order.customer?.name}</span>
-                        <span className="text-[12.5px] text-ash">{order.customer?.phone}</span>
+                        <span className="font-semibold text-ink">{order.customer?.name}</span>
+                        <span className="text-[12.5px] text-ash tabular-nums">{order.customer?.phone}</span>
                       </span>
                     </Td>
-                    <Td className="max-w-72">
+                    <Td className="max-w-64">
                       <span className="line-clamp-2 text-[13px]">{order.description}</span>
                     </Td>
-                    <Td className={late ? "font-semibold text-risk" : undefined}>{order.dueOn ? formatDate(order.dueOn) : "—"}</Td>
-                    <Td align="right">{order.balanceDue === null ? "—" : formatINR(order.balanceDue)}</Td>
+                    <Td>{order.karigar?.name ?? <span className="text-ash">In shop</span>}</Td>
+                    <Td className={late ? "font-semibold whitespace-nowrap text-risk" : "whitespace-nowrap"}>
+                      {order.dueOn ? formatDate(order.dueOn) : "—"}
+                      {late && <span className="block text-[11px] font-bold tracking-wide uppercase">Late</span>}
+                    </Td>
+                    <Td align="right" className="font-semibold text-ink">
+                      {order.balanceDue === null ? <span className="font-normal text-ash">Charge not set</span> : formatINR(order.balanceDue)}
+                    </Td>
                     <Td>
                       <OrderBadge status={order.status} />
                     </Td>

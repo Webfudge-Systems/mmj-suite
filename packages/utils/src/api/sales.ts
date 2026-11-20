@@ -41,7 +41,9 @@ export type CustomerWithStats = Customer & { stats: { bills: number; spent: numb
 export type CustomerRef = { id: number; name: string; phone: string; pan: string | null };
 
 export type CustomerDetail = Customer & {
-  invoices: { id: number; number: string; invoiceDate: string; total: number; status: "paid" | "cancelled" }[];
+  summary?: { bills: number; spent: number; averageBill: number; pieces: number; firstBillAt: string | null; lastBillAt: string | null };
+  oldGold?: { id: number; number: string; kind: "exchange" | "purchase"; totalValue: number; createdAt: string }[];
+  invoices: { id: number; number: string; invoiceDate: string; total: number; status: "paid" | "cancelled"; pieces?: number; items?: string[] }[];
   advances: { id: number; number: string; balance: number; lockedPurity: Purity | null; lockedRate: number | null; lockedWeightLeft: number | null; validUntil: string | null }[];
   creditNotes: { id: number; number: string; balance: number }[];
 };
@@ -144,6 +146,14 @@ export type InvoiceSummary = {
   cashier: string | null;
 };
 
+/** Totals for the invoice list's cards (?stats=true). */
+export type InvoiceStats = {
+  today: { count: number; total: number };
+  month: { count: number; total: number };
+  cancelledThisMonth: number;
+  averageBill: number;
+};
+
 export type Invoice = InvoiceSummary & {
   lines: BillLine[];
   rates: { rateCardId: number; effectiveFrom: string; lines: { purity: Purity; ratePerGram: number }[] };
@@ -178,11 +188,22 @@ export type Advance = {
   lockedWeightUsed: number;
   note: string | null;
   validUntil: string | null;
+  /** Bills it was used on, and a refund if it was paid back. */
+  usage?: { invoice?: string; amount: number; grams?: number; refund?: Payment[]; at: string; cashOverride?: CashOverride }[];
   createdAt: string;
   customer: CustomerRef | null;
   by: string | null;
   branch: BranchRef | null;
 };
+
+/** The shop as printed on documents. */
+export type Seller = { name: string; tradeName: string; gstin: string | null; phone: string | null; email: string | null; address: string | null };
+
+/** A customer as printed on documents. */
+export type PrintCustomer = CustomerRef & { address: string | null; gstin: string | null };
+
+/** GET /sales/advances/:id: an advance with what its receipt needs. */
+export type AdvanceDetail = Omit<Advance, "customer"> & { customer: PrintCustomer | null; seller: Seller };
 
 export type CreditNote = {
   id: number;
@@ -193,11 +214,20 @@ export type CreditNote = {
   lines: { kind: string; tagNumber?: string; description?: string; paid?: number; amount: number; invoice?: string }[];
   deductionPercent: number;
   reason: string | null;
+  usage?: { invoice?: string; amount: number; at: string }[];
+  refunds?: { payouts: Payment[]; amount: number; at: string; cashOverride?: CashOverride }[];
   createdAt: string;
   customer: CustomerRef | null;
   by: string | null;
   branch: BranchRef | null;
   invoice: { id: number; number: string } | null;
+};
+
+/** GET /sales/credit-notes/:id: a credit note with what its printout needs. */
+export type CreditNoteDetail = Omit<CreditNote, "customer" | "invoice"> & {
+  customer: PrintCustomer | null;
+  invoice: { id: number; number: string; invoiceDate: string } | null;
+  seller: Seller;
 };
 
 export type OldGoldRecord = {
@@ -208,12 +238,16 @@ export type OldGoldRecord = {
   totalValue: number;
   payouts: Payment[];
   idProof: string | null;
+  /** Set when a manager approved paying more than the cash limit. */
+  cashOverride?: CashOverride | null;
   createdAt: string;
   customer: CustomerRef | null;
   by: string | null;
   branch: BranchRef | null;
   invoice: { id: number; number: string } | null;
 };
+
+export type CashOverride = { cash: number; limit: number; reason: string; approvedBy: string; at: string };
 
 export type DaySummary = {
   date: string;

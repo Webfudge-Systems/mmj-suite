@@ -1327,6 +1327,7 @@ export interface ApiOldGoldOldGold extends Struct.CollectionTypeSchema {
   attributes: {
     branch: Schema.Attribute.Relation<"manyToOne", "api::branch.branch">;
     by: Schema.Attribute.Relation<"manyToOne", "plugin::users-permissions.user">;
+    cashOverride: Schema.Attribute.JSON;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<"oneToOne", "admin::user"> & Schema.Attribute.Private;
     customer: Schema.Attribute.Relation<"manyToOne", "api::customer.customer">;

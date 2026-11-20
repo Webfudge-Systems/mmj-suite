@@ -158,7 +158,9 @@ export default function KarigarPage() {
                   <Td>
                     <Link href={`/karigar/${job.id}`} className="grid leading-tight" onClick={(event) => event.stopPropagation()}>
                       <span className="font-mono font-semibold text-ink hover:underline">{job.number}</span>
-                      {job.status === "closed" ? <Badge className="mt-1 justify-self-start">Settled</Badge> : null}
+                      <Badge tone={job.status === "closed" ? "ok" : "gold"} dot className="mt-1 justify-self-start">
+                        {job.status === "closed" ? "Closed" : "Open"}
+                      </Badge>
                     </Link>
                   </Td>
                   <Td className="font-semibold">{job.karigar?.name}</Td>

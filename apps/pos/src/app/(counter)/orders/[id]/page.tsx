@@ -1,18 +1,68 @@
 "use client";
 
 import { use, useState, type FormEvent } from "react";
-import { MessageCircle } from "lucide-react";
+import Link from "next/link";
+import {
+  Ban,
+  CalendarClock,
+  Camera,
+  CircleCheckBig,
+  Gem,
+  Hammer,
+  History,
+  IndianRupee,
+  MessageCircle,
+  PackageCheck,
+  Phone,
+  Scale,
+  UserRound,
+  Wallet,
+  Wrench,
+} from "lucide-react";
 import { errorMessage, useApi, useAuth, useResource } from "@webfudge/auth/components";
-import { Alert, Button, Card, CardBody, CardHeader, Field, Input, PageHeader, Select, Spinner, Table, Td, Th, Tr, cn } from "@webfudge/ui";
-import type { OrderStatus, PaymentMode, ServiceOrder, Supplier } from "@webfudge/utils/api";
+import {
+  ActivityLog,
+  Alert,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  DetailHero,
+  Field,
+  HeroFact,
+  InfoGrid,
+  InfoRow,
+  InfoSection,
+  Input,
+  KpiCard,
+  PageHeader,
+  Select,
+  Spinner,
+  StatusPill,
+  StatusSteps,
+  Table,
+  Td,
+  Th,
+  Tr,
+} from "@webfudge/ui";
+import type { ImageRef, OrderStatus, PaymentMode, ServiceOrder, Supplier } from "@webfudge/utils/api";
 import { ORDER_STATUS_LABELS, PAYMENT_MODE_LABELS } from "@webfudge/utils/api";
 import { formatDate, formatDateTime, formatINR, formatWeight } from "@webfudge/utils/formatters";
-import { OrderBadge } from "@/components/order-badge";
+import { PhotoStrip } from "@/components/photos";
+import { mediaUrl } from "@/lib/env";
 
 const FLOW: OrderStatus[] = ["received", "in_work", "ready"];
+const PILL: Record<OrderStatus, { tone: "navy" | "gold" | "ok" | "neutral" | "risk"; icon: typeof Wrench }> = {
+  received: { tone: "navy", icon: PackageCheck },
+  in_work: { tone: "gold", icon: Hammer },
+  ready: { tone: "ok", icon: CircleCheckBig },
+  delivered: { tone: "neutral", icon: CircleCheckBig },
+  cancelled: { tone: "risk", icon: Ban },
+};
 
-export default function OrderPage({ params }: { params: Promise<{ id: string }> }) {
+export default function OrderPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string }> }) {
   const { id } = use(params);
+  const { new: justSaved } = use(searchParams);
   const api = useApi();
   const { hasRole } = useAuth();
   const { data, error, loading, reload } = useResource<{ data: ServiceOrder }>(`/orders/${id}`);
@@ -28,12 +78,17 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ tone: "ok" | "risk"; text: string } | null>(null);
+  const [viewing, setViewing] = useState<ImageRef | null>(null);
 
   if (loading && !order) return <Spinner className="text-navy" />;
   if (error || !order) return <p className="text-sm text-risk">{error ?? "Order not found."}</p>;
   const closed = order.status === "delivered" || order.status === "cancelled";
   const canMoney = hasRole("owner", "branch_manager", "cashier");
   const payments = Number(amount) > 0 ? [{ mode, amount: Number(amount), reference: reference || null }] : [];
+  const repair = order.kind === "repair";
+  const today = new Date().toISOString().slice(0, 10);
+  const late = Boolean(order.dueOn && order.dueOn < today && !closed);
+  const pill = PILL[order.status];
 
   async function run(action: () => Promise<unknown>, done: string) {
     setBusy(true);
@@ -65,77 +120,153 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
     );
   }
 
+  const steps = [
+    { key: "received", label: "Taken in", icon: PackageCheck, note: formatDate(order.createdAt) },
+    { key: "in_work", label: order.karigar ? `With ${order.karigar.name.replace(/^Demo\s*[–-]\s*/, "").split(",")[0]}` : "In work", icon: Hammer },
+    { key: "ready", label: "Ready to collect", icon: CircleCheckBig, note: order.dueOn ? `Promised ${formatDate(order.dueOn)}` : undefined },
+    { key: "delivered", label: "Delivered", icon: Gem, note: order.deliveredAt ? formatDate(order.deliveredAt) : undefined },
+  ];
+  const cancelledAt = order.log.filter((entry) => /cancel/i.test(entry.text)).at(-1);
+  const stoppedAt = order.status === "cancelled" ? (order.log.some((entry) => /ready/i.test(entry.text)) ? "ready" : order.log.some((entry) => /in work/i.test(entry.text)) ? "in_work" : "received") : null;
+
   return (
     <div className="grid gap-6">
-      <PageHeader
-        title={`${order.number} · ${order.customer?.name ?? ""}`}
-        description={
-          <span className="flex flex-wrap items-center gap-2">
-            <span>{order.kind === "repair" ? "Repair" : "Custom order"}</span>
-            {order.dueOn && <span>· promised {formatDate(order.dueOn)}</span>}
-            <OrderBadge status={order.status} />
-          </span>
+      <PageHeader title={<span className="font-mono">{order.number}</span>} description={`${repair ? "Repair" : "Custom order"} for ${order.customer?.name ?? "a customer"}`} />
+      {justSaved && (
+        <Alert tone="ok" title={`${order.number} saved`}>
+          Give the customer this number. Move it to In work when it goes to the karigar.
+        </Alert>
+      )}
+
+      <DetailHero
+        image={
+          order.photos[0] ? (
+            <button type="button" onClick={() => setViewing(order.photos[0])} className="size-16 shrink-0 overflow-hidden rounded-2xl border-2 border-white shadow-lg" title="View photo">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={mediaUrl(order.photos[0].thumbnailUrl)} alt="" className="size-full object-cover" />
+            </button>
+          ) : undefined
         }
-        actions={
-          order.whatsapp && (
+        icon={repair ? Wrench : Gem}
+        title={<span className="font-mono">{order.number}</span>}
+        badges={
+          <>
+            <StatusPill tone={pill.tone} icon={pill.icon}>
+              {ORDER_STATUS_LABELS[order.status]}
+            </StatusPill>
+            {late && <StatusPill tone="risk">Late</StatusPill>}
+          </>
+        }
+        meta={
+          <>
+            <HeroFact icon={repair ? Wrench : Gem}>{repair ? "Repair" : "Custom order"}</HeroFact>
+            {order.customer && (
+              <HeroFact icon={UserRound}>
+                <Link href={`/customers/${order.customer.id}`} className="font-semibold text-ink hover:text-navy">
+                  {order.customer.name}
+                </Link>
+              </HeroFact>
+            )}
+            {order.customer && (
+              <HeroFact icon={Phone}>
+                <a href={`tel:${order.customer.phone}`} className="tabular-nums hover:text-navy">
+                  {order.customer.phone}
+                </a>
+              </HeroFact>
+            )}
+            {order.dueOn && <HeroFact icon={CalendarClock}>Promised {formatDate(order.dueOn)}</HeroFact>}
+          </>
+        }
+        stat={{ label: "Balance due", value: order.balanceDue === null ? "—" : formatINR(order.balanceDue), note: order.charge === null ? "Charge not set yet" : `of ${formatINR(order.charge)}` }}
+      />
+
+      <Card>
+        <CardBody className="grid gap-4">
+          <StatusSteps steps={steps} current={order.status === "cancelled" ? stoppedAt ?? "received" : order.status} stopped={order.status === "cancelled" ? `Cancelled${cancelledAt ? ` on ${formatDate(cancelledAt.at)}` : ""}` : undefined} />
+          {order.whatsapp && (
             <a
               href={order.whatsapp}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex h-10 items-center gap-1.5 rounded-full border border-[#25d366]/40 bg-[#25d366]/10 px-4 text-[13px] font-semibold text-[#128c4b] hover:bg-[#25d366]/20"
+              className="inline-flex h-10 items-center gap-1.5 justify-self-center rounded-full border border-[#25d366]/40 bg-[#25d366]/10 px-4 text-[13px] font-semibold text-[#128c4b] hover:bg-[#25d366]/20"
             >
               <MessageCircle className="size-4" aria-hidden />
-              Tell them it is ready
+              Tell {order.customer?.name.replace(/^Demo\s*[–-]\s*/, "").split(" ")[0]} it is ready on WhatsApp
             </a>
-          )
-        }
-      />
+          )}
+        </CardBody>
+      </Card>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard compact title="Estimate" value={order.estimate !== null ? formatINR(order.estimate) : "—"} icon={IndianRupee} subtitle="Told to the customer" />
+        <KpiCard compact title="Final charge" value={order.charge !== null ? formatINR(order.charge) : "Not set"} icon={IndianRupee} tone="gold" subtitle={order.charge === null ? "Set it when the work is done" : "What they pay in all"} />
+        <KpiCard compact title="Paid so far" value={formatINR(order.paidTotal)} icon={Wallet} tone="ok" subtitle={`${order.payments.length} ${order.payments.length === 1 ? "payment" : "payments"}`} />
+        <KpiCard
+          compact
+          title={repair ? "Weight in → out" : "Purity"}
+          value={repair ? (order.weightIn ? `${order.weightIn.toFixed(3)} g` : "—") : (order.purity ?? "—")}
+          icon={Scale}
+          tone="navy"
+          subtitle={repair ? (order.weightOut ? `Out ${formatWeight(order.weightOut)}` : "Weighed out on delivery") : "Metal to make it in"}
+        />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
         <div className="grid content-start gap-6">
           <Card>
-            <CardHeader title="The work" />
-            <CardBody className="grid gap-3 text-sm">
-              <p className="whitespace-pre-line text-ink">{order.description}</p>
-              <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {[
-                  ["Piece", order.itemDescription ?? "—"],
-                  ["Purity", order.purity ?? "—"],
-                  ["Weight in", order.weightIn ? formatWeight(order.weightIn) : "—"],
-                  ["Weight out", order.weightOut ? formatWeight(order.weightOut) : "—"],
-                  ["Estimate", order.estimate !== null ? formatINR(order.estimate) : "—"],
-                  ["Charge", order.charge !== null ? formatINR(order.charge) : "Not set"],
-                  ["Paid", formatINR(order.paidTotal)],
-                  ["Balance", order.balanceDue !== null ? formatINR(order.balanceDue) : "—"],
-                ].map(([label, value]) => (
-                  <div key={label}>
-                    <dt className="text-[11.5px] font-bold tracking-wide text-gray-500 uppercase">{label}</dt>
-                    <dd className="font-medium tabular-nums">{value}</dd>
-                  </div>
-                ))}
-              </dl>
-              {order.karigar && <p className="text-ash">Karigar: {order.karigar.name}</p>}
+            <CardHeader title={repair ? "The piece and the work" : "What to make"} />
+            <CardBody className="grid gap-5">
+              <InfoSection title="Work" icon={repair ? Wrench : Gem} first>
+                <p className="text-[15px] whitespace-pre-line text-ink">{order.description}</p>
+              </InfoSection>
+              <InfoSection title="Details" icon={Scale}>
+                <InfoGrid columns={3}>
+                  {repair && <InfoRow label="Their piece">{order.itemDescription}</InfoRow>}
+                  <InfoRow label="Purity">{order.purity}</InfoRow>
+                  {repair && <InfoRow label="Weight in">{order.weightIn ? formatWeight(order.weightIn) : null}</InfoRow>}
+                  {repair && <InfoRow label="Weight out">{order.weightOut ? formatWeight(order.weightOut) : null}</InfoRow>}
+                  <InfoRow label="Karigar" icon={Hammer}>
+                    {order.karigar?.name ?? "Done in the shop"}
+                  </InfoRow>
+                  <InfoRow label="Taken in by">{order.by}</InfoRow>
+                </InfoGrid>
+              </InfoSection>
+              <InfoSection title="Photos" icon={Camera}>
+                {closed ? (
+                  order.photos.length ? (
+                    <div className="flex flex-wrap gap-2">
+                      {order.photos.map((photo) => (
+                        <button key={photo.id} type="button" onClick={() => setViewing(photo)} className="size-24 overflow-hidden rounded-xl border border-gray-200">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={mediaUrl(photo.thumbnailUrl)} alt="" className="size-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-ash">No photos.</p>
+                  )
+                ) : (
+                  <PhotoStrip id="order-photos" photos={order.photos} onChange={(next) => run(() => api.put(`/orders/${id}`, { photoIds: next.map((photo) => photo.id) }), "Photos saved.")} />
+                )}
+              </InfoSection>
             </CardBody>
           </Card>
 
           {!closed && (
             <Card>
-              <CardHeader title="Move it along" />
+              <CardHeader title="Move it along" description="Change the stage, send it to a karigar, set the final charge." />
               <CardBody className="grid gap-4">
                 <div className="flex flex-wrap gap-2">
                   {FLOW.map((status) => (
-                    <button
+                    <Button
                       key={status}
-                      type="button"
+                      size="sm"
+                      variant={status === order.status ? "primary" : "secondary"}
                       disabled={busy || status === order.status}
                       onClick={() => run(() => api.put(`/orders/${id}`, { status }), `Marked ${ORDER_STATUS_LABELS[status].toLowerCase()}.`)}
-                      className={cn(
-                        "rounded-lg border px-3 py-1.5 text-[13px] font-semibold transition-all",
-                        status === order.status ? "border-transparent bg-navy text-white shadow-md" : "border-gray-200 bg-white text-gray-700 hover:shadow-sm",
-                      )}
                     >
                       {ORDER_STATUS_LABELS[status]}
-                    </button>
+                    </Button>
                   ))}
                 </div>
                 <form onSubmit={save} className="grid gap-3 sm:grid-cols-2" noValidate>
@@ -144,7 +275,7 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
                   </Field>
                   <Field label="Karigar" htmlFor="order-karigar">
                     <Select id="order-karigar" value={karigarId ?? String(order.karigar?.id ?? "")} onChange={(event) => setKarigarId(event.target.value)}>
-                      <option value="">Not sent out</option>
+                      <option value="">Done in the shop</option>
                       {karigars.data?.data.map((karigar) => (
                         <option key={karigar.id} value={karigar.id}>
                           {karigar.name}
@@ -152,8 +283,8 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
                       ))}
                     </Select>
                   </Field>
-                  <Field label="Note" htmlFor="order-note" className="sm:col-span-2">
-                    <Input id="order-note" value={note} onChange={(event) => setNote(event.target.value)} />
+                  <Field label="Note for the history" htmlFor="order-note" className="sm:col-span-2">
+                    <Input id="order-note" value={note} onChange={(event) => setNote(event.target.value)} placeholder="Like: karigar says 2 more days" />
                   </Field>
                   <Button type="submit" variant="secondary" loading={busy} className="justify-self-start">
                     Save
@@ -165,7 +296,7 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
 
           {!closed && canMoney && (
             <Card>
-              <CardHeader title={order.status === "ready" ? "Hand over" : "Take money"} description={order.status === "ready" ? "Collect what is left, then hand the piece over." : "An advance or part payment. Counted in today's day close."} />
+              <CardHeader title={order.status === "ready" ? "Hand over" : "Take money"} description={order.status === "ready" ? "Collect what is left, weigh it out, then hand the piece over." : "An advance or part payment. Counted in today's day close."} />
               <CardBody className="grid gap-3">
                 <div className="grid gap-3 sm:grid-cols-3">
                   <Field label="Amount (₹)" htmlFor="pay-amount">
@@ -186,7 +317,7 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
                     </Field>
                   )}
                 </div>
-                {order.status === "ready" && order.kind === "repair" && (
+                {order.status === "ready" && repair && (
                   <Field label="Weight out (g)" htmlFor="weight-out">
                     <Input id="weight-out" inputMode="decimal" value={weightOut} onChange={(event) => setWeightOut(event.target.value)} className="max-w-40" />
                   </Field>
@@ -201,7 +332,7 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
                     </Button>
                   )}
                 </div>
-                {order.kind === "custom" && <p className="text-[12.5px] text-ash">A finished custom piece is tagged in the Back Office and billed here like any piece. Use its advance against the bill.</p>}
+                {!repair && <p className="text-[12.5px] text-ash">A finished custom piece is tagged in the Back Office and billed here like any piece. Use its advance against the bill.</p>}
               </CardBody>
             </Card>
           )}
@@ -223,9 +354,9 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
 
         <div className="grid content-start gap-6">
           <Card className="overflow-hidden">
-            <CardHeader title="Money received" />
+            <CardHeader title="Money received" description={order.paidTotal ? `${formatINR(order.paidTotal)} in all` : undefined} />
             {order.payments.length ? (
-              <Table minWidth={360}>
+              <Table minWidth={340}>
                 <thead>
                   <tr>
                     <Th>When</Th>
@@ -238,7 +369,9 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
                     <Tr key={`${payment.at}-${index}`}>
                       <Td className="whitespace-nowrap">{formatDateTime(payment.at)}</Td>
                       <Td>{PAYMENT_MODE_LABELS[payment.mode]}</Td>
-                      <Td align="right">{formatINR(payment.amount)}</Td>
+                      <Td align="right" className="font-semibold text-ink">
+                        {formatINR(payment.amount)}
+                      </Td>
                     </Tr>
                   ))}
                 </tbody>
@@ -250,22 +383,28 @@ export default function OrderPage({ params }: { params: Promise<{ id: string }> 
             )}
           </Card>
           <Card>
-            <CardHeader title="History" />
-            <ol className="grid px-6 py-4">
-              {[...order.log].reverse().map((entry, index) => (
-                <li key={`${entry.at}-${index}`} className="relative border-l-2 border-gray-100 pb-4 pl-5 last:pb-0">
-                  <span className="absolute top-1 -left-[7px] size-3 rounded-full border-2 border-white bg-navy" aria-hidden />
-                  <p className="text-sm">{entry.text}</p>
-                  <p className="text-[12px] text-ash">
-                    {formatDateTime(entry.at)}
-                    {entry.by ? ` · ${entry.by}` : ""}
-                  </p>
-                </li>
-              ))}
-            </ol>
+            <CardHeader title={<span className="flex items-center gap-2"><History className="size-4 text-gold" aria-hidden />History</span>} />
+            <CardBody>
+              <ActivityLog
+                formatTime={formatDateTime}
+                entries={[...order.log].reverse().map((entry) => ({
+                  at: entry.at,
+                  by: entry.by,
+                  text: entry.text,
+                  tone: /cancel/i.test(entry.text) ? "risk" : /deliver|ready/i.test(entry.text) ? "ok" : /paid|received ₹|advance/i.test(entry.text) ? "gold" : "navy",
+                }))}
+              />
+            </CardBody>
           </Card>
         </div>
       </div>
+
+      {viewing && (
+        <button type="button" onClick={() => setViewing(null)} className="fixed inset-0 z-50 grid place-items-center bg-ink/80 p-6" aria-label="Close photo">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={mediaUrl(viewing.url)} alt="" className="max-h-full max-w-full rounded-xl shadow-2xl" />
+        </button>
+      )}
     </div>
   );
 }

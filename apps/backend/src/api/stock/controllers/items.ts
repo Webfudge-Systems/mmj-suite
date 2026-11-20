@@ -248,12 +248,15 @@ export default ({ strapi }: { strapi: any }) => ({
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
-    const [inStock, untrayed, withStaff, inTransit, receivedToday] = await Promise.all([
+    const [inStock, untrayed, withStaff, inTransit, receivedToday, onApproval, reserved, sold] = await Promise.all([
       count({ status: "in_stock" }),
       count({ status: "in_stock", location: { id: { $null: true } } }),
       count({ status: "with_staff" }),
       count({ status: "in_transit" }),
       count({ receivedAt: { $gte: startOfDay.toISOString() } }),
+      count({ status: "on_approval" }),
+      count({ status: "reserved" }),
+      count({ status: "sold" }),
     ]);
 
     // Weight in stock by purity. Read only the columns needed.
@@ -283,6 +286,9 @@ export default ({ strapi }: { strapi: any }) => ({
         withStaff,
         inTransit,
         receivedToday,
+        onApproval,
+        reserved,
+        sold,
         incomingTransfers: incoming,
         lastAuditAt: lastAudit?.closedAt ?? null,
         byPurity: [...byPurity.entries()].map(([purity, entry]) => ({

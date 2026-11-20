@@ -75,12 +75,26 @@ export default ({ strapi }: { strapi: any }) => ({
       }
     }
 
+    // With ?summary=true: totals for the list's cards.
+    let summary;
+    if (ctx.query.summary === "true") {
+      const org = { organization: { id: staff.organization.id } };
+      const monthStart = new Date(`${new Date().toISOString().slice(0, 7)}-01T00:00:00+05:30`).toISOString();
+      const [total, newThisMonth, buyers, withBirthday] = await Promise.all([
+        strapi.db.query(CUSTOMER).count({ where: org }),
+        strapi.db.query(CUSTOMER).count({ where: { ...org, createdAt: { $gte: monthStart } } }),
+        strapi.db.query(INVOICE).findMany({ where: { ...org, status: "paid", invoiceDate: { $gte: monthStart } }, select: ["id"], populate: { customer: { select: ["id"] } }, limit: 20000 }),
+        strapi.db.query(CUSTOMER).count({ where: { ...org, birthDate: { $notNull: true } } }),
+      ]);
+      summary = { total, newThisMonth, boughtThisMonth: new Set(buyers.map((row: any) => row.customer?.id).filter(Boolean)).size, withBirthday };
+    }
+
     ctx.body = {
       data: rows.map((row) => ({
         ...serializeCustomer(row),
         ...(ctx.query.stats === "true" ? { stats: stats.get(row.id) ?? { bills: 0, spent: 0, lastBillAt: null } } : {}),
       })),
-      meta: { pagination: result.pagination },
+      meta: { pagination: result.pagination, ...(summary ? { summary } : {}) },
     };
   },
 
@@ -91,15 +105,35 @@ export default ({ strapi }: { strapi: any }) => ({
     const customer = await strapi.db.query(CUSTOMER).findOne({ where: { id: Number(ctx.params.id), ...org } });
     if (!customer) throw new errors.NotFoundError("Customer not found.");
     const mine = { ...org, customer: { id: customer.id } };
-    const [invoices, advances, creditNotes] = await Promise.all([
-      strapi.db.query(INVOICE).findMany({ where: mine, orderBy: { invoiceDate: "desc" }, limit: 20, select: ["id", "number", "invoiceDate", "total", "status"] }),
+    const [invoices, advances, creditNotes, oldGold] = await Promise.all([
+      strapi.db.query(INVOICE).findMany({ where: mine, orderBy: { invoiceDate: "desc" }, limit: 200, select: ["id", "number", "invoiceDate", "total", "status", "lines"] }),
       strapi.db.query(BOOKING).findMany({ where: { ...mine, status: "open" }, orderBy: { createdAt: "desc" } }),
       strapi.db.query(CREDIT_NOTE).findMany({ where: { ...mine, status: "open" }, orderBy: { createdAt: "desc" } }),
+      strapi.db.query("api::old-gold.old-gold").findMany({ where: mine, orderBy: { createdAt: "desc" }, limit: 50, select: ["id", "number", "kind", "totalValue", "createdAt"] }),
     ]);
+    const paid = invoices.filter((invoice: any) => invoice.status === "paid");
+    const spent = Math.round(paid.reduce((sum: number, invoice: any) => sum + Number(invoice.total), 0) * 100) / 100;
     ctx.body = {
       data: {
         ...serializeCustomer(customer),
-        invoices: invoices.map((invoice: any) => ({ id: invoice.id, number: invoice.number, invoiceDate: invoice.invoiceDate, total: Number(invoice.total), status: invoice.status })),
+        summary: {
+          bills: paid.length,
+          spent,
+          averageBill: paid.length ? Math.round(spent / paid.length) : 0,
+          pieces: paid.reduce((sum: number, invoice: any) => sum + (Array.isArray(invoice.lines) ? invoice.lines.length : 0), 0),
+          firstBillAt: paid.length ? paid[paid.length - 1].invoiceDate : null,
+          lastBillAt: paid[0]?.invoiceDate ?? null,
+        },
+        oldGold: oldGold.map((record: any) => ({ id: record.id, number: record.number, kind: record.kind, totalValue: Number(record.totalValue), createdAt: record.createdAt })),
+        invoices: invoices.map((invoice: any) => ({
+          id: invoice.id,
+          number: invoice.number,
+          invoiceDate: invoice.invoiceDate,
+          total: Number(invoice.total),
+          status: invoice.status,
+          pieces: Array.isArray(invoice.lines) ? invoice.lines.length : 0,
+          items: Array.isArray(invoice.lines) ? invoice.lines.slice(0, 3).map((line: any) => line.description).filter(Boolean) : [],
+        })),
         advances: advances.map((booking: any) => ({
           id: booking.id,
           number: booking.number,

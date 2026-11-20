@@ -1,14 +1,17 @@
 "use client";
 
-import { Fragment, use, useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { CreditCard, HandCoins, Undo2, Wallet } from "lucide-react";
 import { errorMessage, useApi, useAuth, useResource } from "@webfudge/auth/components";
-import { Alert, Badge, Button, Card, CardBody, CardHeader, EmptyState, Field, Input, PageHeader, Table, Td, Th, Tr } from "@webfudge/ui";
-import type { CreditNote, Invoice, InvoiceSummary, Page } from "@webfudge/utils/api";
-import { formatDateTime, formatINR } from "@webfudge/utils/formatters";
-import { PaymentsEditor, newPaymentRow, paidPaise, toPayments, type PaymentRow } from "@/components/payments";
+import { Alert, Badge, Button, Card, CardBody, CardHeader, EmptyState, Field, Input, KpiCard, PageHeader, ResultsCount, Spinner, Table, Tabs, Td, Th, ToolbarActions, ToolbarExport, ToolbarSearch, Tr } from "@webfudge/ui";
+import type { CreditNote, Invoice } from "@webfudge/utils/api";
+import { downloadCsv } from "@webfudge/utils/csv";
+import { formatDate, formatDateTime, formatINR } from "@webfudge/utils/formatters";
+import { CREDIT_STATUS } from "@/components/credit-note";
+import { InvoicePicker } from "@/components/invoice-picker";
 
-const STATUS = { open: { label: "Open", tone: "gold" }, used: { label: "Used", tone: "ok" }, refunded: { label: "Paid out", tone: "neutral" } } as const;
 
 function ReturnForm({ invoice, onDone }: { invoice: Invoice; onDone: (note: CreditNote) => void }) {
   const api = useApi();
@@ -76,44 +79,17 @@ function ReturnForm({ invoice, onDone }: { invoice: Invoice; onDone: (note: Cred
   );
 }
 
-function PayOut({ note, onDone }: { note: CreditNote; onDone: () => void }) {
-  const api = useApi();
-  const [payouts, setPayouts] = useState<PaymentRow[]>(() => [newPaymentRow("bank_transfer")]);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  async function pay() {
-    setBusy(true);
-    setError(null);
-    try {
-      await api.post(`/sales/credit-notes/${note.id}/refund`, { payouts: toPayments(payouts) });
-      onDone();
-    } catch (cause) {
-      setError(errorMessage(cause));
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <div className="grid max-w-md gap-3 py-2">
-      <PaymentsEditor rows={payouts} onChange={setPayouts} due={note.balance} label={`Pay out ${formatINR(note.balance)}`} />
-      {error && <Alert tone="risk">{error}</Alert>}
-      <Button size="sm" variant="danger" loading={busy} disabled={paidPaise(payouts) !== Math.round(note.balance * 100)} onClick={pay} className="justify-self-start">
-        Pay out
-      </Button>
-    </div>
-  );
-}
+type View = "open" | "used" | "refunded" | "all";
 
 export default function ReturnsPage({ searchParams }: { searchParams: Promise<{ invoice?: string }> }) {
   const { invoice: invoiceParam } = use(searchParams);
+  const router = useRouter();
   const api = useApi();
-  const { hasRole } = useAuth();
   const notes = useResource<{ data: CreditNote[] }>("/sales/credit-notes");
-  const [q, setQ] = useState("");
-  const [matches, setMatches] = useState<InvoiceSummary[]>([]);
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [issued, setIssued] = useState<CreditNote | null>(null);
-  const [paying, setPaying] = useState<number | null>(null);
+  const [view, setView] = useState<View>("open");
+  const [q, setQ] = useState("");
 
   useEffect(() => {
     if (!invoiceParam) return;
@@ -124,34 +100,52 @@ export default function ReturnsPage({ searchParams }: { searchParams: Promise<{ 
     };
   }, [api, invoiceParam]);
 
-  useEffect(() => {
-    if (q.trim().length < 3) return;
-    let active = true;
-    const timer = window.setTimeout(() => {
-      api
-        .get<Page<InvoiceSummary>>(`/sales/invoices?q=${encodeURIComponent(q.trim())}`)
-        .then(({ data }) => active && setMatches(data.filter((entry) => entry.status === "paid")))
-        .catch(() => active && setMatches([]));
-    }, 250);
-    return () => {
-      active = false;
-      window.clearTimeout(timer);
-    };
-  }, [api, q]);
+  const all = notes.data?.data ?? [];
+  const open = all.filter((note) => note.status === "open");
+  const monthStart = `${new Date().toISOString().slice(0, 7)}-01`;
+  const thisMonth = all.filter((note) => note.createdAt.slice(0, 10) >= monthStart);
+  const paidOut = all.filter((note) => note.status === "refunded").reduce((sum, note) => sum + note.amount, 0);
+  const needle = q.trim().toLowerCase();
+  const rows = all.filter((note) => {
+    if (view !== "all" && note.status !== view) return false;
+    if (!needle) return true;
+    return [note.number, note.customer?.name, note.customer?.phone, note.invoice?.number, note.reason].some((value) => value?.toLowerCase().includes(needle));
+  });
+
+  function exportCsv() {
+    downloadCsv(`credit-notes-${new Date().toISOString().slice(0, 10)}`, [
+      ["Number", "Date", "Customer", "Mobile", "From invoice", "Amount (₹)", "Left (₹)", "Deduction %", "Reason", "Status"],
+      ...rows.map((note) => [note.number, note.createdAt.slice(0, 10), note.customer?.name, note.customer?.phone, note.invoice?.number, note.amount, note.balance, note.deductionPercent, note.reason, CREDIT_STATUS[note.status].label]),
+    ]);
+  }
 
   return (
     <div className="grid gap-6">
-      <PageHeader title="Returns & credit notes" description="Take pieces back from an invoice. The customer gets a credit note to use on a new bill or to be paid out." />
-      {issued && <Alert tone="ok" title={`${issued.number} issued for ${formatINR(issued.amount)}`}>The pieces are back in stock and need a tray.</Alert>}
+      <PageHeader title="Returns & credit notes" description="Take pieces back from an invoice. The customer gets a credit note to use on a new bill or to be paid out, and a printed copy as proof." />
+      {issued && (
+        <Alert tone="ok" title={`${issued.number} issued for ${formatINR(issued.amount)}`}>
+          The pieces are back in stock and need a tray.{" "}
+          <Link href={`/returns/${issued.id}`} className="font-semibold underline">
+            Open and print the credit note
+          </Link>
+        </Alert>
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard compact title="Open credit notes" value={open.length} icon={CreditCard} subtitle="Waiting to be used or paid out" />
+        <KpiCard compact title="Owed to customers" value={formatINR(open.reduce((sum, note) => sum + note.balance, 0))} icon={Wallet} tone="gold" subtitle="Left on open credit notes" />
+        <KpiCard compact title="Returns this month" value={thisMonth.length} icon={Undo2} tone="navy" subtitle={formatINR(thisMonth.reduce((sum, note) => sum + note.amount, 0))} />
+        <KpiCard compact title="Paid out" value={formatINR(paidOut)} icon={HandCoins} tone="ok" subtitle="Credit notes refunded in all" />
+      </div>
 
       <Card>
-        <CardHeader title="Take pieces back" />
+        <CardHeader title="Take pieces back" description="Find the invoice the pieces were sold on." />
         <CardBody className="grid gap-4">
           {invoice ? (
             <>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span>
-                  <span className="font-mono font-semibold">{invoice.number}</span> · {invoice.customer.name} · {formatDateTime(invoice.invoiceDate)}
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-navy-line bg-navy-soft/60 px-4 py-3">
+                <span className="text-sm">
+                  <span className="font-mono font-semibold text-ink">{invoice.number}</span> · {invoice.customer.name} · {formatDateTime(invoice.invoiceDate)} · {formatINR(invoice.total)}
                 </span>
                 <Button size="sm" variant="ghost" onClick={() => setInvoice(null)}>
                   Different invoice
@@ -168,94 +162,86 @@ export default function ReturnsPage({ searchParams }: { searchParams: Promise<{ 
               />
             </>
           ) : (
-            <>
-              <Input id="return-search" placeholder="Invoice number, customer name or mobile" value={q} onChange={(event) => setQ(event.target.value)} />
-              {q.trim().length >= 3 && (
-                <ul className="grid divide-y divide-line rounded-[var(--radius-control)] border border-line">
-                  {matches.map((match) => (
-                    <li key={match.id}>
-                      <button
-                        type="button"
-                        className="flex w-full flex-wrap justify-between gap-2 px-4 py-2.5 text-left text-sm hover:bg-sunk"
-                        onClick={async () => setInvoice((await api.get<{ data: Invoice }>(`/sales/invoices/${match.id}`)).data)}
-                      >
-                        <span className="font-mono font-semibold">{match.number}</span>
-                        <span>
-                          {match.customer.name} · {formatINR(match.total)}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                  {!matches.length && <li className="px-4 py-2.5 text-[13px] text-ash">No paid invoice matches.</li>}
-                </ul>
-              )}
-            </>
+            <InvoicePicker onChoose={async (match) => setInvoice((await api.get<{ data: Invoice }>(`/sales/invoices/${match.id}`)).data)} />
           )}
         </CardBody>
       </Card>
 
-      <Card>
-        <CardHeader title="Credit notes" />
-        {!notes.data?.data.length ? (
-          <EmptyState title="No credit notes" />
+      <Tabs<View>
+        label="Credit note status"
+        active={view}
+        onChange={setView}
+        tabs={[
+          { key: "open", label: "Open", count: open.length },
+          { key: "used", label: "Used", count: all.filter((note) => note.status === "used").length },
+          { key: "refunded", label: "Paid out", count: all.filter((note) => note.status === "refunded").length },
+          { key: "all", label: "All", count: all.length },
+        ]}
+        actions={
+          <ToolbarActions>
+            <ToolbarSearch value={q} onChange={setQ} placeholder="Number, customer or invoice…" />
+            <ToolbarExport onExport={exportCsv} />
+          </ToolbarActions>
+        }
+      />
+      {notes.data && <ResultsCount shown={rows.length} total={all.length} noun="credit note" />}
+
+      <Card className="overflow-hidden">
+        {notes.loading && !notes.data ? (
+          <div className="grid place-items-center py-12 text-navy">
+            <Spinner />
+          </div>
+        ) : !rows.length ? (
+          <EmptyState icon={CreditCard} title="No credit notes here" description={needle ? "Nothing matches the search." : "Credit notes from returns appear here."} />
         ) : (
-          <Table minWidth={720}>
+          <Table minWidth={820}>
             <thead>
               <tr>
-                <Th>Number</Th>
+                <Th>Credit note</Th>
                 <Th>Customer</Th>
-                <Th>From</Th>
+                <Th>From invoice</Th>
                 <Th align="right">Amount</Th>
                 <Th align="right">Left</Th>
                 <Th>Status</Th>
-                <Th />
               </tr>
             </thead>
             <tbody>
-              {notes.data.data.map((note) => (
-                <Fragment key={note.id}>
-                  <Tr>
-                    <Td>
-                      <span className="font-mono font-semibold">{note.number}</span>
-                      <span className="block text-[12px] text-ash">{note.reason}</span>
-                    </Td>
-                    <Td>{note.customer?.name}</Td>
-                    <Td>
-                      {note.invoice ? (
-                        <Link href={`/invoices/${note.invoice.id}`} className="font-mono text-[12px] underline">
-                          {note.invoice.number}
-                        </Link>
-                      ) : (
-                        "—"
-                      )}
-                    </Td>
-                    <Td align="right">{formatINR(note.amount)}</Td>
-                    <Td align="right">{formatINR(note.balance)}</Td>
-                    <Td>
-                      <Badge tone={STATUS[note.status].tone}>{STATUS[note.status].label}</Badge>
-                    </Td>
-                    <Td>
-                      {note.status === "open" && hasRole("owner", "branch_manager") && paying !== note.id && (
-                        <Button size="sm" variant="ghost" onClick={() => setPaying(note.id)}>
-                          Pay out
-                        </Button>
-                      )}
-                    </Td>
-                  </Tr>
-                  {paying === note.id && (
-                    <Tr>
-                      <Td colSpan={7}>
-                        <PayOut
-                          note={note}
-                          onDone={() => {
-                            setPaying(null);
-                            notes.reload();
-                          }}
-                        />
-                      </Td>
-                    </Tr>
-                  )}
-                </Fragment>
+              {rows.map((note) => (
+                <Tr key={note.id} className="cursor-pointer" onClick={() => router.push(`/returns/${note.id}`)}>
+                  <Td>
+                    <Link href={`/returns/${note.id}`} className="grid leading-tight" onClick={(event) => event.stopPropagation()}>
+                      <span className="font-mono font-semibold text-ink hover:underline">{note.number}</span>
+                      <span className="text-[12px] text-ash">
+                        {formatDate(note.createdAt)}
+                        {note.reason ? ` · ${note.reason}` : ""}
+                      </span>
+                    </Link>
+                  </Td>
+                  <Td>
+                    <span className="grid leading-tight">
+                      <span className="font-semibold text-ink">{note.customer?.name}</span>
+                      <span className="text-[12px] text-ash tabular-nums">{note.customer?.phone}</span>
+                    </span>
+                  </Td>
+                  <Td>
+                    {note.invoice ? (
+                      <Link href={`/invoices/${note.invoice.id}`} className="font-mono text-[12.5px] text-navy hover:underline" onClick={(event) => event.stopPropagation()}>
+                        {note.invoice.number}
+                      </Link>
+                    ) : (
+                      "—"
+                    )}
+                  </Td>
+                  <Td align="right">{formatINR(note.amount)}</Td>
+                  <Td align="right" className="font-semibold text-ink">
+                    {formatINR(note.balance)}
+                  </Td>
+                  <Td>
+                    <Badge tone={CREDIT_STATUS[note.status].tone} dot>
+                      {CREDIT_STATUS[note.status].label}
+                    </Badge>
+                  </Td>
+                </Tr>
               ))}
             </tbody>
           </Table>
@@ -264,3 +250,4 @@ export default function ReturnsPage({ searchParams }: { searchParams: Promise<{ 
     </div>
   );
 }
+

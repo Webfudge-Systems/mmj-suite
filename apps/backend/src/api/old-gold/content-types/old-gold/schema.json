@@ -64,6 +64,9 @@
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::organization.organization"
+    },
+    "cashOverride": {
+      "type": "json"
     }
   }
 }

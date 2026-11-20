@@ -14,6 +14,7 @@ import {
   MANAGER_ROLES,
   OLD_GOLD,
   branchRef,
+  indiaDate,
   nextNumber,
   parsePayments,
   person,
@@ -238,10 +239,31 @@ export default ({ strapi }: { strapi: any }) => ({
       const start = new Date(`${ctx.query.date}T00:00:00+05:30`);
       where.invoiceDate = { $gte: start.toISOString(), $lt: new Date(start.getTime() + 86400000).toISOString() };
     }
-    const result = await strapi.db.query(INVOICE).findPage({ where, page, pageSize: 30, orderBy: { invoiceDate: "desc" }, populate: POPULATE });
+    if (ctx.query.status === "paid" || ctx.query.status === "cancelled") where.status = ctx.query.status;
+    const pageSize = Math.min(Math.max(Number(ctx.query.pageSize) || 30, 1), 500);
+    const result = await strapi.db.query(INVOICE).findPage({ where, page, pageSize, orderBy: { invoiceDate: "desc" }, populate: POPULATE });
+
+    // With ?stats=true: today's and this month's paid sales for the same branches, for the list's cards.
+    let stats;
+    if (ctx.query.stats === "true") {
+      const scope = { organization: { id: staff.organization.id }, branch: where.branch };
+      const today = indiaDate();
+      const monthStart = new Date(`${today.slice(0, 7)}-01T00:00:00+05:30`).toISOString();
+      const month = await strapi.db.query(INVOICE).findMany({ where: { ...scope, invoiceDate: { $gte: monthStart } }, select: ["id", "status", "total", "invoiceDate"], limit: 20000 });
+      const dayStart = new Date(`${today}T00:00:00+05:30`).toISOString();
+      const paid = month.filter((row: any) => row.status === "paid");
+      const todays = paid.filter((row: any) => row.invoiceDate >= dayStart);
+      const sum = (rows: any[]) => Math.round(rows.reduce((total, row) => total + Number(row.total), 0) * 100) / 100;
+      stats = {
+        today: { count: todays.length, total: sum(todays) },
+        month: { count: paid.length, total: sum(paid) },
+        cancelledThisMonth: month.length - paid.length,
+        averageBill: paid.length ? Math.round(sum(paid) / paid.length) : 0,
+      };
+    }
     ctx.body = {
       data: await Promise.all(result.results.map((invoice: any) => serializeInvoice(strapi, invoice, { full: false }))),
-      meta: { pagination: result.pagination },
+      meta: { pagination: result.pagination, ...(stats ? { stats } : {}) },
     };
   },
 

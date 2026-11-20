@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Download, Eye } from "lucide-react";
 import { useAuth } from "@webfudge/auth/components";
 import { LARGE_RATE_CHANGE_PERCENT, PURITIES, RATE_EDITOR_ROLES, type Purity } from "@webfudge/config";
 import { useCurrentRates } from "@webfudge/hooks";
-import { Alert, Badge, Button, Card, CardBody, CardHeader, EmptyState, Field, Input, PageHeader, Spinner } from "@webfudge/ui";
+import { Alert, Badge, Button, Card, CardBody, CardHeader, EmptyState, Field, Input, PageHeader, PrintPreview, Spinner } from "@webfudge/ui";
 import { ApiError, fetchRateHistory, publishRates, type RateCard } from "@webfudge/utils/api";
 import { formatChange, formatDateTime, formatINR, formatPercent } from "@webfudge/utils/formatters";
 import { percentChange } from "@webfudge/utils/pricing";
+import { RateChart } from "@/components/rate-chart";
+import { useBranch } from "@/lib/branch";
 import { API_URL } from "@/lib/env";
 
 type LargeChange = { purity: Purity; from: number; to: number; percent: number };
@@ -221,6 +224,8 @@ export default function RatesPage() {
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [justPublished, setJustPublished] = useState(false);
   const [historyVersion, setHistoryVersion] = useState(0);
+  const [preview, setPreview] = useState(false);
+  const { branch } = useBranch();
 
   useEffect(() => {
     let active = true;
@@ -242,11 +247,27 @@ export default function RatesPage() {
   }, [withToken, historyVersion]);
 
   return (
-    <div className="grid gap-6">
+    <>
+    <div className="grid gap-6 print:hidden">
       <PageHeader
         title="Rates & pricing"
         description="Publish the morning rate once. The website, the showroom tablets and the billing counter all pick it up within a minute."
+        actions={
+          card && (
+            <>
+              <Button variant="secondary" onClick={() => setPreview((value) => !value)}>
+                <Eye className="size-4" aria-hidden />
+                {preview ? "Hide rate chart" : "Preview rate chart"}
+              </Button>
+              <Button variant="gold" onClick={() => window.print()}>
+                <Download className="size-4" aria-hidden />
+                Download A4 rate chart
+              </Button>
+            </>
+          )
+        }
       />
+      {card && preview && <p className="text-[13px] text-ash">The chart below prints on one A4 page. In the print window choose “Save as PDF” to share it on WhatsApp.</p>}
 
       <Card>
         <CardHeader
@@ -278,5 +299,13 @@ export default function RatesPage() {
         <History cards={history} loading={historyLoading} error={historyError} />
       </Card>
     </div>
+    {card && (
+      <div className={preview ? "mt-6 print:mt-0" : "hidden print:block"}>
+        <PrintPreview>
+          <RateChart card={card} place={branch?.city ?? branch?.name} />
+        </PrintPreview>
+      </div>
+    )}
+    </>
   );
 }

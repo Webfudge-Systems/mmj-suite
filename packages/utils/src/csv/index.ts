@@ -72,3 +72,28 @@ export function csvRecords<F extends string>(rows: string[][], fields: Record<F,
   });
   return { records, missing };
 }
+
+/** One CSV cell: quoted when it holds a comma, quote or line break. */
+function cell(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  const text = String(value);
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+/** Rows to CSV text that Excel opens directly (with a BOM so ₹ and Marathi survive). */
+export function toCsv(rows: unknown[][]): string {
+  return "﻿" + rows.map((row) => row.map(cell).join(",")).join("\r\n");
+}
+
+/** Downloads rows as a .csv file in the browser. The first row is the header. */
+export function downloadCsv(filename: string, rows: unknown[][]): void {
+  const blob = new Blob([toCsv(rows)], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename.endsWith(".csv") ? filename : `${filename}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

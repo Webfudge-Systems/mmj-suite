@@ -40,10 +40,28 @@ async function loadCustomer(strapi: any, staff: any, id: unknown) {
 }
 
 /** Cash paid out above the limit must go by bank, for the shop's own tax records. */
-function checkPayout(staff: any, payouts: Payment[]) {
+/**
+ * Cash paid out to one person is capped (₹10,000 by default). An owner or
+ * branch manager can pay more in cash on purpose, with a reason; the approval is
+ * returned so the caller can keep it on the record.
+ */
+function checkPayout(staff: any, payouts: Payment[], override?: any) {
   const cash = toRupees(sumPaise(payouts.filter((payment) => payment.mode === "cash").map((payment) => payment.amount)));
   const limit = rules(staff).cashPayoutLimit;
-  if (cash > limit) throw new errors.ValidationError(`Pay at most ₹${limit} in cash. Send the rest by bank transfer or UPI.`, { code: "CASH_PAYOUT_LIMIT" });
+  if (cash <= limit) return null;
+  const reason = typeof override?.reason === "string" ? override.reason.trim().slice(0, 300) : "";
+  if (!override) {
+    throw new errors.ValidationError(`Pay at most ₹${limit} in cash. Send the rest by bank transfer or UPI, or have a manager approve paying it all in cash.`, {
+      code: "CASH_PAYOUT_LIMIT",
+      limit,
+      cash,
+    });
+  }
+  if (!MANAGER_ROLES.includes(staff.staffRole)) {
+    throw new errors.ForbiddenError(`Only the owner or a branch manager can approve paying more than ₹${limit} in cash.`);
+  }
+  if (reason.length < 5) throw new errors.ValidationError("Write why this is being paid in cash.");
+  return { cash, limit, reason, approvedBy: staff.fullName || staff.username, at: new Date().toISOString() };
 }
 
 const money = (value: unknown) => Number(value ?? 0);
@@ -67,6 +85,29 @@ function serializeBooking(booking: any) {
     customer: customerRef(booking.customer),
     by: person(booking.by),
     branch: branchRef(booking.branch),
+  };
+}
+
+/** The customer as printed on a receipt or credit note. */
+function printCustomer(customer: any) {
+  if (!customer) return null;
+  return {
+    ...customerRef(customer),
+    address: [customer.address, customer.city].filter(Boolean).join(", ") || null,
+    gstin: customer.gstin ?? null,
+  };
+}
+
+/** The shop's name, address and GSTIN for printed documents, as on the tax invoice. */
+async function sellerFor(strapi: any, staff: any, branch: any) {
+  const organization = await strapi.db.query("api::organization.organization").findOne({ where: { id: staff.organization.id } });
+  return {
+    name: organization?.legalName || organization?.name,
+    tradeName: organization?.name,
+    gstin: branch?.gstin || organization?.gstin || null,
+    phone: branch?.phone || organization?.phone || null,
+    email: organization?.email ?? null,
+    address: [branch?.address, branch?.city].filter(Boolean).join(", ") || null,
   };
 }
 
@@ -99,6 +140,7 @@ function serializeOldGold(record: any) {
     totalValue: money(record.totalValue),
     payouts: record.payouts ?? [],
     idProof: record.idProof ?? null,
+    cashOverride: record.cashOverride ?? null,
     createdAt: record.createdAt,
     customer: customerRef(record.customer),
     by: person(record.by),
@@ -160,7 +202,7 @@ export default ({ strapi }: { strapi: any }) => ({
     if (sumPaise(payouts.map((payment) => payment.amount)) !== toPaise(total)) {
       throw new errors.ValidationError(`Payouts must add up to ₹${total}.`, { code: "PAYMENT_MISMATCH" });
     }
-    checkPayout(staff, payouts);
+    const cashOverride = checkPayout(staff, payouts, body.cashOverride);
 
     const created = await strapi.documents(OLD_GOLD).create({
       data: {
@@ -170,6 +212,7 @@ export default ({ strapi }: { strapi: any }) => ({
         totalValue: total,
         payouts,
         idProof,
+        cashOverride,
         customer: customer.documentId,
         by: staff.documentId,
         branch: branch.documentId,
@@ -260,10 +303,10 @@ export default ({ strapi }: { strapi: any }) => ({
     if (sumPaise(payouts.map((payment) => payment.amount)) !== toPaise(Number(booking.balance))) {
       throw new errors.ValidationError(`Refund exactly the balance of ₹${Number(booking.balance)}.`);
     }
-    checkPayout(staff, payouts);
+    const cashOverride = checkPayout(staff, payouts, ctx.request.body?.cashOverride);
     await strapi.db.query(BOOKING).update({
       where: { id: booking.id },
-      data: { status: "refunded", balance: 0, usage: [...(booking.usage ?? []), { refund: payouts, amount: Number(booking.balance), at: new Date().toISOString(), by: staff.id }] },
+      data: { status: "refunded", balance: 0, usage: [...(booking.usage ?? []), { refund: payouts, amount: Number(booking.balance), at: new Date().toISOString(), by: staff.id, ...(cashOverride ? { cashOverride } : {}) }] },
     });
     const saved = await strapi.db.query(BOOKING).findOne({ where: { id: booking.id }, populate: PEOPLE });
     ctx.body = { data: serializeBooking(saved) };
@@ -340,6 +383,37 @@ export default ({ strapi }: { strapi: any }) => ({
     ctx.body = { data: serializeCreditNote(saved) };
   },
 
+  /** One advance with what is needed to print its receipt. */
+  async getBooking(ctx: any) {
+    const staff = staffOf(ctx);
+    const booking = await strapi.db.query(BOOKING).findOne({
+      where: { id: Number(ctx.params.id), organization: { id: staff.organization.id } },
+      populate: { ...PEOPLE, branch: true },
+    });
+    if (!booking) throw new errors.NotFoundError("Advance not found.");
+    await requireBranch(strapi, staff, booking.branch.id);
+    ctx.body = { data: { ...serializeBooking(booking), customer: printCustomer(booking.customer), seller: await sellerFor(strapi, staff, booking.branch) } };
+  },
+
+  /** One credit note with what is needed to print it for the customer. */
+  async getCreditNote(ctx: any) {
+    const staff = staffOf(ctx);
+    const note = await strapi.db.query(CREDIT_NOTE).findOne({
+      where: { id: Number(ctx.params.id), organization: { id: staff.organization.id } },
+      populate: { ...PEOPLE, branch: true, invoice: { select: ["id", "number", "invoiceDate"] } },
+    });
+    if (!note) throw new errors.NotFoundError("Credit note not found.");
+    await requireBranch(strapi, staff, note.branch.id);
+    ctx.body = {
+      data: {
+        ...serializeCreditNote(note),
+        invoice: note.invoice ? { id: note.invoice.id, number: note.invoice.number, invoiceDate: note.invoice.invoiceDate } : null,
+        customer: printCustomer(note.customer),
+        seller: await sellerFor(strapi, staff, note.branch),
+      },
+    };
+  },
+
   async listCreditNotes(ctx: any) {
     const staff = staffOf(ctx);
     ctx.body = { data: await list(strapi, staff, CREDIT_NOTE, ctx.query, { ...PEOPLE, invoice: { select: ["id", "number"] } }, serializeCreditNote) };
@@ -357,10 +431,10 @@ export default ({ strapi }: { strapi: any }) => ({
     if (sumPaise(payouts.map((payment) => payment.amount)) !== toPaise(Number(note.balance))) {
       throw new errors.ValidationError(`Pay out exactly the balance of ₹${Number(note.balance)}.`);
     }
-    checkPayout(staff, payouts);
+    const cashOverride = checkPayout(staff, payouts, ctx.request.body?.cashOverride);
     await strapi.db.query(CREDIT_NOTE).update({
       where: { id: note.id },
-      data: { status: "refunded", balance: 0, refunds: [...(note.refunds ?? []), { payouts, amount: Number(note.balance), at: new Date().toISOString(), by: staff.id }] },
+      data: { status: "refunded", balance: 0, refunds: [...(note.refunds ?? []), { payouts, amount: Number(note.balance), at: new Date().toISOString(), by: staff.id, ...(cashOverride ? { cashOverride } : {}) }] },
     });
     const saved = await strapi.db.query(CREDIT_NOTE).findOne({ where: { id: note.id }, populate: { ...PEOPLE, invoice: { select: ["id", "number"] } } });
     ctx.body = { data: serializeCreditNote(saved) };

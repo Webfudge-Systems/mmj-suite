@@ -54,6 +54,9 @@ export type Supplier = {
   isActive: boolean;
 };
 
+/** A supplier row on the list, with ?stats=true. */
+export type SupplierWithStats = Supplier & { stats: { pieces: number; inStock: number; netInStock: number; receipts: number; lastReceivedAt: string | null } };
+
 /** A bill, challan or other uploaded file: an image or a PDF. */
 export type FileRef = { id: number; name: string; url: string; mime: string | null; size: number | null; thumbnailUrl: string | null };
 
@@ -207,6 +210,9 @@ export type StockSummary = {
   withStaff: number;
   inTransit: number;
   receivedToday: number;
+  onApproval?: number;
+  reserved?: number;
+  sold?: number;
   incomingTransfers: number;
   lastAuditAt: string | null;
   byPurity: { purity: Purity; pieces: number; netWeight: number; grossWeight: number }[];

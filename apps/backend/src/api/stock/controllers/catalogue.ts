@@ -214,7 +214,39 @@ export default ({ strapi }: { strapi: any }) => {
     if (ctx.query.kind === "supplier" || ctx.query.kind === "karigar") where.kind = ctx.query.kind;
     if (ctx.query.active !== "all") where.isActive = { $ne: false };
     const rows = await strapi.db.query(SUPPLIER).findMany({ where, orderBy: { name: "asc" }, limit: 1000 });
-    ctx.body = { data: rows.map(serializeSupplier) };
+    if (ctx.query.stats !== "true") {
+      ctx.body = { data: rows.map(serializeSupplier) };
+      return;
+    }
+    // With ?stats=true: pieces received from each, how many are still in stock, and the last delivery.
+    const ids = rows.map((row: any) => row.id);
+    const [items, receipts] = ids.length
+      ? await Promise.all([
+          strapi.db.query(ITEM).findMany({ where: { ...orgWhere(staff), supplier: { id: { $in: ids } } }, select: ["id", "status", "netWeight"], populate: { supplier: { select: ["id"] } }, limit: 100000 }),
+          strapi.db.query(RECEIPT).findMany({ where: { ...orgWhere(staff), supplier: { id: { $in: ids } } }, select: ["id", "createdAt"], populate: { supplier: { select: ["id"] } }, limit: 20000 }),
+        ])
+      : [[], []];
+    const stats = new Map<number, { pieces: number; inStock: number; netInStock: number; receipts: number; lastReceivedAt: string | null }>();
+    const entry = (id: number) => {
+      if (!stats.has(id)) stats.set(id, { pieces: 0, inStock: 0, netInStock: 0, receipts: 0, lastReceivedAt: null });
+      return stats.get(id)!;
+    };
+    for (const item of items) {
+      if (!item.supplier) continue;
+      const row = entry(item.supplier.id);
+      row.pieces += 1;
+      if (!GONE.has(item.status)) {
+        row.inStock += 1;
+        row.netInStock = round3(row.netInStock + Number(item.netWeight ?? 0));
+      }
+    }
+    for (const receipt of receipts) {
+      if (!receipt.supplier) continue;
+      const row = entry(receipt.supplier.id);
+      row.receipts += 1;
+      if (!row.lastReceivedAt || receipt.createdAt > row.lastReceivedAt) row.lastReceivedAt = receipt.createdAt;
+    }
+    ctx.body = { data: rows.map((row: any) => ({ ...serializeSupplier(row), stats: stats.get(row.id) ?? { pieces: 0, inStock: 0, netInStock: 0, receipts: 0, lastReceivedAt: null } })) };
   },
 
   /** One supplier or karigar: details, everything received from them, and how those pieces are doing. */

@@ -2,7 +2,7 @@
 
 import { use, useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { CircleDollarSign, Gem, PackagePlus, Printer, Scale, Weight } from "lucide-react";
+import { CalendarClock, CircleCheckBig, CircleDollarSign, ClipboardList, Gem, Hammer, PackagePlus, Printer, Scale, Weight } from "lucide-react";
 import { useAuth } from "@webfudge/auth/components";
 import {
   Alert,
@@ -14,6 +14,9 @@ import {
   Input,
   KpiCard,
   PageHeader,
+  DetailHero,
+  HeroFact,
+  StatusPill,
   Spinner,
   StatusBadge,
   Table,
@@ -70,6 +73,7 @@ export default function JobPage({
   if (error || !job) return <p className="text-sm text-risk">{error ?? "Job not found."}</p>;
   const account = job.account;
   const open = job.status === "open";
+  const late = open && Boolean(job.dueOn && job.dueOn < new Date().toISOString().slice(0, 10));
 
   async function run(action: () => Promise<unknown>, done: string) {
     setBusy(true);
@@ -140,6 +144,41 @@ export default function JobPage({
               )}
             </div>
           }
+        />
+
+        <DetailHero
+          icon={Hammer}
+          title={job.karigar?.name ?? "Karigar"}
+          badges={
+            open ? (
+              <>
+                <StatusPill tone="gold" icon={Hammer}>
+                  Open · work in progress
+                </StatusPill>
+                {late && <StatusPill tone="risk">Past due date</StatusPill>}
+              </>
+            ) : (
+              <StatusPill tone="ok" icon={CircleCheckBig}>
+                Closed · settled
+              </StatusPill>
+            )
+          }
+          meta={
+            <>
+              <HeroFact icon={ClipboardList}>
+                <span className="font-mono">{job.number}</span>
+              </HeroFact>
+              {job.dueOn && <HeroFact icon={CalendarClock}>Due {formatDate(job.dueOn)}</HeroFact>}
+              {job.closedAt && <HeroFact icon={CircleCheckBig}>Settled {formatDate(job.closedAt)}</HeroFact>}
+              {job.labourCharge !== null && <HeroFact icon={CircleDollarSign}>Labour {formatINR(job.labourCharge)}</HeroFact>}
+            </>
+          }
+          stat={{
+            label: open ? "Fine gold with karigar" : "Balance at settlement",
+            value: `${Math.abs(account.balanceFine).toFixed(3)} g`,
+            note: account.balanceFine < 0 ? "The shop owes the karigar" : account.balanceFine === 0 ? "Square" : open ? "Still to come back" : "Carried over",
+          }}
+          className={open ? undefined : "border-ok-line from-ok-soft/80 via-white to-ok-soft/30"}
         />
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
