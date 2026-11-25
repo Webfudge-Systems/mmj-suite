@@ -20,6 +20,7 @@ import {
   Shapes,
   Tags,
   Truck,
+  UsersRound,
 } from "lucide-react";
 import { RequireAuth, StaffHeaderExtras, useAuth } from "@webfudge/auth/components";
 import { RATE_EDITOR_ROLES } from "@webfudge/config";
@@ -51,7 +52,10 @@ const nav: NavItem[] = [
   { href: "/reports", label: "Reports", icon: BarChart3 },
 ];
 
-const system: NavItem[] = [{ href: "/settings", label: "Settings", icon: Settings }];
+const system: NavItem[] = [
+  { href: "/team", label: "Team", icon: UsersRound },
+  { href: "/settings", label: "Settings", icon: Settings },
+];
 
 function Rates() {
   const { hasRole } = useAuth();

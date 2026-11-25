@@ -11,6 +11,8 @@ export default {
     { method: "GET", path: "/staff/organization", handler: "staff.organization", config: anyStaff },
     { method: "PUT", path: "/staff/organization", handler: "staff.saveOrganization", config: owner },
     { method: "GET", path: "/staff/team", handler: "staff.team", config: managers },
+    { method: "POST", path: "/staff/team", handler: "staff.addMember", config: managers },
+    { method: "PUT", path: "/staff/team/:id", handler: "staff.updateMember", config: managers },
     { method: "PUT", path: "/staff/team/:id/pin", handler: "staff.setPin", config: anyStaff },
   ],
 };

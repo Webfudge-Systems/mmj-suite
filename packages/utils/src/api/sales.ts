@@ -325,9 +325,15 @@ export type Tablet = {
 export type TeamMember = {
   id: number;
   name: string;
-  email: string;
+  fullName: string | null;
+  /** Signs in with this, or with the email when there is one. */
+  username: string;
+  /** Null when they sign in with the username only. */
+  email: string | null;
+  phone: string | null;
   staffRole: string;
   blocked: boolean;
   hasPin: boolean;
+  createdAt: string | null;
   branches: { id: number; name: string; code: string }[];
 };

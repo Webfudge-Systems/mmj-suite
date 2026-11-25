@@ -2,7 +2,6 @@
 
 import { useState, type FormEvent } from "react";
 import { errorMessage, useApi, useAuth, useBranch, useResource } from "@webfudge/auth/components";
-import { STAFF_ROLES, type StaffRole } from "@webfudge/config";
 import { Alert, Badge, Button, Card, CardBody, CardHeader, Field, Input, Table, Td, Th, Tr } from "@webfudge/ui";
 import type { Tablet, TeamMember } from "@webfudge/utils/api";
 import { formatDateTime } from "@webfudge/utils/formatters";
@@ -109,7 +108,7 @@ function InvoiceDetailsForm({
   );
 }
 
-function PinCell({ member, onSaved }: { member: TeamMember; onSaved: () => void }) {
+export function PinCell({ member, onSaved }: { member: TeamMember; onSaved: () => void }) {
   const api = useApi();
   const [editing, setEditing] = useState(false);
   const [pin, setPin] = useState("");
@@ -154,41 +153,6 @@ function PinCell({ member, onSaved }: { member: TeamMember; onSaved: () => void 
       </span>
       {error && <span className="text-[12px] text-risk">{error}</span>}
     </span>
-  );
-}
-
-/** Staff and their tablet PINs. Owner and branch managers. */
-export function StaffPins() {
-  const team = useResource<{ data: TeamMember[] }>("/staff/team");
-  return (
-    <Card>
-      <CardHeader title="Staff & tablet PINs" description="Salespeople sign in on the showroom tablets with a 4 to 6 digit PIN. New staff accounts are still added in the backend admin panel." />
-      <Table minWidth={620}>
-        <thead>
-          <tr>
-            <Th>Name</Th>
-            <Th>Role</Th>
-            <Th>Branches</Th>
-            <Th>Tablet PIN</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {team.data?.data.map((member) => (
-            <Tr key={member.id}>
-              <Td>
-                <span className="font-semibold">{member.name}</span>
-                <span className="block text-[12px] text-ash">{member.email}</span>
-              </Td>
-              <Td>{STAFF_ROLES[member.staffRole as StaffRole]?.label ?? member.staffRole}</Td>
-              <Td>{member.staffRole === "owner" ? "All" : member.branches.map((branch) => branch.code).join(", ") || "—"}</Td>
-              <Td>
-                <PinCell member={member} onSaved={team.reload} />
-              </Td>
-            </Tr>
-          ))}
-        </tbody>
-      </Table>
-    </Card>
   );
 }
 

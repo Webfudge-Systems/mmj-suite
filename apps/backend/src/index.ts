@@ -34,6 +34,8 @@ const staffActions = [
   "api::staff.staff.organization",
   "api::staff.staff.saveOrganization",
   "api::staff.staff.team",
+  "api::staff.staff.addMember",
+  "api::staff.staff.updateMember",
   "api::staff.staff.setPin",
   "api::rate-card.rate-card.history",
   "api::rate-card.rate-card.publish",

@@ -1,7 +1,62 @@
 import { errors } from "@strapi/utils";
+import { STAFF_ROLES } from "../../../utils/constants";
 import { hashPin, weakPin } from "../../../utils/secrets";
 
 const branchRef = (branch: any) => ({ id: branch.id, name: branch.name, code: branch.code, city: branch.city ?? null });
+
+/** Placeholder email for staff who sign in with a username only. The .invalid domain never receives mail. */
+const NO_EMAIL = "@no-email.invalid";
+const USERNAME = /^[a-z0-9._]{3,30}$/;
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const ROLES: readonly string[] = STAFF_ROLES;
+
+const text = (value: unknown, max: number) => (typeof value === "string" && value.trim() ? value.trim().slice(0, max) : null);
+
+function weakPassword(password: string) {
+  if (password.length < 8) return "The password must be at least 8 characters.";
+  if (password.length > 72) return "The password can be at most 72 characters.";
+  if (!/[a-zA-Z]/.test(password) || !/\d/.test(password)) return "Use both letters and digits in the password.";
+  return null;
+}
+
+/** One person on the team list. */
+function teamRow(person: any) {
+  const email = person.email && !String(person.email).endsWith(NO_EMAIL) ? person.email : null;
+  return {
+    id: person.id,
+    name: person.fullName || person.username,
+    fullName: person.fullName ?? null,
+    username: person.username,
+    email,
+    phone: person.phone ?? null,
+    staffRole: person.staffRole,
+    blocked: !!person.blocked,
+    hasPin: !!person.pinHash,
+    createdAt: person.createdAt ?? null,
+    branches: (person.branches ?? []).map(branchRef),
+  };
+}
+
+/** Only the owner gives the owner or branch manager role. */
+function assertRoleAllowed(staff: any, role: string) {
+  if (!ROLES.includes(role)) throw new errors.ValidationError("Choose a role.");
+  if (staff.staffRole !== "owner" && ["owner", "branch_manager"].includes(role)) {
+    throw new errors.ForbiddenError("Only the owner can make someone an owner or a branch manager.");
+  }
+}
+
+/** The branches a new or edited person may be given: the organization's, and for a manager only their own. */
+async function allowedBranches(strapi: any, staff: any, role: string, value: unknown) {
+  const ids = [...new Set((Array.isArray(value) ? value : []).map(Number).filter(Boolean))];
+  if (!ids.length && role !== "owner") throw new errors.ValidationError("Choose at least one branch.");
+  const found = await strapi.db.query("api::branch.branch").findMany({ where: { id: { $in: ids }, organization: { id: staff.organization.id } } });
+  if (found.length !== ids.length) throw new errors.ValidationError("One of the branches was not found.");
+  if (staff.staffRole !== "owner") {
+    const own = new Set((staff.branches ?? []).map((branch: any) => branch.id));
+    if (ids.some((id) => !own.has(id))) throw new errors.ForbiddenError("You can only add people to the branches you manage.");
+  }
+  return ids;
+}
 
 /** Branches of the organization. The owner works in all of them; everyone else in their own. */
 async function organizationBranches(strapi: any, organizationId: number) {
@@ -128,17 +183,109 @@ export default ({ strapi }: { strapi: any }) => {
       populate: { branches: true },
       orderBy: { fullName: "asc" },
     });
-    ctx.body = {
-      data: people.map((person: any) => ({
-        id: person.id,
-        name: person.fullName || person.username,
-        email: person.email,
-        staffRole: person.staffRole,
-        blocked: !!person.blocked,
-        hasPin: !!person.pinHash,
-        branches: (person.branches ?? []).map(branchRef),
-      })),
-    };
+    ctx.body = { data: people.map(teamRow) };
+  },
+
+  /** Adds a staff account. The owner adds anyone; a branch manager adds staff for their own branches. */
+  async addMember(ctx: any) {
+    const staff = ctx.state.staff;
+    const body = ctx.request.body ?? {};
+    const fullName = text(body.fullName, 80);
+    const username = typeof body.username === "string" ? body.username.trim().toLowerCase() : "";
+    const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const password = typeof body.password === "string" ? body.password : "";
+    const staffRole = String(body.staffRole ?? "");
+
+    if (!fullName) throw new errors.ValidationError("Enter their name.");
+    if (!USERNAME.test(username)) throw new errors.ValidationError("The username must be 3 to 30 letters, digits, dots or underscores, like ravi.patil.");
+    if (email && !EMAIL.test(email)) throw new errors.ValidationError("That email doesn't look right.");
+    const weak = weakPassword(password);
+    if (weak) throw new errors.ValidationError(weak);
+    assertRoleAllowed(staff, staffRole);
+    const branchIds = await allowedBranches(strapi, staff, staffRole, body.branchIds);
+
+    const users = strapi.db.query("plugin::users-permissions.user");
+    if (await users.findOne({ where: { username } })) throw new errors.ValidationError(`The username ${username} is taken.`);
+    if (email && (await users.findOne({ where: { email } }))) throw new errors.ValidationError(`${email} already has an account.`);
+
+    const authenticated = await strapi.db.query("plugin::users-permissions.role").findOne({ where: { type: "authenticated" } });
+    const created = await strapi.plugin("users-permissions").service("user").add({
+      username,
+      email: email || `${username}${NO_EMAIL}`,
+      password,
+      provider: "local",
+      confirmed: true,
+      blocked: false,
+      role: authenticated?.id,
+      fullName,
+      phone: text(body.phone, 20),
+      staffRole,
+      organization: staff.organization.id,
+      branches: branchIds,
+    });
+
+    ctx.status = 201;
+    ctx.body = { data: teamRow(await users.findOne({ where: { id: created.id }, populate: { branches: true } })) };
+  },
+
+  /** Edits a staff account: name, contact, role, branches, blocked, or a new password. */
+  async updateMember(ctx: any) {
+    const staff = ctx.state.staff;
+    const body = ctx.request.body ?? {};
+    const users = strapi.db.query("plugin::users-permissions.user");
+    const target = await users.findOne({ where: { id: Number(ctx.params.id), organization: { id: staff.organization.id } }, populate: { branches: true } });
+    if (!target || !target.staffRole) throw new errors.NotFoundError("Staff member not found.");
+
+    const self = target.id === staff.id;
+    const isOwner = staff.staffRole === "owner";
+    if (!isOwner && ["owner", "branch_manager"].includes(target.staffRole) && !self) {
+      throw new errors.ForbiddenError("Only the owner can change an owner or a branch manager.");
+    }
+    if (!isOwner && !self && !(target.branches ?? []).some((branch: any) => (staff.branches ?? []).some((own: any) => own.id === branch.id))) {
+      throw new errors.ForbiddenError("This person works at a branch you don't manage.");
+    }
+
+    const data: Record<string, unknown> = {};
+    if (body.fullName !== undefined) {
+      const fullName = text(body.fullName, 80);
+      if (!fullName) throw new errors.ValidationError("Enter their name.");
+      data.fullName = fullName;
+    }
+    if (body.phone !== undefined) data.phone = text(body.phone, 20);
+    if (body.email !== undefined) {
+      const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+      if (email && !EMAIL.test(email)) throw new errors.ValidationError("That email doesn't look right.");
+      if (email && (await users.findOne({ where: { email, id: { $ne: target.id } } }))) throw new errors.ValidationError(`${email} already has an account.`);
+      data.email = email || `${target.username}${NO_EMAIL}`;
+    }
+
+    const roleChanging = body.staffRole !== undefined && body.staffRole !== target.staffRole;
+    const blocking = body.blocked !== undefined && !!body.blocked !== !!target.blocked;
+    if ((roleChanging || blocking) && self) throw new errors.ValidationError("You can't change your own role or block yourself. Ask the owner.");
+    const role = roleChanging ? String(body.staffRole) : target.staffRole;
+    if (roleChanging) {
+      assertRoleAllowed(staff, role);
+      data.staffRole = role;
+    }
+    if (body.branchIds !== undefined || roleChanging) {
+      data.branches = await allowedBranches(strapi, staff, role, body.branchIds ?? (target.branches ?? []).map((branch: any) => branch.id));
+    }
+    if (blocking) data.blocked = !!body.blocked;
+
+    // Never leave the shop without an owner who can sign in.
+    if (target.staffRole === "owner" && ((roleChanging && role !== "owner") || (blocking && body.blocked))) {
+      const owners = await users.count({ where: { organization: { id: staff.organization.id }, staffRole: "owner", blocked: false } });
+      if (owners <= 1) throw new errors.ValidationError("This is the only owner. Make someone else an owner first.");
+    }
+
+    if (body.password !== undefined && body.password !== "") {
+      const weak = weakPassword(String(body.password));
+      if (weak) throw new errors.ValidationError(weak);
+      data.password = String(body.password);
+    }
+
+    if (Object.keys(data).length) await strapi.plugin("users-permissions").service("user").edit(target.id, data);
+    ctx.body = { data: teamRow(await users.findOne({ where: { id: target.id }, populate: { branches: true } })) };
   },
 
   /** Sets a staff member's tablet PIN. Managers set it for others; anyone may set their own. */

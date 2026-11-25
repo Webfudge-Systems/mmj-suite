@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@webfudge/auth/components";
 import { Alert, Button, Card, CardBody, CardHeader, Field, Input, PageHeader, Table, Td, Th, Tr, buttonClass } from "@webfudge/ui";
 import type { Branch } from "@webfudge/utils/api";
-import { InvoiceDetails, StaffPins, Tablets } from "@/components/settings-floor";
+import { InvoiceDetails, Tablets } from "@/components/settings-floor";
 import { errorMessage, useApi, useResource } from "@/lib/api";
 
 function BranchForm({ branch, onSaved, onCancel }: { branch?: Branch; onSaved: () => void; onCancel?: () => void }) {
@@ -77,9 +77,21 @@ export default function SettingsPage() {
 
   return (
     <div className="grid gap-6">
-      <PageHeader title="Settings" description="Staff accounts and roles are still created in the backend admin panel." />
+      <PageHeader title="Settings" description="Invoice details, branches and showroom tablets." />
       <InvoiceDetails />
-      {hasRole("owner", "branch_manager") && <StaffPins />}
+      {hasRole("owner", "branch_manager") && (
+        <Card>
+          <CardHeader
+            title="Team"
+            description="Add staff accounts, set their role, branches, password and tablet PIN, and block anyone who leaves."
+            action={
+              <Link href="/team" className={buttonClass("secondary", "sm")}>
+                Open team
+              </Link>
+            }
+          />
+        </Card>
+      )}
       {hasRole("owner", "branch_manager") && <Tablets />}
 
       <Card>
