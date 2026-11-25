@@ -2,10 +2,10 @@
 
 import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ClipboardList, RotateCcw } from "lucide-react";
+import { Check, ClipboardList, Coins, CreditCard, Gem, IndianRupee, ReceiptText, RotateCcw, ScanBarcode, Trash2, UserRound, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { errorMessage, useApi, useBranch } from "@webfudge/auth/components";
-import { Alert, Badge, Button, Card, CardBody, CardHeader, Field, Input, PageHeader, ScanInput, Spinner, Table, Td, Th, Tr, buttonClass, type ScanSuggestion } from "@webfudge/ui";
+import { Alert, Badge, Button, Card, CardBody, CardHeader, Field, Input, MissingHints, PageHeader, ScanInput, Spinner, Table, Td, Th, Tr, buttonClass, cn, type ScanSuggestion } from "@webfudge/ui";
 import type { Customer, CustomerDetail, Estimate, Invoice, Quote, StockItem } from "@webfudge/utils/api";
 import { ITEM_STATUS_LABELS } from "@webfudge/utils/api";
 import { formatINR, formatWeight } from "@webfudge/utils/formatters";
@@ -195,6 +195,23 @@ export default function NewBillPage({ searchParams }: { searchParams: Promise<{ 
   const overCash = !!shownQuote && cash > shownQuote.cashAllowed;
   const canIssue = !!shownQuote && !!customer && balanced && !shownQuote.panMissing && !overCash && !quoteError && (!oldGold.length || idProof.trim().length > 3);
 
+
+  const netTotal = shownQuote ? shownQuote.lines.reduce((sum, line) => sum + line.netWeight, 0) : 0;
+  const missing = [
+    !customer && "Choose the customer.",
+    !pieces.length && "Scan at least one piece.",
+    shownQuote?.panMissing && "Add the customer's PAN: their purchases today reach ₹2 lakh.",
+    oldGold.length > 0 && idProof.trim().length <= 3 && "Enter the seller's ID proof for the old gold.",
+    shownQuote && !balanced && (paidPaise(payments) < Math.round(due * 100) ? `Payments are ${formatINR(due - paidPaise(payments) / 100)} short.` : `Payments are ${formatINR(paidPaise(payments) / 100 - due)} more than due.`),
+    overCash && "Take less cash: the ₹2 lakh daily cash limit for one customer would be crossed.",
+  ];
+  const steps = [
+    { label: "Customer", icon: UserRound, done: !!customer, note: customer?.name.replace(/^Demo\s*[–-]\s*/, "") },
+    { label: "Pieces", icon: ScanBarcode, done: pieces.length > 0, note: pieces.length ? `${pieces.length} ${pieces.length === 1 ? "piece" : "pieces"}` : undefined },
+    { label: "Old gold", icon: Coins, done: oldGold.length > 0, note: oldGold.length ? `${oldGold.length} ${oldGold.length === 1 ? "line" : "lines"}` : "If any", optional: true },
+    { label: "Payment", icon: Wallet, done: balanced, note: shownQuote ? formatINR(due) : undefined },
+  ];
+
   return (
     <div className="grid gap-6">
       <PageHeader
@@ -216,10 +233,29 @@ export default function NewBillPage({ searchParams }: { searchParams: Promise<{ 
         }
       />
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <ol className="grid grid-cols-2 gap-2 rounded-2xl border border-gray-100 bg-white p-2 shadow-sm sm:grid-cols-4">
+        {steps.map((step, index) => {
+          const Icon = step.icon;
+          return (
+            <li key={step.label} className={cn("flex items-center gap-3 rounded-xl px-3 py-2.5", step.done ? "bg-ok-soft/70" : "bg-gray-50")}>
+              <span className={cn("grid size-9 shrink-0 place-items-center rounded-full", step.done ? "bg-ok text-white" : step.optional ? "bg-white text-gray-400 ring-1 ring-gray-200" : "bg-navy text-white")}>
+                {step.done ? <Check className="size-4" aria-hidden /> : <Icon className="size-4" aria-hidden />}
+              </span>
+              <span className="grid min-w-0 leading-tight">
+                <span className="text-[11px] font-semibold tracking-wide text-gray-500 uppercase">
+                  {index + 1}. {step.label}
+                </span>
+                <span className={cn("truncate text-[13px]", step.done ? "font-semibold text-ink" : "text-ash")}>{step.note ?? "To do"}</span>
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
         <div className="grid min-w-0 content-start gap-6">
           <Card>
-            <CardHeader title="Customer" />
+            <CardHeader title={<StepTitle icon={UserRound} title="Customer" />} />
             <CardBody className="grid gap-4">
               <CustomerPicker
                 value={customer}
@@ -233,34 +269,63 @@ export default function NewBillPage({ searchParams }: { searchParams: Promise<{ 
               />
               {customer && detail && (detail.advances.length > 0 || detail.creditNotes.length > 0) && (
                 <div className="grid gap-2">
-                  <span className="text-[13px] font-semibold">Use towards this bill</span>
-                  {detail.advances.map((advance) => (
-                    <label key={advance.id} className="flex flex-wrap items-center gap-2 text-sm">
-                      <input type="checkbox" checked={bookingIds.includes(advance.id)} onChange={(event) => setBookingIds((ids) => (event.target.checked ? [...ids, advance.id] : ids.filter((id) => id !== advance.id)))} />
-                      Advance {advance.number}: {formatINR(advance.balance)}
-                      {advance.lockedPurity && advance.lockedRate && (
-                        <Badge tone="gold">
-                          {advance.lockedPurity} booked at {formatINR(advance.lockedRate)}/g for {formatWeight(advance.lockedWeightLeft ?? 0)}
-                        </Badge>
-                      )}
-                    </label>
-                  ))}
-                  {detail.creditNotes.map((note) => (
-                    <label key={note.id} className="flex items-center gap-2 text-sm">
-                      <input type="checkbox" checked={creditNoteIds.includes(note.id)} onChange={(event) => setCreditNoteIds((ids) => (event.target.checked ? [...ids, note.id] : ids.filter((id) => id !== note.id)))} />
-                      Credit note {note.number}: {formatINR(note.balance)}
-                    </label>
-                  ))}
+                  <span className="text-[13px] font-semibold text-ink">Money on account: tick to use it on this bill</span>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {detail.advances.map((advance) => {
+                      const on = bookingIds.includes(advance.id);
+                      return (
+                        <label key={advance.id} className={cn("flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors", on ? "border-navy bg-navy-soft" : "border-gray-200 hover:border-gray-300")}>
+                          <input type="checkbox" className="mt-1 size-4 accent-navy" checked={on} onChange={(event) => setBookingIds((ids) => (event.target.checked ? [...ids, advance.id] : ids.filter((id) => id !== advance.id)))} />
+                          <span className="grid gap-1 leading-tight">
+                            <span className="flex items-center gap-1.5 text-[13px] font-semibold text-ink">
+                              <Wallet className="size-3.5 text-gold" aria-hidden />
+                              Advance {advance.number}
+                            </span>
+                            <span className="text-sm font-bold text-ok tabular-nums">{formatINR(advance.balance)}</span>
+                            {advance.lockedPurity && advance.lockedRate && (
+                              <Badge tone="gold">
+                                {advance.lockedPurity} at {formatINR(advance.lockedRate)}/g for {formatWeight(advance.lockedWeightLeft ?? 0)}
+                              </Badge>
+                            )}
+                          </span>
+                        </label>
+                      );
+                    })}
+                    {detail.creditNotes.map((note) => {
+                      const on = creditNoteIds.includes(note.id);
+                      return (
+                        <label key={note.id} className={cn("flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors", on ? "border-navy bg-navy-soft" : "border-gray-200 hover:border-gray-300")}>
+                          <input type="checkbox" className="mt-1 size-4 accent-navy" checked={on} onChange={(event) => setCreditNoteIds((ids) => (event.target.checked ? [...ids, note.id] : ids.filter((id) => id !== note.id)))} />
+                          <span className="grid gap-1 leading-tight">
+                            <span className="flex items-center gap-1.5 text-[13px] font-semibold text-ink">
+                              <CreditCard className="size-3.5 text-gold" aria-hidden />
+                              Credit note {note.number}
+                            </span>
+                            <span className="text-sm font-bold text-ok tabular-nums">{formatINR(note.balance)}</span>
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </CardBody>
           </Card>
 
-          <Card>
-            <CardHeader title="Pieces" description="Scan each tag. The bill is priced at today's rate." />
+          <Card className="overflow-hidden">
+            <CardHeader title={<StepTitle icon={ScanBarcode} title="Pieces" />} description="Scan each tag. The bill is priced at today's rate." />
             <CardBody className="grid gap-3">
               <ScanInput id="bill-scan" onScan={scan} onSearch={findPieces} autoFocus={!estimateParam} placeholder="Scan a tag, or type part of a tag or design name" />
               {scanError && <Alert tone="risk">{scanError}</Alert>}
+              {!pieces.length && (
+                <div className="grid justify-items-center gap-2 rounded-xl border border-dashed border-gray-200 bg-gray-50/60 px-6 py-8 text-center">
+                  <span className="grid size-12 place-items-center rounded-full bg-white text-navy shadow-sm">
+                    <ScanBarcode className="size-6" aria-hidden />
+                  </span>
+                  <p className="font-semibold text-ink">No pieces yet</p>
+                  <p className="max-w-sm text-[13px] text-ash">Scan the tag with the reader, or type part of the tag or the design name and pick from the list.</p>
+                </div>
+              )}
             </CardBody>
             {pieces.length > 0 && (
               <Table minWidth={900}>
@@ -283,14 +348,19 @@ export default function NewBillPage({ searchParams }: { searchParams: Promise<{ 
                     return (
                       <Tr key={piece.id}>
                         <Td>
-                          <span className="grid leading-tight">
-                            <span className="font-mono font-semibold">{piece.tagNumber}</span>
-                            {line && (
-                              <span className="text-[12px] text-ash">
-                                {line.description} · {line.purity}
-                                {line.huid ? ` · HUID ${line.huid}` : ""}
-                              </span>
-                            )}
+                          <span className="flex items-center gap-3">
+                            <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-gold-soft text-gold-deep">
+                              <Gem className="size-4" aria-hidden />
+                            </span>
+                            <span className="grid leading-tight">
+                              <span className="font-mono font-semibold text-ink">{piece.tagNumber}</span>
+                              {line && (
+                                <span className="text-[12px] text-ash">
+                                  {line.description} · {line.purity}
+                                  {line.huid ? ` · HUID ${line.huid}` : ""}
+                                </span>
+                              )}
+                            </span>
                           </span>
                         </Td>
                         <Td align="right">{line ? formatWeight(line.netWeight) : "—"}</Td>
@@ -307,16 +377,23 @@ export default function NewBillPage({ searchParams }: { searchParams: Promise<{ 
                             inputMode="decimal"
                             value={discounts[piece.id] ?? ""}
                             onChange={(event) => setDiscounts((all) => ({ ...all, [piece.id]: event.target.value }))}
+                            placeholder="0"
                             className="h-8 w-24 tabular-nums"
                           />
                         </Td>
                         <Td align="right">{line ? formatINR(line.stoneValue + line.otherCharges) : "—"}</Td>
-                        <Td align="right" className="font-semibold">
+                        <Td align="right" className="font-semibold text-ink">
                           {line ? formatINR(line.total) : "—"}
                         </Td>
                         <Td>
-                          <button type="button" className="text-[12px] text-ash hover:text-risk" onClick={() => setPieces((current) => current.filter((entry) => entry.id !== piece.id))}>
-                            Remove
+                          <button
+                            type="button"
+                            className="grid size-8 place-items-center rounded-full text-gray-400 hover:bg-risk-soft hover:text-risk"
+                            aria-label={`Remove ${piece.tagNumber}`}
+                            title="Remove from the bill"
+                            onClick={() => setPieces((current) => current.filter((entry) => entry.id !== piece.id))}
+                          >
+                            <Trash2 className="size-4" aria-hidden />
                           </button>
                         </Td>
                       </Tr>
@@ -325,16 +402,16 @@ export default function NewBillPage({ searchParams }: { searchParams: Promise<{ 
                 </tbody>
               </Table>
             )}
-            {shownQuote && <p className="px-4 pb-3 text-[12px] text-ash">Your role can give up to {shownQuote.discountLimitPercent}% off making.</p>}
+            {shownQuote && <p className="border-t border-gray-100 px-5 py-3 text-[12px] text-ash">Your role can give up to {shownQuote.discountLimitPercent}% off making.</p>}
           </Card>
 
           <Card>
-            <CardHeader title="Old gold in exchange" description="Weigh it, test it, and enter the tester's reading. Valued at today's 24KT rate less the shop's deduction." />
+            <CardHeader title={<StepTitle icon={Coins} title="Old gold in exchange" />} description="Optional. Weigh it, test it, and enter the tester's reading. Valued at today's 24KT rate less the shop's deduction." />
             <CardBody className="grid gap-4">
               <OldGoldEditor rows={oldGold} onChange={setOldGold} values={shownQuote?.oldGold.lines.map((line) => line.value)} />
               {oldGold.length > 0 && (
                 <Field label="Seller's ID proof" htmlFor="bill-id-proof" hint="Required when taking old gold, like Aadhaar ending 1234.">
-                  <Input id="bill-id-proof" value={idProof} onChange={(event) => setIdProof(event.target.value)} />
+                  <Input id="bill-id-proof" value={idProof} onChange={(event) => setIdProof(event.target.value)} placeholder="Aadhaar ending 1234" />
                 </Field>
               )}
             </CardBody>
@@ -342,8 +419,8 @@ export default function NewBillPage({ searchParams }: { searchParams: Promise<{ 
         </div>
 
         <div className="grid min-w-0 content-start gap-4 xl:sticky xl:top-20">
-          <Card>
-            <CardHeader title="Bill" />
+          <Card className="overflow-hidden">
+            <CardHeader title={<StepTitle icon={ReceiptText} title="Bill" />} description={pieces.length ? `${pieces.length} ${pieces.length === 1 ? "piece" : "pieces"}${netTotal ? `, ${formatWeight(netTotal)} net` : ""}` : undefined} />
             <CardBody className="grid gap-1">
               {!pieces.length ? (
                 <p className="text-[13px] text-ash">Scan a piece to start.</p>
@@ -365,7 +442,13 @@ export default function NewBillPage({ searchParams }: { searchParams: Promise<{ 
                   {shownQuote.oldGold.value > 0 && <Row label="Old gold" value={shownQuote.oldGold.value} tone="minus" />}
                   {shownQuote.creditNoteUsed > 0 && <Row label="Credit notes" value={shownQuote.creditNoteUsed} tone="minus" />}
                   {shownQuote.advanceUsed > 0 && <Row label="Advances" value={shownQuote.advanceUsed} tone="minus" />}
-                  <Row label="To collect" value={shownQuote.amountDue} strong />
+                  <div className="mt-3 flex items-center justify-between rounded-xl bg-navy px-4 py-3 text-white">
+                    <span className="flex items-center gap-2 text-sm font-semibold">
+                      <IndianRupee className="size-4 text-gold" aria-hidden />
+                      To collect
+                    </span>
+                    <span className="text-2xl font-bold tabular-nums">{formatINR(shownQuote.amountDue)}</span>
+                  </div>
                   {shownQuote.panMissing && (
                     <Alert tone="warn" className="mt-2" title="PAN needed">
                       This customer&apos;s purchases today reach ₹2 lakh. Add their PAN above.
@@ -378,6 +461,7 @@ export default function NewBillPage({ searchParams }: { searchParams: Promise<{ 
 
           {shownQuote && (
             <Card>
+              <CardHeader title={<StepTitle icon={Wallet} title="Payment" />} />
               <CardBody className="grid gap-4">
                 <PaymentsEditor rows={payments} onChange={setPayments} due={due} />
                 {overCash && (
@@ -386,18 +470,32 @@ export default function NewBillPage({ searchParams }: { searchParams: Promise<{ 
                   </Alert>
                 )}
                 <Field label="Note on the invoice" htmlFor="bill-notes">
-                  <Input id="bill-notes" value={notes} onChange={(event) => setNotes(event.target.value)} />
+                  <Input id="bill-notes" value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Optional" />
                 </Field>
                 {issueError && <Alert tone="risk">{issueError}</Alert>}
                 <Button size="lg" variant="gold" loading={issuing} disabled={!canIssue} onClick={issue}>
+                  <ReceiptText className="size-4" aria-hidden />
                   Issue invoice
                 </Button>
-                {!customer && <p className="text-[12px] text-ash">Choose the customer to issue the invoice.</p>}
+                <MissingHints items={missing} />
               </CardBody>
             </Card>
           )}
+          {!shownQuote && <MissingHints items={missing} className="px-1" />}
         </div>
       </div>
     </div>
+  );
+}
+
+/** A step card's title: a gold icon tile and the name. */
+function StepTitle({ icon: Icon, title }: { icon: typeof UserRound; title: string }) {
+  return (
+    <span className="flex items-center gap-2.5">
+      <span className="grid size-8 place-items-center rounded-lg bg-navy-soft text-navy">
+        <Icon className="size-4" aria-hidden />
+      </span>
+      {title}
+    </span>
   );
 }

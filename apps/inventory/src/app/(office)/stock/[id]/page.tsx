@@ -3,9 +3,11 @@
 import { use, useState, type FormEvent } from "react";
 import Link from "next/link";
 import {
+  Calculator,
   CalendarClock,
   Gem,
   Hammer,
+  ImagePlus,
   IndianRupee,
   MapPin,
   Pencil,
@@ -26,6 +28,7 @@ import {
   Card,
   CardBody,
   CardHeader,
+  CopyText,
   DetailHero,
   Field,
   HeroFact,
@@ -34,11 +37,11 @@ import {
   InfoSection,
   Input,
   KpiCard,
+  Modal,
   PageHeader,
   Select,
   Spinner,
   StatusBadge,
-  Tabs,
   buttonClass,
 } from "@webfudge/ui";
 import type { ImageRef, MakingCharge, Movement, StockItem } from "@webfudge/utils/api";
@@ -288,26 +291,26 @@ function EditForm({ item, onSaved }: { item: StockItem; onSaved: (item: StockIte
   );
 }
 
-/** The piece's own photos. Changes save straight away. Falls back to showing the design's photo. */
-function PiecePhotos({
-  item,
-  canEdit,
-  onSaved,
-}: {
-  item: Detail;
-  canEdit: boolean;
-  onSaved: () => void;
-}) {
+/**
+ * The piece's photos, shop style: one large photo with small ones underneath;
+ * tapping a small one shows it large. "Manage photos" adds, removes or changes
+ * the main photo, saving straight away. Falls back to the design's photo.
+ */
+function PieceGallery({ item, canEdit, onSaved }: { item: Detail; canEdit: boolean; onSaved: () => void }) {
   const api = useApi();
   const [photos, setPhotos] = useState<ImageRef[]>(item.photos);
+  const [shown, setShown] = useState(0);
+  const [managing, setManaging] = useState(false);
+  const [zoom, setZoom] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const main = photos[0] ?? null;
-  const fallback = !main ? (item.design?.image ?? null) : null;
+  const fallback = !photos.length ? (item.design?.image ?? null) : null;
+  const big = photos[Math.min(shown, photos.length - 1)] ?? fallback;
 
   async function save(next: ImageRef[]) {
     const before = photos;
     setPhotos(next);
+    setShown(0);
     setSaving(true);
     setError(null);
     try {
@@ -322,59 +325,67 @@ function PiecePhotos({
   }
 
   return (
-    <Card>
-      <CardHeader
-        title="Photos"
-        description={
-          main
-            ? "The main photo is what the tablets and stock list show."
-            : "No photo of this piece yet."
-        }
-        action={saving ? <Spinner className="size-4 text-navy" label="Saving photos" /> : null}
-      />
-      <CardBody className="grid gap-4">
-        {(main || fallback) && (
-          <div className="relative grid aspect-square w-full place-items-center overflow-hidden rounded-xl bg-[radial-gradient(circle_at_50%_40%,var(--color-surface),var(--color-sunk))]">
+    <Card className="overflow-hidden">
+      <div className="relative grid aspect-square w-full place-items-center bg-[radial-gradient(circle_at_50%_40%,var(--color-surface),var(--color-sunk))]">
+        {big ? (
+          <button type="button" onClick={() => setZoom(true)} className="size-full cursor-zoom-in" title="View large">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={mediaUrl((main ?? fallback)!.url)}
-              alt={item.design?.name ?? item.tagNumber}
-              className="size-full object-contain"
-            />
-            {fallback && (
-              <span className="absolute top-2 left-2 rounded-lg bg-white/90 px-2 py-1 text-[11px] font-semibold text-ash shadow-sm">
-                Design photo
-              </span>
-            )}
-          </div>
+            <img src={mediaUrl(big.url)} alt={item.design?.name ?? item.tagNumber} className="size-full object-contain" />
+          </button>
+        ) : (
+          <span className="grid justify-items-center gap-2 text-gray-300">
+            <Gem className="size-14" aria-hidden />
+            <span className="text-[13px] font-semibold text-ash">No photo yet</span>
+          </span>
         )}
-        {canEdit ? (
-          <PhotoStrip
-            id={`piece-${item.id}-photos`}
-            photos={photos}
-            onChange={save}
-            disabled={saving}
-          />
-        ) : photos.length > 1 ? (
-          <div className="flex flex-wrap gap-2">
-            {photos.map((photo) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={photo.id}
-                src={mediaUrl(photo.thumbnailUrl)}
-                alt=""
-                className="size-16 rounded-lg border border-gray-200 object-cover"
-              />
-            ))}
-          </div>
-        ) : null}
-        {error && <Alert tone="risk">{error}</Alert>}
-      </CardBody>
+        {fallback && <span className="absolute top-3 left-3 rounded-lg bg-white/90 px-2 py-1 text-[11px] font-semibold text-ash shadow-sm">Design photo</span>}
+        {saving && (
+          <span className="absolute top-3 right-3 rounded-full bg-white/90 p-1.5 shadow-sm">
+            <Spinner className="size-4 text-navy" label="Saving photos" />
+          </span>
+        )}
+      </div>
+      {photos.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto border-t border-gray-100 p-3">
+          {photos.map((photo, index) => (
+            <button
+              key={photo.id}
+              type="button"
+              onClick={() => setShown(index)}
+              aria-label={`Show photo ${index + 1}`}
+              aria-pressed={index === shown}
+              className={`size-16 shrink-0 overflow-hidden rounded-lg border-2 transition-all ${index === shown ? "border-gold shadow-md" : "border-transparent opacity-70 hover:opacity-100"}`}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={mediaUrl(photo.thumbnailUrl)} alt="" className="size-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+      {canEdit && (
+        <div className="grid gap-3 border-t border-gray-100 p-3">
+          <button type="button" onClick={() => setManaging((value) => !value)} className="flex items-center gap-1.5 justify-self-start text-[13px] font-semibold text-navy hover:underline">
+            <ImagePlus className="size-4" aria-hidden />
+            {managing ? "Done" : photos.length ? "Manage photos" : "Add photos"}
+          </button>
+          {managing && <PhotoStrip id={`piece-${item.id}-photos`} photos={photos} onChange={save} disabled={saving} compact />}
+          {managing && <p className="text-[12px] text-ash">Tap a photo to make it the main one. The main photo is what the tablets and the stock list show.</p>}
+        </div>
+      )}
+      {error && (
+        <div className="px-3 pb-3">
+          <Alert tone="risk">{error}</Alert>
+        </div>
+      )}
+      {zoom && big && (
+        <button type="button" onClick={() => setZoom(false)} className="fixed inset-0 z-50 grid place-items-center bg-ink/80 p-6" aria-label="Close photo">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={mediaUrl(big.url)} alt="" className="max-h-full max-w-full rounded-xl shadow-2xl" />
+        </button>
+      )}
     </Card>
   );
 }
-
-type Tab = "overview" | "photos" | "price" | "history";
 
 const MOVEMENT_TONES: Partial<Record<string, "navy" | "gold" | "ok" | "risk">> = {
   received: "ok",
@@ -392,7 +403,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
   const { data, error, loading, reload } = useResource<{ data: Detail }>(`/stock/items/${id}`);
   const { card } = useCurrentRates(API_URL);
   const [editing, setEditing] = useState(false);
-  const [tab, setTab] = useState<Tab>("overview");
+  const [breakdown, setBreakdown] = useState(false);
   const [now] = useState(() => Date.now());
   const item = data?.data;
 
@@ -405,17 +416,12 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
       ? calculatePrice({
           netWeight: item.netWeight,
           ratePerGram: rate,
-          making:
-            item.making.type === "percent"
-              ? { type: "percent", percent: item.making.value }
-              : { type: item.making.type, amount: item.making.value },
+          making: item.making.type === "percent" ? { type: "percent", percent: item.making.value } : { type: item.making.type, amount: item.making.value },
           stoneValue: item.stoneValue,
           otherCharges: item.huid ? HALLMARK_CHARGE_PER_PIECE : 0,
         })
       : null;
-  const days = item.receivedAt
-    ? Math.max(0, Math.floor((now - new Date(item.receivedAt).getTime()) / 86400000))
-    : null;
+  const days = item.receivedAt ? Math.max(0, Math.floor((now - new Date(item.receivedAt).getTime()) / 86400000)) : null;
   const photo = item.photos[0] ?? item.design?.image ?? null;
   const editable = canEdit && !["sold", "melted", "in_transit"].includes(item.status);
   const making = item.making
@@ -427,7 +433,11 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
   return (
     <div className="grid gap-6">
       <PageHeader
-        title={<span className="font-mono">{item.tagNumber}</span>}
+        title={
+          <CopyText value={item.tagNumber} label="Copy tag number">
+            <span className="font-mono">{item.tagNumber}</span>
+          </CopyText>
+        }
         description={item.design ? `${item.design.name} · ${item.purity}` : item.purity}
         actions={
           <>
@@ -436,13 +446,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
               Print tag
             </Link>
             {editable && !editing && (
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setTab("overview");
-                  setEditing(true);
-                }}
-              >
+              <Button variant="secondary" onClick={() => setEditing(true)}>
                 <Pencil className="size-4" aria-hidden />
                 Correct details
               </Button>
@@ -460,11 +464,7 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
           <span className="grid size-20 shrink-0 place-items-center overflow-hidden rounded-2xl border-2 border-white bg-white text-gray-300 shadow-lg">
             {photo ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={mediaUrl(photo.thumbnailUrl)}
-                alt={item.design?.name ?? item.tagNumber}
-                className="size-full object-cover"
-              />
+              <img src={mediaUrl(photo.thumbnailUrl)} alt={item.design?.name ?? item.tagNumber} className="size-full object-cover" />
             ) : (
               <Gem className="size-8" aria-hidden />
             )}
@@ -482,100 +482,31 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
           <>
             {item.design && (
               <HeroFact icon={Gem}>
-                {item.design.name}{" "}
-                <span className="font-mono text-[12px]">({item.design.code})</span>
+                {item.design.name} <span className="font-mono text-[12px]">({item.design.code})</span>
               </HeroFact>
             )}
-            <HeroFact icon={MapPin}>
-              {item.location
-                ? `${item.location.fullCode}${item.slot ? ` · slot ${item.slot}` : ""}`
-                : "Needs a tray"}
-            </HeroFact>
+            <HeroFact icon={MapPin}>{item.location ? `${item.location.fullCode}${item.slot ? ` · slot ${item.slot}` : ""}` : "Needs a tray"}</HeroFact>
             {item.branch && <HeroFact icon={Store}>{item.branch.name}</HeroFact>}
           </>
         }
-        stat={{
-          label: "Price today",
-          value: price ? formatRupees(price.roundedTotal) : "—",
-          note: rate ? `${item.purity} at ${formatINR(rate)}/g` : `No ${item.purity} rate yet`,
-        }}
+        stat={{ label: "Price today", value: price ? formatRupees(price.roundedTotal) : "—", note: rate ? `${item.purity} at ${formatINR(rate)}/g` : `No ${item.purity} rate yet` }}
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard
-          compact
-          title="Net weight"
-          value={formatWeight(item.netWeight)}
-          icon={Scale}
-          subtitle={`Gross ${formatWeight(item.grossWeight)} · stones ${formatWeight(item.stoneWeight)}`}
-        />
-        <KpiCard
-          compact
-          title="Making"
-          value={making ?? "—"}
-          icon={Hammer}
-          tone="gold"
-          subtitle={
-            price ? `${formatINR(price.makingCharge)} on today's price` : "Charged on the bill"
-          }
-        />
-        <KpiCard
-          compact
-          title="In stock for"
-          value={days === null ? "—" : `${days} ${days === 1 ? "day" : "days"}`}
-          icon={CalendarClock}
-          tone={days !== null && days > 180 ? "warn" : "navy"}
-          subtitle={item.receivedAt ? `Since ${formatDate(item.receivedAt)}` : "Date not known"}
-        />
+        <KpiCard compact title="Net weight" value={formatWeight(item.netWeight)} icon={Scale} subtitle={`Gross ${formatWeight(item.grossWeight)} · stones ${formatWeight(item.stoneWeight)}`} />
+        <KpiCard compact title="Making" value={making ?? "—"} icon={Hammer} tone="gold" subtitle={price ? `${formatINR(price.makingCharge)} on today's price` : "Charged on the bill"} />
+        <KpiCard compact title="In stock for" value={days === null ? "—" : `${days} ${days === 1 ? "day" : "days"}`} icon={CalendarClock} tone={days !== null && days > 180 ? "warn" : "navy"} subtitle={item.receivedAt ? `Since ${formatDate(item.receivedAt)}` : "Date not known"} />
         {item.costPrice !== undefined ? (
-          <KpiCard
-            compact
-            title="Cost"
-            value={item.costPrice == null ? "—" : formatINR(item.costPrice)}
-            icon={IndianRupee}
-            tone="ok"
-            subtitle={
-              price && item.costPrice
-                ? `Margin about ${formatINR(price.roundedTotal - price.gst - item.costPrice)}`
-                : "Bought for"
-            }
-          />
+          <KpiCard compact title="Cost" value={item.costPrice == null ? "—" : formatINR(item.costPrice)} icon={IndianRupee} tone="ok" subtitle={price && item.costPrice ? `Margin about ${formatINR(price.roundedTotal - price.gst - item.costPrice)}` : "Bought for"} />
         ) : (
-          <KpiCard
-            compact
-            title="Stone value"
-            value={formatINR(item.stoneValue)}
-            icon={IndianRupee}
-            tone="ok"
-            subtitle="Added to the price"
-          />
+          <KpiCard compact title="Stone value" value={formatINR(item.stoneValue)} icon={IndianRupee} tone="ok" subtitle="Added to the price" />
         )}
       </div>
 
-      <Tabs<Tab>
-        variant="pill"
-        label="Piece sections"
-        active={tab}
-        onChange={setTab}
-        tabs={[
-          { key: "overview", label: "Overview" },
-          { key: "photos", label: "Photos", count: item.photos.length },
-          { key: "price", label: "Price today" },
-          { key: "history", label: "History", count: item.movements.length },
-        ]}
-      />
-
-      {tab === "overview" && (
-        <div className="grid gap-6 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
-            <CardHeader
-              title={editing ? "Correct details" : "Piece details"}
-              description={
-                editing
-                  ? "Every change is written to the history with your name and reason."
-                  : "Weights, codes and where it is."
-              }
-            />
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid content-start gap-6 lg:col-span-2">
+          <Card>
+            <CardHeader title={editing ? "Correct details" : "Piece details"} description={editing ? "Every change is written to the history with your name and reason." : "Weights, codes and where it is."} />
             <CardBody className="grid gap-5">
               {editing ? (
                 <EditForm
@@ -624,17 +555,12 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
                     <InfoGrid columns={3}>
                       <InfoRow label="Supplier">
                         {item.supplier ? (
-                          <Link
-                            href={`/suppliers/${item.supplier.id}`}
-                            className="text-navy hover:underline"
-                          >
+                          <Link href={`/suppliers/${item.supplier.id}`} className="text-navy hover:underline">
                             {item.supplier.name}
                           </Link>
                         ) : null}
                       </InfoRow>
-                      <InfoRow label="Received">
-                        {item.receivedAt && formatDateTime(item.receivedAt)}
-                      </InfoRow>
+                      <InfoRow label="Received">{item.receivedAt && formatDateTime(item.receivedAt)}</InfoRow>
                       <InfoRow label="Branch">{item.branch?.name}</InfoRow>
                     </InfoGrid>
                   </InfoSection>
@@ -642,107 +568,52 @@ export default function ItemPage({ params }: { params: Promise<{ id: string }> }
               )}
             </CardBody>
           </Card>
-          <div className="grid content-start gap-6">
-            <Card>
-              <CardHeader
-                title="Price today"
-                action={
-                  <button
-                    type="button"
-                    onClick={() => setTab("price")}
-                    className="text-[13px] font-semibold text-navy hover:underline"
-                  >
-                    Breakdown
-                  </button>
-                }
+
+          <Card>
+            <CardHeader title="History" description="Every change to this piece, newest first. Entries are never edited." />
+            <CardBody>
+              <ActivityLog
+                formatTime={formatDateTime}
+                entries={item.movements.map((movement) => ({
+                  at: movement.at,
+                  by: movement.by,
+                  tone: MOVEMENT_TONES[movement.type] ?? "navy",
+                  text: (
+                    <>
+                      <span className="font-semibold">{MOVEMENT_LABELS[movement.type] ?? movement.type}</span>
+                      {describe(movement) && <span className="block text-[12.5px] text-ash">{describe(movement)}</span>}
+                      {movement.note && <span className="block text-[12.5px] text-ash">“{movement.note}”</span>}
+                    </>
+                  ),
+                }))}
               />
-              <CardBody>
-                <p className="text-3xl font-bold text-ink tabular-nums">
-                  {price ? formatRupees(price.roundedTotal) : "—"}
-                </p>
-                <p className="mt-1 text-[13px] text-ash">
-                  What the counter and the tablets quote, with GST.
-                </p>
-              </CardBody>
-            </Card>
-            <Card>
-              <CardHeader
-                title="Latest changes"
-                action={
-                  <button
-                    type="button"
-                    onClick={() => setTab("history")}
-                    className="text-[13px] font-semibold text-navy hover:underline"
-                  >
-                    All
-                  </button>
-                }
-              />
-              <CardBody>
-                <ActivityLog
-                  formatTime={formatDateTime}
-                  entries={item.movements.slice(0, 4).map((movement) => ({
-                    at: movement.at,
-                    by: movement.by,
-                    text: MOVEMENT_LABELS[movement.type] ?? movement.type,
-                    tone: MOVEMENT_TONES[movement.type] ?? "navy",
-                  }))}
-                />
-              </CardBody>
-            </Card>
-          </div>
+            </CardBody>
+          </Card>
         </div>
-      )}
 
-      {tab === "photos" && (
-        <div className="max-w-2xl">
-          <PiecePhotos item={item} canEdit={canEdit} onSaved={reload} />
-        </div>
-      )}
-
-      {tab === "price" && (
-        <Card className="max-w-xl">
-          <CardHeader
-            title="Price at today's rate"
-            description="What the counter and the tablets will quote."
-          />
-          <CardBody>
-            <Price item={item} />
-          </CardBody>
-        </Card>
-      )}
-
-      {tab === "history" && (
-        <Card>
-          <CardHeader
-            title="History"
-            description="Every change to this piece, newest first. Entries are never edited."
-          />
-          <CardBody>
-            <ActivityLog
-              formatTime={formatDateTime}
-              entries={item.movements.map((movement) => ({
-                at: movement.at,
-                by: movement.by,
-                tone: MOVEMENT_TONES[movement.type] ?? "navy",
-                text: (
-                  <>
-                    <span className="font-semibold">
-                      {MOVEMENT_LABELS[movement.type] ?? movement.type}
-                    </span>
-                    {describe(movement) && (
-                      <span className="block text-[12.5px] text-ash">{describe(movement)}</span>
-                    )}
-                    {movement.note && (
-                      <span className="block text-[12.5px] text-ash">“{movement.note}”</span>
-                    )}
-                  </>
-                ),
-              }))}
+        <div className="grid content-start gap-6">
+          <PieceGallery item={item} canEdit={canEdit} onSaved={reload} />
+          <Card>
+            <CardHeader
+              title="Price today"
+              action={
+                <Button size="sm" variant="secondary" onClick={() => setBreakdown(true)}>
+                  <Calculator className="size-3.5" aria-hidden />
+                  Breakdown
+                </Button>
+              }
             />
-          </CardBody>
-        </Card>
-      )}
+            <CardBody>
+              <p className="text-3xl font-bold text-ink tabular-nums">{price ? formatRupees(price.roundedTotal) : "—"}</p>
+              <p className="mt-1 text-[13px] text-ash">What the counter and the tablets quote, with GST.</p>
+            </CardBody>
+          </Card>
+        </div>
+      </div>
+
+      <Modal open={breakdown} onClose={() => setBreakdown(false)} title="Price at today's rate" description={`${item.tagNumber} · ${item.purity} · ${formatWeight(item.netWeight)} net`}>
+        <Price item={item} />
+      </Modal>
     </div>
   );
 }

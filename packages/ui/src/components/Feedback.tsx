@@ -79,3 +79,22 @@ export function EmptyState({ title, description, action, icon: Icon, className }
     </div>
   );
 }
+
+/**
+ * Says why a button is still off: one short line per thing left to do. Render
+ * it next to a disabled submit button so nobody is left guessing.
+ */
+export function MissingHints({ items, className }: { items: (string | false | null | undefined)[]; className?: string }) {
+  const left = items.filter(Boolean) as string[];
+  if (!left.length) return null;
+  return (
+    <ul className={cn("grid gap-1 text-[12.5px] text-warn", className)} aria-live="polite">
+      {left.map((item) => (
+        <li key={item} className="flex items-start gap-2">
+          <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-warn" aria-hidden />
+          {item}
+        </li>
+      ))}
+    </ul>
+  );
+}

@@ -26,6 +26,7 @@ export default ({ strapi }: { strapi: any }) => ({
     if (idOf(ctx.query.designId)) where.design = { id: idOf(ctx.query.designId) };
     if (idOf(ctx.query.categoryId)) where.design = { ...(where.design ?? {}), category: { id: idOf(ctx.query.categoryId) } };
     if (idOf(ctx.query.locationId)) where.location = { id: idOf(ctx.query.locationId) };
+    if (idOf(ctx.query.supplierId)) where.supplier = { id: idOf(ctx.query.supplierId) };
     if (ctx.query.untrayed === "true") {
       where.location = { id: { $null: true } };
       where.status = "in_stock";

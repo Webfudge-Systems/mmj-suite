@@ -5,23 +5,24 @@ const rupees = (value: number) => `₹${Math.round(value).toLocaleString("en-IN"
 const rupeesPaise = (value: number) => `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 /**
- * Today's rates as a poster for the showroom and WhatsApp: a full A4 page in
- * the MMJ colours, with every purity per gram and per 10 g (per kg for silver).
+ * The day's gold and silver rates as a poster for the showroom and WhatsApp:
+ * one A4 page in the MMJ colours, every purity per gram and per 10 g (per kg
+ * for silver). Platinum is left out so everything fits on the one sheet.
  */
 export function RateChart({ card, place, phone }: { card: RateCard; place?: string | null; phone?: string | null }) {
   const when = new Date(card.effectiveFrom);
   const date = when.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const time = when.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
-  const rows = PURITIES.map((purity) => ({ purity, rate: card.rates.find((line) => line.purity === purity.code)?.ratePerGram })).filter((row) => row.rate);
-  const groups = (["gold", "platinum", "silver"] as const).map((metal) => ({ metal, rows: rows.filter((row) => row.purity.metal === metal) })).filter((group) => group.rows.length);
-  const names = { gold: "Gold", platinum: "Platinum", silver: "Silver" } as const;
+  const rows = PURITIES.filter((purity) => purity.metal !== "platinum").map((purity) => ({ purity, rate: card.rates.find((line) => line.purity === purity.code)?.ratePerGram })).filter((row) => row.rate);
+  const groups = (["gold", "silver"] as const).map((metal) => ({ metal, rows: rows.filter((row) => row.purity.metal === metal) })).filter((group) => group.rows.length);
+  const names = { gold: "Gold", silver: "Silver" } as const;
 
   return (
     <article
-      className="rate-chart relative mx-auto flex min-h-[297mm] w-[210mm] flex-col overflow-hidden bg-white text-ink print:min-h-[273mm] print:w-auto"
+      className="rate-chart relative mx-auto flex min-h-[297mm] w-[210mm] flex-col overflow-hidden bg-white text-ink break-inside-avoid print:h-[272mm] print:min-h-0 print:w-auto"
       style={{ printColorAdjust: "exact", WebkitPrintColorAdjust: "exact" }}
     >
-      <header className="relative overflow-hidden bg-navy px-[14mm] pt-[12mm] pb-[10mm] text-white">
+      <header className="relative overflow-hidden bg-navy px-[14mm] pt-[10mm] pb-[8mm] text-white">
         <div aria-hidden className="absolute -top-24 -right-24 size-80 rounded-full border-[28px] border-gold/15" />
         <div className="relative flex items-center gap-5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -31,10 +32,10 @@ export function RateChart({ card, place, phone }: { card: RateCard; place?: stri
             {place && <p className="text-[13px] tracking-[0.25em] text-gold uppercase">{place}</p>}
           </div>
         </div>
-        <div className="relative mt-[9mm] flex items-end justify-between gap-4 border-t border-white/20 pt-[6mm]">
+        <div className="relative mt-[6mm] flex items-end justify-between gap-4 border-t border-white/20 pt-[5mm]">
           <div>
             <p className="text-[12px] font-semibold tracking-[0.3em] text-gold uppercase">Today&apos;s rates</p>
-            <p className="mt-1 text-[30px] leading-none font-bold">Gold, Silver &amp; Platinum</p>
+            <p className="mt-1 text-[30px] leading-none font-bold">Gold &amp; Silver</p>
           </div>
           <div className="text-right">
             <p className="text-[15px] font-semibold">{date}</p>
@@ -48,7 +49,7 @@ export function RateChart({ card, place, phone }: { card: RateCard; place?: stri
         <img src="/brand/mmj-mark.png" alt="" className="w-[110mm] opacity-[0.06]" />
       </div>
 
-      <div className="relative grid flex-1 content-start gap-[7mm] px-[14mm] py-[10mm]">
+      <div className="relative grid flex-1 content-start gap-[6mm] px-[14mm] py-[8mm]">
         {groups.map((group) => (
           <section key={group.metal}>
             <div className="mb-[3mm] flex items-center gap-3">
@@ -66,12 +67,12 @@ export function RateChart({ card, place, phone }: { card: RateCard; place?: stri
               <tbody>
                 {group.rows.map(({ purity, rate }) => (
                   <tr key={purity.code} className="border-b border-navy/10 last:border-b-0">
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-3">
                       <span className="block text-[19px] font-bold">{purity.label}</span>
                       <span className="text-[11px] text-ash">{purity.metal === "gold" ? `${(purity.fineness / 10).toFixed(1)}% pure` : `${purity.fineness} fineness`}</span>
                     </td>
-                    <td className="px-4 py-3.5 text-right text-[24px] font-bold text-navy tabular-nums">{rupeesPaise(rate!)}</td>
-                    <td className="px-4 py-3.5 text-right text-[19px] font-semibold tabular-nums">{rupees(rate! * (purity.metal === "silver" ? 1000 : 10))}</td>
+                    <td className="px-4 py-3 text-right text-[24px] font-bold text-navy tabular-nums">{rupeesPaise(rate!)}</td>
+                    <td className="px-4 py-3 text-right text-[19px] font-semibold tabular-nums">{rupees(rate! * (purity.metal === "silver" ? 1000 : 10))}</td>
                   </tr>
                 ))}
               </tbody>

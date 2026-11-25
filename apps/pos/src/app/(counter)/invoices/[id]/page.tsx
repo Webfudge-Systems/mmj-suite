@@ -3,7 +3,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { errorMessage, useApi, useAuth, useResource } from "@webfudge/auth/components";
-import { Alert, Badge, Button, Card, CardBody, CardHeader, Field, Input, PageHeader, Spinner, buttonClass } from "@webfudge/ui";
+import { Alert, Badge, Button, Card, CardBody, CardHeader, CopyText, Field, Input, PageHeader, Spinner, buttonClass } from "@webfudge/ui";
 import type { Invoice } from "@webfudge/utils/api";
 import { formatDateTime, formatINR } from "@webfudge/utils/formatters";
 import { TaxInvoice } from "@/components/tax-invoice";
@@ -41,7 +41,11 @@ export default function InvoicePage({ params, searchParams }: { params: Promise<
       <style>{`@media print { @page { size: A4; margin: 12mm; } }`}</style>
       <div className="grid gap-6 print:hidden">
         <PageHeader
-          title={<span className="font-mono">{invoice.number}</span>}
+          title={
+            <CopyText value={invoice.number} label="Copy invoice number">
+              <span className="font-mono">{invoice.number}</span>
+            </CopyText>
+          }
           description={
             <span className="flex flex-wrap items-center gap-2">
               {invoice.status === "cancelled" ? <Badge tone="risk">Cancelled</Badge> : <Badge tone="ok">Paid</Badge>}

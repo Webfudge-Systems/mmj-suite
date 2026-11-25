@@ -16,3 +16,4 @@ export * from "./Detail";
 export * from "./Timeline";
 export * from "./Modal";
 export * from "./PrintSheet";
+export * from "./CopyText";

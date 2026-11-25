@@ -63,7 +63,31 @@ export default ({ strapi }: { strapi: any }) => {
       where: orgWhere(staff),
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     });
-    ctx.body = { data: rows.map((row: any) => ({ id: row.id, name: row.name, code: row.code ?? null, slug: row.slug })) };
+    if (ctx.query.stats !== "true") {
+      ctx.body = { data: rows.map((row: any) => ({ id: row.id, name: row.name, code: row.code ?? null, slug: row.slug })) };
+      return;
+    }
+    // With ?stats=true: designs in each category and pieces of those designs still unsold.
+    const [designs, items] = await Promise.all([
+      strapi.db.query(DESIGN).findMany({ where: orgWhere(staff), select: ["id"], populate: { category: { select: ["id"] } }, limit: 20000 }),
+      strapi.db.query(ITEM).findMany({ where: { ...orgWhere(staff), status: { $notIn: ["sold", "melted"] } }, select: ["id", "netWeight"], populate: { design: { select: ["id"], populate: { category: { select: ["id"] } } } }, limit: 100000 }),
+    ]);
+    const count = new Map<number, { designs: number; pieces: number; netWeight: number }>();
+    const entry = (id: number) => {
+      if (!count.has(id)) count.set(id, { designs: 0, pieces: 0, netWeight: 0 });
+      return count.get(id)!;
+    };
+    for (const design of designs) if (design.category) entry(design.category.id).designs += 1;
+    for (const item of items) {
+      const id = item.design?.category?.id;
+      if (!id) continue;
+      const row = entry(id);
+      row.pieces += 1;
+      row.netWeight = round3(row.netWeight + Number(item.netWeight ?? 0));
+    }
+    ctx.body = {
+      data: rows.map((row: any) => ({ id: row.id, name: row.name, code: row.code ?? null, slug: row.slug, stats: count.get(row.id) ?? { designs: 0, pieces: 0, netWeight: 0 } })),
+    };
   },
 
   async saveCategory(ctx: any) {
@@ -106,7 +130,9 @@ export default ({ strapi }: { strapi: any }) => {
     const where: any = { ...orgWhere(staff) };
     if (idOf(ctx.query.categoryId)) where.category = { id: idOf(ctx.query.categoryId) };
     if (METALS.includes(ctx.query.metal)) where.metal = ctx.query.metal;
-    if (ctx.query.active !== "all") where.isActive = { $ne: false };
+    if (ctx.query.active === "retired") where.isActive = false;
+    else if (ctx.query.active !== "all") where.isActive = { $ne: false };
+    if (ctx.query.online === "true") where.isOnline = true;
     if (q) where.$or = [{ code: { $containsi: q } }, { name: { $containsi: q } }];
 
     const result = await strapi.db.query(DESIGN).findPage({
@@ -129,9 +155,29 @@ export default ({ strapi }: { strapi: any }) => {
       for (const item of items) counts.set(item.design.id, (counts.get(item.design.id) ?? 0) + 1);
     }
 
+    // With ?summary=true: totals for the catalogue's cards, over every design.
+    let summary;
+    if (ctx.query.summary === "true") {
+      const org = orgWhere(staff);
+      const [active, online, retired, withStock, withPhoto] = await Promise.all([
+        strapi.db.query(DESIGN).count({ where: { ...org, isActive: { $ne: false } } }),
+        strapi.db.query(DESIGN).count({ where: { ...org, isActive: { $ne: false }, isOnline: true } }),
+        strapi.db.query(DESIGN).count({ where: { ...org, isActive: false } }),
+        strapi.db.query("api::item.item").findMany({ where: { ...org, status: "in_stock" }, select: ["id"], populate: { design: { select: ["id"] } }, limit: 100000 }),
+        strapi.db.query(DESIGN).findMany({ where: { ...org, isActive: { $ne: false } }, select: ["id"], populate: { images: { select: ["id"] } }, limit: 20000 }),
+      ]);
+      summary = {
+        active,
+        online,
+        retired,
+        withStock: new Set(withStock.map((item: any) => item.design?.id).filter(Boolean)).size,
+        noPhoto: withPhoto.filter((design: any) => !(design.images ?? []).length).length,
+      };
+    }
+
     ctx.body = {
       data: result.results.map((design: any) => ({ ...serializeDesign(design), inStock: counts.get(design.id) ?? 0 })),
-      meta: { pagination: result.pagination },
+      meta: { pagination: result.pagination, ...(summary ? { summary } : {}) },
     };
   },
 

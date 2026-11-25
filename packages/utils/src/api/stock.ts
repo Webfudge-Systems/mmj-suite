@@ -23,6 +23,9 @@ export type BranchRef = { id: number; code: string; name: string };
 
 export type Category = { id: number; name: string; code: string | null; slug: string };
 
+/** A category with ?stats=true: its designs and unsold pieces. */
+export type CategoryWithStats = Category & { stats: { designs: number; pieces: number; netWeight: number } };
+
 export type Design = {
   id: number;
   code: string;
@@ -165,8 +168,13 @@ export type Receipt = {
   supplier: { id: number; name: string; kind: string } | null;
   receivedBy: string | null;
   pieces?: number;
+  /** Net weight of the receipt's pieces, on the list. */
+  netWeight?: number;
   items?: StockItem[];
 };
+
+/** Totals for the receive list's cards (?summary=true). */
+export type ReceiptSummary = { receiptsThisMonth: number; piecesThisMonth: number; netThisMonth: number; billsMissing: number; untrayed: number };
 
 export type TransferLine = { itemId: number; tagNumber: string; legacyTag: string | null; huid: string | null; receivedAt: string | null };
 

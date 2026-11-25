@@ -62,15 +62,51 @@ export default ({ strapi }: { strapi: any }) => ({
     const { page, pageSize } = paging(ctx.query, 30);
     const where: any = { ...orgWhere(staff) };
     if (idOf(ctx.query.branchId)) where.branch = { id: idOf(ctx.query.branchId) };
+    if (SOURCES.includes(ctx.query.source)) where.source = ctx.query.source;
+    const q = text(ctx.query.q, 60);
+    if (q) where.$or = [{ number: { $containsi: q } }, { billNumber: { $containsi: q } }, { supplier: { name: { $containsi: q } } }];
     const result = await strapi.db.query(RECEIPT).findPage({ where, page, pageSize, orderBy: { createdAt: "desc" }, populate: RECEIPT_POPULATE });
 
-    const counts = new Map<number, number>();
-    for (const receipt of result.results) {
-      counts.set(receipt.id, await strapi.db.query(ITEM).count({ where: { receipt: { id: receipt.id } } }));
+    // Pieces and net weight on each receipt of the page, in one query.
+    const ids = result.results.map((receipt: any) => receipt.id);
+    const totals = new Map<number, { pieces: number; net: number }>();
+    if (ids.length) {
+      const items = await strapi.db.query(ITEM).findMany({ where: { receipt: { id: { $in: ids } } }, select: ["id", "netWeight"], populate: { receipt: { select: ["id"] } }, limit: 50000 });
+      for (const item of items) {
+        const entry = totals.get(item.receipt.id) ?? { pieces: 0, net: 0 };
+        entry.pieces += 1;
+        entry.net += Number(item.netWeight ?? 0);
+        totals.set(item.receipt.id, entry);
+      }
     }
+
+    // With ?summary=true: this month's deliveries, pieces in from them, and supplier bills not attached.
+    let summary;
+    if (ctx.query.summary === "true") {
+      const scope: any = { ...orgWhere(staff), ...(where.branch ? { branch: where.branch } : {}) };
+      const monthStart = new Date(`${new Date().toISOString().slice(0, 7)}-01T00:00:00+05:30`).toISOString();
+      const [month, purchases, untrayed] = await Promise.all([
+        strapi.db.query(RECEIPT).findMany({ where: { ...scope, createdAt: { $gte: monthStart } }, select: ["id", "source"], limit: 5000 }),
+        strapi.db.query(RECEIPT).findMany({ where: { ...scope, source: "purchase" }, select: ["id"], populate: { attachments: { select: ["id"] } }, limit: 5000 }),
+        strapi.db.query(ITEM).count({ where: { ...scope, status: "in_stock", location: { id: { $null: true } } } }),
+      ]);
+      const monthIds = month.map((receipt: any) => receipt.id);
+      const monthItems = monthIds.length ? await strapi.db.query(ITEM).findMany({ where: { receipt: { id: { $in: monthIds } } }, select: ["id", "netWeight"], limit: 50000 }) : [];
+      summary = {
+        receiptsThisMonth: month.length,
+        piecesThisMonth: monthItems.length,
+        netThisMonth: Math.round(monthItems.reduce((sum: number, item: any) => sum + Number(item.netWeight ?? 0), 0) * 1000) / 1000,
+        billsMissing: purchases.filter((receipt: any) => !(receipt.attachments ?? []).length).length,
+        untrayed,
+      };
+    }
+
     ctx.body = {
-      data: result.results.map((receipt: any) => ({ ...serializeReceipt(receipt), pieces: counts.get(receipt.id) ?? 0 })),
-      meta: { pagination: result.pagination },
+      data: result.results.map((receipt: any) => {
+        const entry = totals.get(receipt.id) ?? { pieces: 0, net: 0 };
+        return { ...serializeReceipt(receipt), pieces: entry.pieces, netWeight: Math.round(entry.net * 1000) / 1000 };
+      }),
+      meta: { pagination: result.pagination, ...(summary ? { summary } : {}) },
     };
   },
 

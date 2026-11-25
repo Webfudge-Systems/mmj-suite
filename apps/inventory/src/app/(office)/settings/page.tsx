@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useAuth } from "@webfudge/auth/components";
-import { Alert, Button, Card, CardBody, CardHeader, Field, Input, PageHeader, Table, Td, Th, Tr } from "@webfudge/ui";
-import type { Branch, Category } from "@webfudge/utils/api";
+import { Alert, Button, Card, CardBody, CardHeader, Field, Input, PageHeader, Table, Td, Th, Tr, buttonClass } from "@webfudge/ui";
+import type { Branch } from "@webfudge/utils/api";
 import { InvoiceDetails, StaffPins, Tablets } from "@/components/settings-floor";
 import { errorMessage, useApi, useResource } from "@/lib/api";
 
@@ -62,77 +63,17 @@ function BranchForm({ branch, onSaved, onCancel }: { branch?: Branch; onSaved: (
   );
 }
 
-function CategoryRow({ category, onSaved }: { category: Category; onSaved: () => void }) {
-  const api = useApi();
-  const [name, setName] = useState(category.name);
-  const [code, setCode] = useState(category.code ?? "");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const changed = name !== category.name || code !== (category.code ?? "");
-
-  async function save() {
-    setBusy(true);
-    setError(null);
-    try {
-      await api.put(`/stock/categories/${category.id}`, { name, code });
-      onSaved();
-    } catch (cause) {
-      setError(errorMessage(cause));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Tr>
-      <Td>
-        <Input id={`cat-name-${category.id}`} aria-label="Category name" value={name} onChange={(event) => setName(event.target.value)} />
-      </Td>
-      <Td>
-        <Input id={`cat-code-${category.id}`} aria-label="Category code" value={code} maxLength={4} onChange={(event) => setCode(event.target.value)} className="w-24 font-mono uppercase" />
-      </Td>
-      <Td>
-        {changed && (
-          <Button size="sm" onClick={save} loading={busy}>
-            Save
-          </Button>
-        )}
-        {error && <span className="block text-[12px] text-risk">{error}</span>}
-      </Td>
-    </Tr>
-  );
-}
-
 export default function SettingsPage() {
-  const api = useApi();
   const { hasRole, refreshProfile } = useAuth();
   const isOwner = hasRole("owner");
-  const canEditCatalogue = hasRole("owner", "branch_manager", "stock_keeper");
   const branches = useResource<{ data: Branch[] }>("/staff/branches");
-  const categories = useResource<{ data: Category[] }>("/stock/categories");
   const [editing, setEditing] = useState<number | null>(null);
-  const [newName, setNewName] = useState("");
-  const [newCode, setNewCode] = useState("");
-  const [categoryError, setCategoryError] = useState<string | null>(null);
 
   const branchSaved = () => {
     setEditing(null);
     branches.reload();
     refreshProfile();
   };
-
-  async function addCategory(event: FormEvent) {
-    event.preventDefault();
-    setCategoryError(null);
-    try {
-      await api.post("/stock/categories", { name: newName, code: newCode });
-      setNewName("");
-      setNewCode("");
-      categories.reload();
-    } catch (cause) {
-      setCategoryError(errorMessage(cause));
-    }
-  }
 
   return (
     <div className="grid gap-6">
@@ -185,45 +126,7 @@ export default function SettingsPage() {
       </Card>
 
       <Card>
-        <CardHeader title="Categories" description="The code goes into automatic design numbers, like D-NK-0001." />
-        <Table minWidth={420}>
-          <thead>
-            <tr>
-              <Th>Name</Th>
-              <Th>Code</Th>
-              <Th />
-            </tr>
-          </thead>
-          <tbody>
-            {categories.data?.data.map((category) =>
-              canEditCatalogue ? (
-                <CategoryRow key={`${category.id}-${category.name}-${category.code}`} category={category} onSaved={categories.reload} />
-              ) : (
-                <Tr key={category.id}>
-                  <Td>{category.name}</Td>
-                  <Td className="font-mono">{category.code}</Td>
-                  <Td />
-                </Tr>
-              ),
-            )}
-          </tbody>
-        </Table>
-        {canEditCatalogue && (
-          <CardBody className="border-t border-line">
-            <form onSubmit={addCategory} className="flex flex-wrap items-end gap-3" noValidate>
-              <Field label="New category" htmlFor="cat-new-name">
-                <Input id="cat-new-name" value={newName} onChange={(event) => setNewName(event.target.value)} />
-              </Field>
-              <Field label="Code" htmlFor="cat-new-code">
-                <Input id="cat-new-code" value={newCode} maxLength={4} onChange={(event) => setNewCode(event.target.value)} className="w-24 font-mono uppercase" />
-              </Field>
-              <Button type="submit" disabled={!newName.trim() || !newCode.trim()}>
-                Add
-              </Button>
-              {categoryError && <Alert tone="risk" className="w-full">{categoryError}</Alert>}
-            </form>
-          </CardBody>
-        )}
+        <CardHeader title="Categories" description="Necklaces, rings, bangles and their short codes now have their own page under Stock." action={<Link href="/categories" className={buttonClass("secondary", "sm")}>Open categories</Link>} />
       </Card>
     </div>
   );

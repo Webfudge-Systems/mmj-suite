@@ -63,6 +63,13 @@ export const GST_RATE_JEWELLERY = 0.03;
 /** BIS hallmarking charge per piece, in rupees. */
 export const HALLMARK_CHARGE_PER_PIECE = 45;
 
+/**
+ * Cash paid out to one person (old gold, refunds) above this needs an owner's or
+ * branch manager's approval with a reason. The backend default matches; an
+ * organization setting can change it there.
+ */
+export const CASH_PAYOUT_LIMIT = 100000;
+
 export const APP_PORTS = {
   landing: 3000,
   inventory: 3001,

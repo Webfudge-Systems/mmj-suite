@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Download, Eye } from "lucide-react";
+import { Download, Eye, Printer } from "lucide-react";
 import { useAuth } from "@webfudge/auth/components";
 import { LARGE_RATE_CHANGE_PERCENT, PURITIES, RATE_EDITOR_ROLES, type Purity } from "@webfudge/config";
 import { useCurrentRates } from "@webfudge/hooks";
@@ -166,7 +166,7 @@ function RatesForm({ current, onPublished }: { current: RateCard | null; onPubli
   );
 }
 
-function History({ cards, loading, error }: { cards: RateCard[]; loading: boolean; error: string | null }) {
+function History({ cards, loading, error, onPrint }: { cards: RateCard[]; loading: boolean; error: string | null; onPrint: (card: RateCard) => void }) {
   if (loading && cards.length === 0) {
     return (
       <div className="flex items-center gap-2 px-5 py-6 text-[13px] text-ash">
@@ -189,6 +189,7 @@ function History({ cards, loading, error }: { cards: RateCard[]; loading: boolea
               </th>
             ))}
             <th className="px-5 py-2 font-semibold">By</th>
+            <th className="px-3 py-2" />
           </tr>
         </thead>
         <tbody>
@@ -206,6 +207,12 @@ function History({ cards, loading, error }: { cards: RateCard[]; loading: boolea
               <td className="px-5 py-2.5">
                 {card.setBy ?? "—"}
                 {card.note && <span className="block text-[12px] text-ash">{card.note}</span>}
+              </td>
+              <td className="px-3 py-2 text-right">
+                <Button size="sm" variant="secondary" onClick={() => onPrint(card)} aria-label={`Print the rate sheet of ${formatDateTime(card.effectiveFrom)}`}>
+                  <Printer className="size-3.5" aria-hidden />
+                  Print sheet
+                </Button>
               </td>
             </tr>
           ))}
@@ -225,6 +232,18 @@ export default function RatesPage() {
   const [justPublished, setJustPublished] = useState(false);
   const [historyVersion, setHistoryVersion] = useState(0);
   const [preview, setPreview] = useState(false);
+  // The card printed next: today's by default, or an older one picked from the history.
+  const [sheet, setSheet] = useState<RateCard | null>(null);
+  const printed = sheet ?? card;
+
+  function printSheet(chosen: RateCard | null) {
+    setSheet(chosen);
+    // Let the chosen card render before the print window opens; go back to today's afterwards.
+    window.setTimeout(() => {
+      window.print();
+      setSheet(null);
+    }, 150);
+  }
   const { branch } = useBranch();
 
   useEffect(() => {
@@ -259,7 +278,7 @@ export default function RatesPage() {
                 <Eye className="size-4" aria-hidden />
                 {preview ? "Hide rate chart" : "Preview rate chart"}
               </Button>
-              <Button variant="gold" onClick={() => window.print()}>
+              <Button variant="gold" onClick={() => printSheet(null)}>
                 <Download className="size-4" aria-hidden />
                 Download A4 rate chart
               </Button>
@@ -295,14 +314,14 @@ export default function RatesPage() {
       </Card>
 
       <Card>
-        <CardHeader title="Rate history" description="Cards are never edited. Each new card replaces the one before." />
-        <History cards={history} loading={historyLoading} error={historyError} />
+        <CardHeader title="Rate history" description="Cards are never edited. Each new card replaces the one before. Print the sheet of any day." />
+        <History cards={history} loading={historyLoading} error={historyError} onPrint={printSheet} />
       </Card>
     </div>
-    {card && (
+    {printed && (
       <div className={preview ? "mt-6 print:mt-0" : "hidden print:block"}>
         <PrintPreview>
-          <RateChart card={card} place={branch?.city ?? branch?.name} />
+          <RateChart card={printed} place={branch?.city ?? branch?.name} />
         </PrintPreview>
       </div>
     )}

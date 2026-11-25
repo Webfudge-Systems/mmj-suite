@@ -50,8 +50,8 @@ export function rules(staff: Staff) {
     cashReceiptLimit: Number(setting(staff, "cashReceiptLimit", 200000)),
     /** PAN is needed when a customer's purchases in a day reach this. */
     panThreshold: Number(setting(staff, "panThreshold", 200000)),
-    /** Cash paid out to one person for old gold or refunds above this needs a bank transfer. */
-    cashPayoutLimit: Number(setting(staff, "cashPayoutLimit", 10000)),
+    /** Cash paid out to one person for old gold or refunds above this needs a manager's approval. */
+    cashPayoutLimit: Number(setting(staff, "cashPayoutLimit", 100000)),
     hallmarkCharge: Number(setting(staff, "hallmarkChargePerPiece", 45)),
     oldGoldDeductionPercent: Number(setting(staff, "oldGoldDeductionPercent", 2)),
     returnDeductionPercent: Number(setting(staff, "returnDeductionPercent", 0)),

@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { errorMessage, useApi, useBranch, useResource } from "@webfudge/auth/components";
-import { Alert, Badge, Button, Card, CardBody, CardHeader, EmptyState, Field, Input, PageHeader, Table, Td, Th, Tr } from "@webfudge/ui";
+import { CASH_PAYOUT_LIMIT } from "@webfudge/config";
+import { Alert, Badge, Button, Card, CardBody, CardHeader, EmptyState, Field, Input, MissingHints, PageHeader, Table, Td, Th, Tr } from "@webfudge/ui";
 import { PAYMENT_MODE_LABELS, type Customer, type OldGoldLine, type OldGoldRecord } from "@webfudge/utils/api";
 import { formatDateTime, formatINR, formatWeight } from "@webfudge/utils/formatters";
 import { CashOverrideNotice, useCashOverride } from "@/components/cash-override";
@@ -23,7 +24,8 @@ export default function OldGoldPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<OldGoldRecord | null>(null);
-  const override = useCashOverride();
+  const cashPaise = payouts.filter((row) => row.mode === "cash").reduce((sum, row) => sum + Math.round((Number(row.amount) || 0) * 100), 0);
+  const override = useCashOverride(cashPaise / 100);
 
   const lines = useMemo(() => toOldGold(rows), [rows]);
 
@@ -55,6 +57,15 @@ export default function OldGoldPage() {
   }, [api, lines]);
 
   const shown = lines.length ? valuation : null;
+  const left = shown ? Math.round(shown.total * 100) - paidPaise(payouts) : 0;
+  // Everything still needed before the purchase can be recorded, said plainly next to the button.
+  const missing = [
+    !customer && "Choose who is selling, at the top left.",
+    idProof.trim().length < 4 && "Enter their ID proof, like Aadhaar ending 1234.",
+    left > 0 && `Payments are ${formatINR(left / 100)} short of the total.`,
+    left < 0 && `Payments are ${formatINR(-left / 100)} more than the total.`,
+    override.blocking && "Approve the cash above, or pay part of it by UPI or bank transfer.",
+  ];
 
   async function save() {
     if (!branch || !shown) return;
@@ -94,7 +105,7 @@ export default function OldGoldPage() {
           <CardBody className="grid gap-4">
             <CustomerPicker value={customer} onChange={setCustomer} />
             <Field label="ID proof" htmlFor="og-id" hint="Required for every purchase, like Aadhaar ending 1234.">
-              <Input id="og-id" value={idProof} onChange={(event) => setIdProof(event.target.value)} />
+              <Input id="og-id" value={idProof} onChange={(event) => setIdProof(event.target.value)} placeholder="Aadhaar ending 1234" className={shown && idProof.trim().length < 4 ? "border-warn ring-2 ring-warn/20" : undefined} />
             </Field>
           </CardBody>
         </Card>
@@ -117,12 +128,13 @@ export default function OldGoldPage() {
               variant="gold"
               onClick={save}
               loading={busy}
-              disabled={!customer || idProof.trim().length < 4 || paidPaise(payouts) !== Math.round(shown.total * 100) || override.blocking}
+              disabled={missing.some(Boolean)}
               className="justify-self-start"
             >
               {override.value ? "Approve cash and record purchase" : "Record purchase and pay"}
             </Button>
-            {!override.limit && <p className="text-[12px] text-ash">Cash payouts above ₹10,000 to one person should go by bank transfer or UPI. A manager can approve more in cash.</p>}
+            <MissingHints items={missing} />
+            {!override.limit && <p className="text-[12px] text-ash">Cash up to {formatINR(CASH_PAYOUT_LIMIT)} goes straight through. Above that, the owner or a branch manager approves it right here.</p>}
           </CardBody>
         </Card>
       )}

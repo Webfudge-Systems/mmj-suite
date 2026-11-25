@@ -17,6 +17,7 @@ import {
   PackagePlus,
   Send,
   Settings,
+  Shapes,
   Tags,
   Truck,
 } from "lucide-react";
@@ -33,6 +34,7 @@ const nav: NavItem[] = [
     icon: Boxes,
     children: [
       { href: "/stock", label: "All stock", icon: Boxes },
+      { href: "/categories", label: "Categories", icon: Shapes },
       { href: "/tags", label: "Tags & labels", icon: Tags },
       { href: "/locations", label: "Trays & locations", icon: MapPin },
       { href: "/audit", label: "Stock audit", icon: ClipboardCheck },

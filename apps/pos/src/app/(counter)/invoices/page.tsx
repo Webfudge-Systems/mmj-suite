@@ -8,6 +8,7 @@ import { errorMessage, useApi, useBranch, useResource } from "@webfudge/auth/com
 import {
   Badge,
   Card,
+  CopyText,
   EmptyState,
   KpiCard,
   PageHeader,
@@ -161,9 +162,11 @@ export default function InvoicesPage() {
                 {rows.map((invoice) => (
                   <Tr key={invoice.id} className="cursor-pointer" onClick={() => router.push(`/invoices/${invoice.id}`)}>
                     <Td>
-                      <Link href={`/invoices/${invoice.id}`} className="font-mono font-semibold text-ink hover:underline" onClick={(event) => event.stopPropagation()}>
-                        {invoice.number}
-                      </Link>
+                      <CopyText value={invoice.number} label="Copy invoice number">
+                        <Link href={`/invoices/${invoice.id}`} className="font-mono font-semibold text-ink hover:underline" onClick={(event) => event.stopPropagation()}>
+                          {invoice.number}
+                        </Link>
+                      </CopyText>
                     </Td>
                     <Td>
                       <Link href={`/customers/${invoice.customer.id}`} className="grid leading-tight" onClick={(event) => event.stopPropagation()}>

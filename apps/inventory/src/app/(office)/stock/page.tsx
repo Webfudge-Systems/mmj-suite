@@ -35,7 +35,7 @@ import { useLocations } from "@/components/pickers";
 import { errorMessage, useApi, useResource } from "@/lib/api";
 import { useBranch } from "@/lib/branch";
 
-type Search = { untrayed?: string; designId?: string; locationId?: string; status?: string };
+type Search = { untrayed?: string; designId?: string; locationId?: string; status?: string; categoryId?: string };
 type View = "" | "in_stock" | "with_staff" | "on_approval" | "reserved" | "sold" | "all";
 
 const GOLD = new Set(["24KT", "22KT", "18KT", "14KT"]);
@@ -60,6 +60,7 @@ export default function StockPage({ searchParams }: { searchParams: Promise<Sear
   if (filters.locationId) params.set("locationId", filters.locationId);
   if (filters.tray === "untrayed") params.set("untrayed", "true");
   if (initial.designId) params.set("designId", initial.designId);
+  if (initial.categoryId) params.set("categoryId", initial.categoryId);
 
   const items = useResource<Page<StockItem>>(branch ? `/stock/items?${params}` : null);
   const summary = useResource<{ data: StockSummary }>(branch ? `/stock/summary?branchId=${branch.id}` : null);

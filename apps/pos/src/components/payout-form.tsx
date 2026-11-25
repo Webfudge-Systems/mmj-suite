@@ -26,7 +26,8 @@ export function PayoutForm({
   const [payouts, setPayouts] = useState<PaymentRow[]>(() => [newPaymentRow("bank_transfer")]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const override = useCashOverride();
+  const cash = payouts.filter((row) => row.mode === "cash").reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
+  const override = useCashOverride(cash);
 
   async function pay() {
     setBusy(true);
