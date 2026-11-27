@@ -25,6 +25,7 @@ export const salesRoutes = [
   route("GET", "/sales/old-gold", "counter.listOldGold"),
   route("POST", "/sales/old-gold", "counter.buyOldGold"),
   route("POST", "/sales/old-gold/quote", "counter.quoteOldGold"),
+  route("GET", "/sales/old-gold/:id", "counter.getOldGold"),
   route("GET", "/sales/advances", "counter.listBookings"),
   route("POST", "/sales/advances", "counter.createBooking"),
   route("GET", "/sales/advances/:id", "counter.getBooking"),

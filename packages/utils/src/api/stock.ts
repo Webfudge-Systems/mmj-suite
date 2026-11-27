@@ -176,7 +176,25 @@ export type Receipt = {
 /** Totals for the receive list's cards (?summary=true). */
 export type ReceiptSummary = { receiptsThisMonth: number; piecesThisMonth: number; netThisMonth: number; billsMissing: number; untrayed: number };
 
-export type TransferLine = { itemId: number; tagNumber: string; legacyTag: string | null; huid: string | null; receivedAt: string | null };
+export type TransferLine = {
+  itemId: number;
+  tagNumber: string;
+  legacyTag: string | null;
+  huid: string | null;
+  receivedAt: string | null;
+  /** On a single transfer only: the piece as it is now. */
+  design?: { id: number; code: string; name: string } | null;
+  purity?: Purity;
+  grossWeight?: number;
+  netWeight?: number;
+  status?: ItemStatus;
+  location?: string | null;
+  photo?: ImageRef | null;
+  designImage?: ImageRef | null;
+};
+
+/** Totals for the transfers list's cards (?summary=true). */
+export type TransferSummary = { open: number; arrivingHere: number; leftHere: number; piecesOnTheWay: number; sentThisMonth: number; piecesSentThisMonth: number };
 
 export type Transfer = {
   id: number;

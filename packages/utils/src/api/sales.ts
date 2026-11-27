@@ -247,6 +247,20 @@ export type OldGoldRecord = {
   invoice: { id: number; number: string } | null;
 };
 
+/** One old gold purchase with what its printed receipt needs. */
+export type OldGoldDetail = Omit<OldGoldRecord, "customer"> & { customer: PrintCustomer | null; seller: Seller };
+
+/** Totals for the old gold page's cards (?summary=true). */
+export type OldGoldSummary = {
+  boughtToday: number;
+  valueToday: number;
+  valueMonth: number;
+  goldFineMonth: number;
+  silverFineMonth: number;
+  exchangesMonth: number;
+  recordsMonth: number;
+};
+
 export type CashOverride = { cash: number; limit: number; reason: string; approvedBy: string; at: string };
 
 export type DaySummary = {

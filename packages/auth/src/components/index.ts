@@ -4,3 +4,5 @@ export * from "./RequireAuth";
 export * from "./BranchProvider";
 export * from "./data";
 export * from "./HeaderExtras";
+export * from "./CustomerPicker";
+export * from "./PieceSearch";

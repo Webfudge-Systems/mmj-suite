@@ -93,6 +93,9 @@ export type ApprovalLine = {
   netWeight: number;
   returnedAt: string | null;
   state: "out" | "returned" | "billed";
+  /** On a single memo only: the piece's main photo, else its design's photo. */
+  photo?: ImageRef | null;
+  designImage?: ImageRef | null;
 };
 
 export type ApprovalMemo = {

@@ -226,7 +226,36 @@ export default ({ strapi }: { strapi: any }) => ({
 
   async listOldGold(ctx: any) {
     const staff = staffOf(ctx);
-    ctx.body = { data: await list(strapi, staff, OLD_GOLD, ctx.query, { ...PEOPLE, invoice: { select: ["id", "number"] } }, serializeOldGold) };
+    const data = await list(strapi, staff, OLD_GOLD, ctx.query, { ...PEOPLE, invoice: { select: ["id", "number"] } }, serializeOldGold);
+    if (ctx.query.summary !== "true") {
+      ctx.body = { data };
+      return;
+    }
+    // Totals for the cards: today and this month, in India's time zone.
+    const today = indiaDate();
+    const monthStart = `${today.slice(0, 8)}01`;
+    const branches = await branchIdsFor(strapi, staff);
+    const rows = await strapi.db.query(OLD_GOLD).findMany({
+      where: { organization: { id: staff.organization.id }, branch: { id: { $in: branches } }, createdAt: { $gte: new Date(Date.parse(`${monthStart}T00:00:00+05:30`)).toISOString() } },
+      select: ["kind", "totalValue", "lines", "createdAt"],
+    });
+    const summary = { boughtToday: 0, valueToday: 0, valueMonth: 0, goldFineMonth: 0, silverFineMonth: 0, exchangesMonth: 0, recordsMonth: rows.length };
+    for (const row of rows) {
+      const value = Number(row.totalValue) || 0;
+      summary.valueMonth += value;
+      if (row.kind === "exchange") summary.exchangesMonth += 1;
+      if (indiaDate(new Date(row.createdAt)) === today) {
+        summary.boughtToday += 1;
+        summary.valueToday += value;
+      }
+      for (const line of row.lines ?? []) {
+        if (line.metal === "silver") summary.silverFineMonth += Number(line.fineWeight) || 0;
+        else summary.goldFineMonth += Number(line.fineWeight) || 0;
+      }
+    }
+    summary.goldFineMonth = Math.round(summary.goldFineMonth * 1000) / 1000;
+    summary.silverFineMonth = Math.round(summary.silverFineMonth * 1000) / 1000;
+    ctx.body = { data, meta: { summary } };
   },
 
   /**
@@ -381,6 +410,18 @@ export default ({ strapi }: { strapi: any }) => ({
     const saved = await strapi.db.query(CREDIT_NOTE).findOne({ where: { id: note.id }, populate: { ...PEOPLE, invoice: { select: ["id", "number"] } } });
     ctx.status = 201;
     ctx.body = { data: serializeCreditNote(saved) };
+  },
+
+  /** One old gold purchase with what is needed to print the customer's receipt. */
+  async getOldGold(ctx: any) {
+    const staff = staffOf(ctx);
+    const record = await strapi.db.query(OLD_GOLD).findOne({
+      where: { id: Number(ctx.params.id), organization: { id: staff.organization.id } },
+      populate: { ...PEOPLE, branch: true, invoice: { select: ["id", "number"] } },
+    });
+    if (!record) throw new errors.NotFoundError("Old gold record not found.");
+    await requireBranch(strapi, staff, record.branch.id);
+    ctx.body = { data: { ...serializeOldGold(record), customer: printCustomer(record.customer), seller: await sellerFor(strapi, staff, record.branch) } };
   },
 
   /** One advance with what is needed to print its receipt. */

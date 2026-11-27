@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Gem, IndianRupee, UserRound, Wrench } from "lucide-react";
+import { Camera, Gem, IndianRupee, Save, UserRound, Wrench } from "lucide-react";
 import { errorMessage, useApi, useBranch } from "@webfudge/auth/components";
 import { PURITIES } from "@webfudge/config";
 import { Alert, Button, Card, CardBody, CardHeader, Field, Input, PageHeader, Select, Textarea, cn } from "@webfudge/ui";
@@ -10,21 +10,6 @@ import type { Customer, ImageRef, OrderKind, PaymentMode, ServiceOrder } from "@
 import { PAYMENT_MODE_LABELS } from "@webfudge/utils/api";
 import { CustomerPicker } from "@/components/customer-picker";
 import { PhotoStrip } from "@/components/photos";
-
-function Step({ number, icon: Icon, title, description }: { number: number; icon: typeof Wrench; title: string; description?: string }) {
-  return (
-    <span className="flex items-center gap-3">
-      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-navy text-sm font-bold text-white">{number}</span>
-      <span className="grid">
-        <span className="flex items-center gap-2 text-base font-semibold text-ink">
-          <Icon className="size-4 text-gold" aria-hidden />
-          {title}
-        </span>
-        {description && <span className="text-[13px] font-normal text-ash">{description}</span>}
-      </span>
-    </span>
-  );
-}
 
 export default function NewOrderPage({ searchParams }: { searchParams: Promise<{ customer?: string; kind?: string }> }) {
   const params = use(searchParams);
@@ -107,14 +92,14 @@ export default function NewOrderPage({ searchParams }: { searchParams: Promise<{
       </div>
 
       <Card>
-        <CardHeader title={<Step number={1} icon={UserRound} title="Customer" />} />
+        <CardHeader icon={UserRound} title="Customer" />
         <CardBody>
           <CustomerPicker value={customer} onChange={setCustomer} />
         </CardBody>
       </Card>
 
       <Card>
-        <CardHeader title={<Step number={2} icon={repair ? Wrench : Gem} title={repair ? "The piece and the work" : "What to make"} />} />
+        <CardHeader icon={repair ? Wrench : Gem} title={repair ? "The piece and the work" : "What to make"} />
         <CardBody className="grid gap-4">
           <Field label={repair ? "What needs doing" : "What to make"} htmlFor="order-description">
             <Textarea
@@ -153,7 +138,9 @@ export default function NewOrderPage({ searchParams }: { searchParams: Promise<{
 
       <Card>
         <CardHeader
-          title={<Step number={3} icon={Camera} title="Photos" description={repair ? "Their piece as it came in: front, back, any damage. Proof if a question comes up later." : "Reference pictures or sketches the customer showed you."} />}
+          icon={Camera}
+          title="Photos"
+          description={repair ? "Their piece as it came in: front, back, any damage. Proof if a question comes up later." : "Reference pictures or sketches the customer showed you."}
         />
         <CardBody>
           <PhotoStrip id="order-photos" photos={photos} onChange={setPhotos} />
@@ -161,7 +148,7 @@ export default function NewOrderPage({ searchParams }: { searchParams: Promise<{
       </Card>
 
       <Card>
-        <CardHeader title={<Step number={4} icon={IndianRupee} title="Estimate and advance" description="The advance is counted in today's day close." />} />
+        <CardHeader icon={IndianRupee} title="Estimate and advance" description="The advance is counted in today's day close." />
         <CardBody className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Field label="Estimate (₹)" htmlFor="order-estimate">
             <Input id="order-estimate" inputMode="decimal" value={form.estimate} onChange={(event) => set("estimate")(event.target.value)} />
@@ -193,6 +180,7 @@ export default function NewOrderPage({ searchParams }: { searchParams: Promise<{
       {error && <Alert tone="risk">{error}</Alert>}
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" size="lg" loading={busy} disabled={!customer || !form.description.trim()}>
+          <Save className="size-4" aria-hidden />
           Save {repair ? "repair" : "order"}
         </Button>
         <Button variant="ghost" onClick={() => router.push("/orders")}>

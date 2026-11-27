@@ -3,6 +3,7 @@
 import { use, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Copy, PackagePlus, Plus, Scale, Trash2, Truck, Usb } from "lucide-react";
 import { useAuth } from "@webfudge/auth/components";
 import { PURITIES } from "@webfudge/config";
 import { Alert, Badge, Button, Card, CardBody, CardHeader, Field, Input, PageHeader, Select, Textarea } from "@webfudge/ui";
@@ -126,7 +127,7 @@ export default function ReceivePage({ searchParams }: { searchParams: Promise<{ 
       <PageHeader title="Receive pieces" description={jobWorkId ? `Pieces back from the karigar for job ${params.job ?? ""}. They count against the gold given.` : `Into ${branch?.name ?? "this branch"}. Each line becomes one tagged piece.`} />
 
       <Card>
-        <CardHeader title="Delivery" />
+        <CardHeader icon={Truck} title="Delivery" description="Who it came from, and the bill or challan that came with it." />
         <CardBody className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Field label="Type" htmlFor="receive-source">
             <Select
@@ -180,6 +181,7 @@ export default function ReceivePage({ searchParams }: { searchParams: Promise<{ 
 
       <Card>
         <CardHeader
+          icon={Scale}
           title="Pieces"
           description="Weigh each piece. Net weight is worked out for you."
           action={
@@ -188,6 +190,7 @@ export default function ReceivePage({ searchParams }: { searchParams: Promise<{ 
                 <Badge tone="ok">Scale connected{scale.reading !== null ? ` · ${formatWeight(scale.reading)}` : ""}</Badge>
               ) : (
                 <Button size="sm" variant="secondary" onClick={scale.connect}>
+                  <Usb className="size-3.5" aria-hidden />
                   Connect scale
                 </Button>
               )
@@ -207,10 +210,12 @@ export default function ReceivePage({ searchParams }: { searchParams: Promise<{ 
                   <span className="text-[12px] font-semibold text-ash">Piece {index + 1}</span>
                   <span className="flex gap-2">
                     <Button size="sm" variant="ghost" onClick={() => setLines((all) => [...all.slice(0, index + 1), blankLine(null, line), ...all.slice(index + 1)])}>
+                      <Copy className="size-3.5" aria-hidden />
                       Another like this
                     </Button>
                     {lines.length > 1 && (
                       <Button size="sm" variant="ghost" onClick={() => setLines((all) => all.filter((entry) => entry.key !== line.key))}>
+                        <Trash2 className="size-3.5" aria-hidden />
                         Remove
                       </Button>
                     )}
@@ -287,6 +292,7 @@ export default function ReceivePage({ searchParams }: { searchParams: Promise<{ 
             );
           })}
           <Button variant="secondary" className="justify-self-start" onClick={() => setLines((all) => [...all, blankLine(all.at(-1)?.locationId ?? null)])}>
+            <Plus className="size-4" aria-hidden />
             Add a piece
           </Button>
         </div>
@@ -295,6 +301,7 @@ export default function ReceivePage({ searchParams }: { searchParams: Promise<{ 
       {error && <Alert tone="risk">{error}</Alert>}
       <div className="flex flex-wrap items-center gap-4">
         <Button type="submit" size="lg" loading={busy} disabled={!ready.length || ready.length !== lines.length}>
+          <PackagePlus className="size-4" aria-hidden />
           Receive {lines.length} {lines.length === 1 ? "piece" : "pieces"} and create tags
         </Button>
         <span className="text-[13px] text-ash tabular-nums">Total net {formatWeight(totalNet)}</span>

@@ -4,13 +4,12 @@ import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Check, ClipboardList, Coins, CreditCard, Gem, IndianRupee, ReceiptText, RotateCcw, ScanBarcode, Trash2, UserRound, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { errorMessage, useApi, useBranch } from "@webfudge/auth/components";
-import { Alert, Badge, Button, Card, CardBody, CardHeader, Field, Input, MissingHints, PageHeader, ScanInput, Spinner, Table, Td, Th, Tr, buttonClass, cn, type ScanSuggestion } from "@webfudge/ui";
+import { errorMessage, useApi, useBranch, usePieceSearch } from "@webfudge/auth/components";
+import { Alert, Badge, Button, Card, CardBody, CardHeader, Field, Input, MissingHints, PageHeader, ScanInput, Spinner, Table, Td, Th, Tr, buttonClass, cn } from "@webfudge/ui";
 import type { Customer, CustomerDetail, Estimate, Invoice, Quote, StockItem } from "@webfudge/utils/api";
 import { ITEM_STATUS_LABELS } from "@webfudge/utils/api";
 import { formatINR, formatWeight } from "@webfudge/utils/formatters";
 import { CustomerPicker } from "@/components/customer-picker";
-import { mediaUrl } from "@/lib/env";
 import { OldGoldEditor, toOldGold, type OldGoldRow } from "@/components/old-gold-lines";
 import { PaymentsEditor, newPaymentRow, paidPaise, toPayments, type PaymentRow } from "@/components/payments";
 
@@ -128,24 +127,18 @@ export default function NewBillPage({ searchParams }: { searchParams: Promise<{ 
   const shownQuote = pieces.length ? quote : null;
 
   /** Pieces at this branch matching what is typed (tag, old tag, HUID or design), for the scan box. */
-  async function findPieces(query: string): Promise<ScanSuggestion[]> {
-    if (!branch) return [];
-    const { data } = await api.get<{ data: StockItem[] }>(`/stock/items?branchId=${branch.id}&pageSize=8&q=${encodeURIComponent(query)}`);
-    return data.map((item) => {
-      const photo = item.photos?.[0] ?? item.design?.image ?? null;
+  const findPieces = usePieceSearch({
+    branchId: branch?.id,
+    check: (item) => {
       const onBill = pieces.some((piece) => piece.id === item.id);
       const reservedElsewhere = item.status === "reserved" && !estimate?.lines.some((line) => line.itemId === item.id);
       const sellable = ["in_stock", "with_staff", "reserved"].includes(item.status) && !reservedElsewhere;
       return {
-        code: item.tagNumber,
-        title: item.tagNumber,
-        detail: [item.design?.name, item.purity, formatWeight(item.netWeight), item.location?.fullCode].filter(Boolean).join(" · "),
         aside: onBill ? "On this bill" : !sellable ? (reservedElsewhere ? "On another estimate" : ITEM_STATUS_LABELS[item.status]) : item.status === "with_staff" ? "With salesperson" : undefined,
-        imageUrl: photo ? mediaUrl(photo.thumbnailUrl) : null,
         disabled: onBill || !sellable,
       };
-    });
-  }
+    },
+  });
 
   async function scan(code: string) {
     setScanError(null);
@@ -408,7 +401,7 @@ export default function NewBillPage({ searchParams }: { searchParams: Promise<{ 
           <Card>
             <CardHeader title={<StepTitle icon={Coins} title="Old gold in exchange" />} description="Optional. Weigh it, test it, and enter the tester's reading. Valued at today's 24KT rate less the shop's deduction." />
             <CardBody className="grid gap-4">
-              <OldGoldEditor rows={oldGold} onChange={setOldGold} values={shownQuote?.oldGold.lines.map((line) => line.value)} />
+              <OldGoldEditor rows={oldGold} onChange={setOldGold} valued={shownQuote?.oldGold.lines} />
               {oldGold.length > 0 && (
                 <Field label="Seller's ID proof" htmlFor="bill-id-proof" hint="Required when taking old gold, like Aadhaar ending 1234.">
                   <Input id="bill-id-proof" value={idProof} onChange={(event) => setIdProof(event.target.value)} placeholder="Aadhaar ending 1234" />

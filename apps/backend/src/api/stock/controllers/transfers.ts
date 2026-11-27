@@ -5,6 +5,7 @@ import { normaliseCode } from "../../../utils/stock";
 import { branchIdsFor, requireBranch } from "../../../utils/staff";
 import { BRANCH, ITEM, TRANSFER, idOf, notFound, orgWhere, paging, requireRole, staffOf, text } from "../lib/common";
 import { findByCode, holdingLocation, recordMovement } from "../lib/items";
+import { serializeImage } from "../lib/serialize";
 
 type Line = { itemId: number; tagNumber: string; legacyTag: string | null; huid: string | null; receivedAt: string | null };
 
@@ -37,15 +38,84 @@ function serialize(transfer: any) {
   };
 }
 
+/** Adds each line's design, purity, weights, tray and photo, for the transfer's own page. */
+async function withPieces(strapi: any, transfer: ReturnType<typeof serialize>) {
+  const ids = transfer.lines.map((line) => line.itemId);
+  if (!ids.length) return transfer;
+  const items = await strapi.db.query(ITEM).findMany({
+    where: { id: { $in: ids } },
+    select: ["id", "purity", "grossWeight", "netWeight", "status"],
+    populate: { photos: true, design: { select: ["id", "code", "name"], populate: { images: true } }, location: { select: ["id", "fullCode"] } },
+  });
+  const byId = new Map<number, any>(items.map((item: any) => [item.id, item]));
+  return {
+    ...transfer,
+    lines: transfer.lines.map((line) => {
+      const item = byId.get(line.itemId);
+      if (!item) return line;
+      const photo = item.photos?.[0] ?? null;
+      const designImage = item.design?.images?.[0] ?? null;
+      return {
+        ...line,
+        design: item.design ? { id: item.design.id, code: item.design.code, name: item.design.name } : null,
+        purity: item.purity,
+        grossWeight: Number(item.grossWeight),
+        netWeight: Number(item.netWeight),
+        status: item.status,
+        location: item.location?.fullCode ?? null,
+        photo: photo ? serializeImage(photo) : null,
+        designImage: designImage ? serializeImage(designImage) : null,
+      };
+    }),
+  };
+}
+
 export default ({ strapi }: { strapi: any }) => ({
+  /**
+   * Transfers to and from the staff's branches. With branchId, `direction` picks
+   * "out" (sent from it) or "in" (sent to it); `status` is a state or "open";
+   * `q` matches the transfer number; `summary=true` adds the cards' totals.
+   */
   async list(ctx: any) {
     const staff = staffOf(ctx);
     const { page, pageSize } = paging(ctx.query, 30);
     const branches = await branchIdsFor(strapi, staff);
-    const where: any = { ...orgWhere(staff), $or: [{ fromBranch: { id: { $in: branches } } }, { toBranch: { id: { $in: branches } } }] };
-    if (ctx.query.open === "true") where.status = { $in: ["in_transit", "partly_received"] };
+    const branchId = idOf(ctx.query.branchId);
+    const here = branchId && branches.includes(branchId) ? branchId : null;
+    const scope: any = { ...orgWhere(staff), $or: [{ fromBranch: { id: { $in: branches } } }, { toBranch: { id: { $in: branches } } }] };
+    const where: any = { ...scope };
+    const and: any[] = [];
+    if (here && ctx.query.direction === "out") and.push({ fromBranch: { id: here } });
+    else if (here && ctx.query.direction === "in") and.push({ toBranch: { id: here } });
+    if (ctx.query.open === "true" || ctx.query.status === "open") where.status = { $in: ["in_transit", "partly_received"] };
+    else if (["in_transit", "partly_received", "received"].includes(ctx.query.status)) where.status = ctx.query.status;
+    const q = typeof ctx.query.q === "string" ? ctx.query.q.trim() : "";
+    if (q) and.push({ $or: [{ number: { $containsi: q } }, { note: { $containsi: q } }] });
+    if (and.length) where.$and = and;
     const result = await strapi.db.query(TRANSFER).findPage({ where, page, pageSize, orderBy: { createdAt: "desc" }, populate: POPULATE });
-    ctx.body = { data: result.results.map(serialize), meta: { pagination: result.pagination } };
+    const meta: any = { pagination: result.pagination };
+
+    if (ctx.query.summary === "true") {
+      const open = { $in: ["in_transit", "partly_received"] };
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+      const count = (extra: any) => strapi.db.query(TRANSFER).count({ where: { ...scope, ...extra } });
+      const sentMonth = await strapi.db.query(TRANSFER).findMany({
+        where: { ...scope, ...(here ? { fromBranch: { id: here } } : {}), dispatchedAt: { $gte: monthStart.toISOString() } },
+        select: ["lines"],
+      });
+      const onTheWay = await strapi.db.query(TRANSFER).findMany({ where: { ...scope, status: open }, select: ["lines"] });
+      meta.summary = {
+        open: await count({ status: open }),
+        arrivingHere: here ? await count({ status: open, toBranch: { id: here } }) : 0,
+        leftHere: here ? await count({ status: open, fromBranch: { id: here } }) : 0,
+        piecesOnTheWay: onTheWay.reduce((sum: number, row: any) => sum + (row.lines ?? []).filter((line: Line) => !line.receivedAt).length, 0),
+        sentThisMonth: sentMonth.length,
+        piecesSentThisMonth: sentMonth.reduce((sum: number, row: any) => sum + (row.lines ?? []).length, 0),
+      };
+    }
+    ctx.body = { data: result.results.map(serialize), meta };
   },
 
   async get(ctx: any) {
@@ -56,7 +126,7 @@ export default ({ strapi }: { strapi: any }) => ({
     if (!branches.includes(transfer.fromBranch.id) && !branches.includes(transfer.toBranch.id)) {
       throw new errors.ForbiddenError("This transfer is between branches you do not work in.");
     }
-    ctx.body = { data: serialize(transfer) };
+    ctx.body = { data: await withPieces(strapi, serialize(transfer)) };
   },
 
   /** Sends pieces to another branch. All pieces go, or none do. */
@@ -187,6 +257,6 @@ export default ({ strapi }: { strapi: any }) => ({
     });
 
     const saved = await strapi.db.query(TRANSFER).findOne({ where: { id: transfer.id }, populate: POPULATE });
-    ctx.body = { data: { transfer: serialize(saved), results } };
+    ctx.body = { data: { transfer: await withPieces(strapi, serialize(saved)), results } };
   },
 });

@@ -2,6 +2,7 @@ import { errors } from "@strapi/utils";
 import { requireBranch } from "../../../utils/staff";
 import { staffOf } from "../../stock/lib/common";
 import { codeWhere } from "../../stock/lib/common";
+import { serializeImage } from "../../stock/lib/serialize";
 import { changePiece } from "../../sales/lib/pieces";
 import { CUSTOMER, nextNumber, normalisePhone } from "../../sales/lib/common";
 import { APPROVAL, STOCK_ROLES, isoDate, logEntry, org, person, requireRole, text } from "../lib/common";
@@ -18,15 +19,25 @@ const POPULATE = {
 
 type Line = { itemId: number; tagNumber: string; design: string | null; purity: string; grossWeight: number; netWeight: number; returnedAt: string | null };
 
-/** Each line's state now: still out, back in stock, or billed to the customer. */
-async function withState(strapi: any, approval: any) {
+/** Each line's state now (still out, back in stock, or billed to the customer) and its thumbnail. */
+async function withState(strapi: any, approval: any, withPhotos = false) {
   const lines: Line[] = Array.isArray(approval.lines) ? approval.lines : [];
-  const items = lines.length ? await strapi.db.query(ITEM).findMany({ where: { id: { $in: lines.map((line) => line.itemId) } }, select: ["id", "status"] }) : [];
-  const status = new Map(items.map((item: any) => [item.id, item.status]));
+  const items = lines.length
+    ? await strapi.db.query(ITEM).findMany({
+        where: { id: { $in: lines.map((line) => line.itemId) } },
+        select: ["id", "status"],
+        ...(withPhotos ? { populate: { photos: true, design: { select: ["id"], populate: { images: true } } } } : {}),
+      })
+    : [];
+  const byId = new Map<number, any>(items.map((item: any) => [item.id, item]));
   return lines.map((line) => {
-    const now = status.get(line.itemId);
+    const item = byId.get(line.itemId);
+    const now = item?.status;
     const state = now === "on_approval" ? "out" : now === "sold" ? "billed" : "returned";
-    return { ...line, state };
+    if (!withPhotos) return { ...line, state };
+    const photo = item?.photos?.[0] ?? null;
+    const designImage = item?.design?.images?.[0] ?? null;
+    return { ...line, state, photo: photo ? serializeImage(photo) : null, designImage: designImage ? serializeImage(designImage) : null };
   });
 }
 
@@ -85,7 +96,7 @@ export default ({ strapi }: { strapi: any }) => ({
     // Pieces billed at the counter since the last look may have closed the memo.
     await closeIfDone(strapi, staff, approval);
     const fresh = await load(strapi, staff, approval.id);
-    ctx.body = { data: serialize(fresh, await withState(strapi, fresh)) };
+    ctx.body = { data: serialize(fresh, await withState(strapi, fresh, true)) };
   },
 
   /** Sends pieces out on approval memo. They leave the floor until they come back or are billed. */
@@ -141,7 +152,7 @@ export default ({ strapi }: { strapi: any }) => ({
     });
     ctx.status = 201;
     const fresh = await load(strapi, staff, created.id);
-    ctx.body = { data: serialize(fresh, await withState(strapi, fresh)) };
+    ctx.body = { data: serialize(fresh, await withState(strapi, fresh, true)) };
   },
 
   /** Takes pieces back into stock. They return to the tray they came from. */
@@ -171,6 +182,6 @@ export default ({ strapi }: { strapi: any }) => ({
     });
     await closeIfDone(strapi, staff, await load(strapi, staff, approval.id));
     const fresh = await load(strapi, staff, approval.id);
-    ctx.body = { data: serialize(fresh, await withState(strapi, fresh)) };
+    ctx.body = { data: serialize(fresh, await withState(strapi, fresh, true)) };
   },
 });

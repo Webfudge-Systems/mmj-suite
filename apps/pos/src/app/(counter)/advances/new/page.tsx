@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { IndianRupee, Lock, UserRound } from "lucide-react";
+import { IndianRupee, Lock, NotebookPen, UserRound, Wallet } from "lucide-react";
 import { errorMessage, useApi, useBranch } from "@webfudge/auth/components";
 import { PURITIES } from "@webfudge/config";
 import { useCurrentRates } from "@webfudge/hooks";
@@ -69,14 +69,14 @@ export default function NewAdvancePage({ searchParams }: { searchParams: Promise
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
         <div className="grid content-start gap-6">
           <Card>
-            <CardHeader title={<span className="flex items-center gap-2"><UserRound className="size-4 text-gold" aria-hidden />Customer</span>} />
+            <CardHeader icon={UserRound} title="Customer" />
             <CardBody>
               <CustomerPicker value={customer} onChange={setCustomer} />
             </CardBody>
           </Card>
 
           <Card>
-            <CardHeader title={<span className="flex items-center gap-2"><Lock className="size-4 text-gold" aria-hidden />Book today&apos;s rate</span>} description="Optional. Protects the customer if gold rises before they buy." />
+            <CardHeader icon={Lock} title="Book today&apos;s rate" description="Optional. Protects the customer if gold rises before they buy." />
             <CardBody className="grid gap-4 sm:grid-cols-2">
               <Field label="Purity" htmlFor="adv-purity">
                 <Select id="adv-purity" value={lockPurity} onChange={(event) => setLockPurity(event.target.value)}>
@@ -102,7 +102,7 @@ export default function NewAdvancePage({ searchParams }: { searchParams: Promise
           </Card>
 
           <Card>
-            <CardHeader title="Details" />
+            <CardHeader icon={NotebookPen} title="Details" />
             <CardBody className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_160px]">
               <Field label="What it is for" htmlFor="adv-note" hint="Like the design or piece they are waiting for.">
                 <Input id="adv-note" value={note} onChange={(event) => setNote(event.target.value)} />
@@ -115,7 +115,7 @@ export default function NewAdvancePage({ searchParams }: { searchParams: Promise
         </div>
 
         <Card className="self-start lg:sticky lg:top-4">
-          <CardHeader title={<span className="flex items-center gap-2"><IndianRupee className="size-4 text-gold" aria-hidden />Payment</span>} />
+          <CardHeader icon={IndianRupee} title="Payment" />
           <CardBody className="grid gap-4">
             <Field label="Advance amount (₹)" htmlFor="adv-amount">
               <Input id="adv-amount" inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} className="h-12 text-lg font-semibold tabular-nums" />
@@ -123,6 +123,7 @@ export default function NewAdvancePage({ searchParams }: { searchParams: Promise
             {total > 0 && <PaymentsEditor rows={payments} onChange={setPayments} due={total} />}
             {error && <Alert tone="risk">{error}</Alert>}
             <Button variant="gold" size="lg" loading={busy} disabled={!ready} onClick={save}>
+              <Wallet className="size-4" aria-hidden />
               Take advance and print receipt
             </Button>
             {!customer && <p className="text-[12.5px] text-ash">Choose the customer first.</p>}

@@ -2,6 +2,7 @@
 
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { Camera, Gem, Save } from "lucide-react";
 import { useAuth } from "@webfudge/auth/components";
 import { PURITIES } from "@webfudge/config";
 import { Alert, Button, Card, CardBody, CardHeader, Field, Input, Select, Textarea } from "@webfudge/ui";
@@ -109,7 +110,7 @@ export function DesignForm({ design }: { design?: Design }) {
   return (
     <form onSubmit={submit} className="grid gap-6" noValidate>
       <Card>
-        <CardHeader title="Details" />
+        <CardHeader icon={Gem} title="Details" description="Name, category, purity and making charge. The design number is made from the category code." />
         <CardBody className="grid gap-4 sm:grid-cols-2">
           <Field label="Design name" htmlFor="design-name" className="sm:col-span-2">
             <Input id="design-name" value={name} onChange={(event) => setName(event.target.value)} disabled={!canEdit} />
@@ -178,7 +179,7 @@ export function DesignForm({ design }: { design?: Design }) {
       </Card>
 
       <Card>
-        <CardHeader title="Photos" description="Front-facing shots on a plain background work best for the tablets and try-on later." />
+        <CardHeader icon={Camera} title="Photos" description="Front-facing shots on a plain background work best for the tablets and try-on later." />
         <CardBody className="grid gap-4">
           {images.length > 0 && (
             <ul className="flex flex-wrap gap-3">
@@ -212,6 +213,7 @@ export function DesignForm({ design }: { design?: Design }) {
       {saved && <Alert tone="ok">Saved.</Alert>}
       {canEdit && (
         <Button type="submit" size="lg" loading={busy} className="justify-self-start" disabled={!name.trim() || !categoryId || !making}>
+          <Save className="size-4" aria-hidden />
           {design ? "Save design" : "Create design"}
         </Button>
       )}
