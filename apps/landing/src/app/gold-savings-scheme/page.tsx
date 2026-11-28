@@ -52,7 +52,7 @@ export default function GoldSavingsSchemePage() {
       />
 
       <Shell className="py-12 sm:py-16">
-        <ol className="grid gap-px border border-line bg-line sm:grid-cols-3">
+        <ol className="grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-3">
           {[
             {
               n: "01",
@@ -82,7 +82,7 @@ export default function GoldSavingsSchemePage() {
       <Panel tone="paper">
         <p className="eyebrow text-[9px] text-stone">Worked example</p>
         <Statement className="mt-5">A five thousand rupee account</Statement>
-        <div className="mt-10 overflow-x-auto border border-line bg-cream">
+        <div className="mt-10 overflow-x-auto rounded-2xl border border-line bg-cream">
           <table className="w-full min-w-[480px] text-left text-[13px]">
             <tbody>
               {[

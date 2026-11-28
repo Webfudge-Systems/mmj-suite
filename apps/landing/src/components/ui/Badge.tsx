@@ -3,7 +3,7 @@ import type { Availability } from "@/types";
 
 export function SaleBadge({ percent }: { percent: number }) {
   return (
-    <span className="eyebrow bg-wine px-2.5 py-1 text-[10px] leading-none text-cream">
+    <span className="bg-mist px-2 py-1 text-[11px] font-semibold leading-none text-wine">
       &minus;{percent}%
     </span>
   );
@@ -11,7 +11,7 @@ export function SaleBadge({ percent }: { percent: number }) {
 
 export function NewBadge() {
   return (
-    <span className="eyebrow bg-gold px-2.5 py-1 text-[10px] leading-none text-ink">new</span>
+    <span className="eyebrow bg-gold px-2.5 py-1 text-[9px] leading-none text-ink">New</span>
   );
 }
 
@@ -20,11 +20,11 @@ export function HallmarkBadge({ className }: { className?: string }) {
   return (
     <span
       className={cn(
-        "eyebrow border border-ink/20 px-2.5 py-1 text-[10px] leading-none text-ash",
+        "rounded-full border border-wine/20 bg-mist px-3 py-1 text-[11px] leading-none text-wine",
         className,
       )}
     >
-      bis hallmarked
+      BIS hallmarked
     </span>
   );
 }
@@ -43,7 +43,7 @@ export function StockDot({
         className={cn("size-1.5 rounded-full", inStock ? "bg-stock" : "bg-stone")}
         aria-hidden
       />
-      {inStock ? "in stock" : "made to order"}
+      {inStock ? "In stock" : "Made to order"}
     </span>
   );
 }

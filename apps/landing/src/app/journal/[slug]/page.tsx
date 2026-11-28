@@ -54,7 +54,7 @@ export default async function JournalPostPage({
         <p className="mt-5 max-w-2xl text-[16px] leading-relaxed text-ash">{post.excerpt}</p>
       </Shell>
 
-      <div className="relative aspect-[21/9] min-h-[240px] bg-cream-deep">
+      <div className="relative aspect-[21/9] min-h-[240px] rounded-2xl bg-cream-deep">
         <Image
           src={post.image}
           alt=""
@@ -75,7 +75,7 @@ export default async function JournalPostPage({
         {more.length > 0 && (
           <aside className="mt-16 border-t border-line pt-12">
             <div className="flex items-end justify-between gap-6">
-              <h2 className="eyebrow text-[13px]">More from the journal</h2>
+              <h2 className="text-[24px] text-ink">More from the journal</h2>
               <ArrowCta href="/journal">All notes</ArrowCta>
             </div>
             <ul className="mt-8 grid gap-6 sm:grid-cols-3">

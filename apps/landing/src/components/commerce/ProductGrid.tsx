@@ -17,7 +17,7 @@ export function ProductGrid({
   return (
     <div
       className={cn(
-        "grid gap-x-5 gap-y-10 sm:grid-cols-2",
+        "grid grid-cols-2 gap-x-3 gap-y-5 sm:gap-x-5 sm:gap-y-8",
         columns === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3",
         className,
       )}

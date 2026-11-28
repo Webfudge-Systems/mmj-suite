@@ -26,7 +26,7 @@ export default async function GoldRatePage() {
       />
 
       <Shell className="py-12 sm:py-16">
-        <div className="overflow-x-auto border border-line">
+        <div className="overflow-x-auto rounded-2xl border border-line">
           <table className="w-full min-w-[640px] text-left text-[13px]">
             <thead className="bg-paper">
               <tr className="eyebrow text-[9px] text-stone">

@@ -24,8 +24,8 @@ export function OrderSummary({
   ];
 
   return (
-    <div className={cn("border border-line bg-paper p-6 sm:p-8", className)}>
-      <h2 className="eyebrow text-[10px]">Estimate</h2>
+    <div className={cn("rounded-2xl border border-line bg-paper p-6 sm:p-8", className)}>
+      <h2 className="text-[24px] text-ink">Estimate</h2>
 
       <dl className="mt-6 space-y-3.5 text-[13px]">
         {rows.map((row) => (

@@ -33,7 +33,7 @@ export function Pagination({ page, pageCount }: { page: number; pageCount: numbe
           href={hrefFor(target)}
           aria-current={target === page ? "page" : undefined}
           className={cn(
-            "grid size-10 place-items-center border text-[13px] transition-colors",
+            "grid size-10 place-items-center rounded-full border text-[13px] transition-colors",
             target === page
               ? "border-ink bg-ink text-cream"
               : "border-line text-ash hover:border-ink hover:text-ink",
@@ -63,7 +63,7 @@ function Step({
 }) {
   if (disabled) {
     return (
-      <span aria-hidden className="grid size-10 place-items-center border border-line text-line">
+      <span aria-hidden className="grid size-10 place-items-center rounded-full border border-line text-line">
         {children}
       </span>
     );
@@ -73,7 +73,7 @@ function Step({
     <Link
       href={href}
       aria-label={label}
-      className="grid size-10 place-items-center border border-line text-ash transition-colors hover:border-ink hover:text-ink"
+      className="grid size-10 place-items-center rounded-full border border-line text-ash transition-colors hover:border-ink hover:text-ink"
     >
       {children}
     </Link>

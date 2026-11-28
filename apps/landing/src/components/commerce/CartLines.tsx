@@ -26,7 +26,7 @@ export function CartLines({
           <Link
             href={`/products/${line.slug}`}
             onClick={onNavigate}
-            className="relative size-20 shrink-0 overflow-hidden bg-cream-deep sm:size-24"
+            className="relative size-20 shrink-0 overflow-hidden rounded-2xl bg-cream-deep sm:size-24"
           >
             <Image
               src={line.product.images[0]}

@@ -8,10 +8,10 @@ import type { LivePiece } from "@/types";
 export function LivePieces({ pieces }: { pieces: LivePiece[] }) {
   return (
     <div className="mt-9 border-t border-line pt-7">
-      <h2 className="eyebrow text-[9px] text-stone">
+      <h2 className="text-[24px] text-ink">
         In the showroom today &middot; {pieces.length} {pieces.length === 1 ? "piece" : "pieces"}
       </h2>
-      <ul className="mt-4 divide-y divide-line border border-line">
+      <ul className="mt-4 divide-y divide-line rounded-2xl border border-line">
         {pieces.map((piece) => (
           <li key={piece.tag} className="flex items-center gap-3 px-4 py-3 text-[13px]">
             {piece.photo ? (

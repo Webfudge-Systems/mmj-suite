@@ -62,7 +62,7 @@ export default function AboutPage() {
 
       <Shell className="py-12 sm:py-16">
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
-          <Reveal className="relative aspect-[4/5] overflow-hidden bg-cream-deep">
+          <Reveal className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-cream-deep">
             <Image
               src="/images/lifestyle/craft-hand.webp"
               alt="A karigar finishing a carved gold bangle by hand"
@@ -171,7 +171,7 @@ export default function AboutPage() {
         <ul className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {reviews.map((review, index) => (
             <Reveal key={review.id} delay={Math.min(index, 3) * 0.05}>
-              <li className="flex h-full flex-col border border-line bg-paper p-6">
+              <li className="flex h-full flex-col rounded-2xl border border-line bg-paper p-6">
                 <Stars rating={review.rating} size={13} />
                 <p className="mt-4 text-[14px] leading-snug text-ink">{review.title}</p>
                 <p className="mt-3 flex-1 text-[13px] leading-relaxed text-ash">

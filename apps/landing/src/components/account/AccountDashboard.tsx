@@ -30,9 +30,9 @@ export function AccountDashboard() {
               event.preventDefault();
               setSignedIn(true);
             }}
-            className="border border-line bg-paper p-7 sm:p-9"
+            className="rounded-2xl border border-line bg-paper p-7 sm:p-9"
           >
-            <h2 className="eyebrow text-[10px]">Sign in</h2>
+            <h2 className="text-[24px] text-ink">Sign in</h2>
             <p className="mt-4 text-[13px] leading-relaxed text-ash">
               We send a one-time code to your mobile. No password to remember.
             </p>
@@ -114,7 +114,7 @@ function Orders() {
   return (
     <ul className="space-y-5">
       {orders.map((order) => (
-        <li key={order.id} className="border border-line bg-paper">
+        <li key={order.id} className="rounded-2xl border border-line bg-paper">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line px-5 py-4">
             <div>
               <p className="text-[14px] tabular-nums text-ink">{order.id}</p>
@@ -144,7 +144,7 @@ function Orders() {
                 <li key={item.slug} className="flex items-center gap-4 px-5 py-4">
                   <Link
                     href={`/products/${product.slug}`}
-                    className="relative size-16 shrink-0 overflow-hidden bg-cream-deep"
+                    className="relative size-16 shrink-0 overflow-hidden rounded-2xl bg-cream-deep"
                   >
                     <Image
                       src={product.images[0]}
@@ -180,7 +180,7 @@ function Scheme() {
   const progress = Math.round((scheme.paid / scheme.term) * 100);
 
   return (
-    <div className="border border-line bg-paper p-7 sm:p-9">
+    <div className="rounded-2xl border border-line bg-paper p-7 sm:p-9">
       <p className="eyebrow text-[9px] text-gold">Gold savings scheme</p>
       <h3 className="mt-3 text-[clamp(1.2rem,2.4vw,1.55rem)]">{scheme.plan}</h3>
       <p className="mt-4 text-[13px] leading-relaxed text-ash">
@@ -200,7 +200,7 @@ function Scheme() {
         </div>
       </div>
 
-      <dl className="mt-8 grid grid-cols-2 gap-px border border-line bg-line sm:grid-cols-3">
+      <dl className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-3">
         {[
           { label: "Paid so far", value: formatPrice(scheme.monthly * scheme.paid) },
           { label: "Gold accrued", value: formatWeight(scheme.gramsAccrued) },
@@ -224,7 +224,7 @@ function Addresses() {
   return (
     <ul className="grid gap-5 sm:grid-cols-2">
       {customer.addresses.map((address) => (
-        <li key={address.label} className="border border-line bg-paper p-6">
+        <li key={address.label} className="rounded-2xl border border-line bg-paper p-6">
           <div className="flex items-center justify-between gap-3">
             <p className="eyebrow text-[9px] text-stone">{address.label}</p>
             {address.isDefault && (
@@ -248,8 +248,8 @@ function Addresses() {
 
 function Details() {
   return (
-    <div className="border border-line bg-paper p-7 sm:p-9">
-      <h3 className="eyebrow text-[10px]">Your details</h3>
+    <div className="rounded-2xl border border-line bg-paper p-7 sm:p-9">
+      <h3 className="text-[24px] text-ink">Your details</h3>
       <div className="mt-6 grid gap-5 sm:grid-cols-2">
         <Field label="Full name" name="name" defaultValue={customer.name} />
         <Field label="Mobile" name="phone" defaultValue={customer.phone} />

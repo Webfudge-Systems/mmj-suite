@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 const control =
-  "w-full border border-line bg-transparent px-4 py-3 text-[14px] text-ink outline-none transition-colors placeholder:text-stone focus:border-ink";
+  "w-full rounded-xl border border-line px-4 py-3.5 text-[14px] text-ink outline-none transition-colors placeholder:text-stone focus:border-wine bg-paper";
 
 export function Field({
   label,
@@ -30,7 +30,7 @@ export function Field({
 }) {
   return (
     <label className={cn("block", className)}>
-      <span className="eyebrow mb-2 block text-[10px] text-ash">{label}</span>
+      <span className="mb-2 block text-[12px] font-medium text-ink">{label}</span>
       <input
         inputMode={inputMode}
         pattern={pattern}
@@ -64,7 +64,7 @@ export function TextArea({
 }) {
   return (
     <label className={cn("block", className)}>
-      <span className="eyebrow mb-2 block text-[10px] text-ash">{label}</span>
+      <span className="mb-2 block text-[12px] font-medium text-ink">{label}</span>
       <textarea
         name={name}
         rows={rows}
@@ -91,7 +91,7 @@ export function Select({
 }) {
   return (
     <label className={cn("block", className)}>
-      <span className="eyebrow mb-2 block text-[10px] text-ash">{label}</span>
+      <span className="mb-2 block text-[12px] font-medium text-ink">{label}</span>
       <select name={name} defaultValue={defaultValue} className={cn(control, "appearance-none")}>
         {options.map((option) => (
           <option key={option.value} value={option.value}>

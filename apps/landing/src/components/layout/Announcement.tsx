@@ -16,11 +16,11 @@ export async function Announcement() {
   const Trend = rising ? TrendingUp : TrendingDown;
 
   return (
-    <div className="bg-ink text-cream">
-      <Shell className="flex h-9 items-center justify-between gap-6">
-        <p className="eyebrow truncate text-[9px] text-cream/70">{announcements[0]}</p>
+    <div className="bg-wine text-cream">
+      <Shell className="flex h-8 items-center justify-between gap-6">
+        <p className="truncate text-[11px] text-cream/80">{announcements[0]}</p>
 
-        <ul className="eyebrow hidden gap-6 text-[9px] text-cream/70 md:flex">
+        <ul className="hidden gap-8 text-[11px] text-cream/80 md:flex">
           {announcements.slice(1).map((line) => (
             <li key={line}>{line}</li>
           ))}
@@ -29,10 +29,10 @@ export async function Announcement() {
         {gold && (
           <Link
             href="/gold-rate"
-            className="eyebrow flex shrink-0 items-center gap-2 text-[9px] transition-colors hover:text-gold"
+            className="flex shrink-0 items-center gap-2 text-[11px] transition-colors hover:text-gold"
           >
-            <span className="text-cream/70">22KT today</span>
-            <span className="text-gold">{formatPrice(gold.ratePerGram)}/g</span>
+            <span className="text-cream/80">22KT today</span>
+            <span className="font-medium tabular-nums text-gold">{formatPrice(gold.ratePerGram)}/g</span>
             <Trend className="size-3 text-gold" aria-hidden />
           </Link>
         )}

@@ -20,7 +20,7 @@ export function ContactForm() {
 
   if (sent) {
     return (
-      <div className="border border-line bg-paper p-8 sm:p-10">
+      <div className="rounded-2xl border border-line bg-paper p-8 sm:p-10">
         <span className="grid size-10 place-items-center rounded-full bg-stock text-cream">
           <Check className="size-4" strokeWidth={2.5} />
         </span>
@@ -46,9 +46,9 @@ export function ContactForm() {
         event.preventDefault();
         setSent(true);
       }}
-      className="border border-line bg-paper p-7 sm:p-9"
+      className="rounded-2xl border border-line bg-paper p-7 sm:p-9"
     >
-      <h2 className="eyebrow text-[10px]">Send a message</h2>
+      <h2 className="text-[24px] text-ink">Send a message</h2>
 
       <div className="mt-7 grid gap-5 sm:grid-cols-2">
         <Field label="Your name" name="name" required autoComplete="name" />

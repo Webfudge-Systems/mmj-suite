@@ -33,7 +33,7 @@ export function ShopBrowser({
         <aside className="hidden lg:block">
           <div className="sticky top-32">
             <div className="flex items-baseline justify-between border-b border-line pb-4">
-              <h2 className="eyebrow text-[10px]">Refine</h2>
+              <h2 className="text-[24px] text-ink">Refine</h2>
               <ClearFilters />
             </div>
             <div className="mt-6 max-h-[calc(100vh-14rem)] overflow-y-auto pr-1">
@@ -61,7 +61,7 @@ export function ShopBrowser({
               <Pagination page={paged.page} pageCount={paged.pageCount} />
             </>
           ) : (
-            <div className="mt-16 border border-line bg-paper px-8 py-20 text-center">
+            <div className="mt-16 rounded-2xl border border-line bg-paper px-8 py-20 text-center">
               <h3 className="text-[1.25rem]">Nothing matches that yet</h3>
               <p className="mx-auto mt-4 max-w-sm text-[13px] leading-relaxed text-ash">
                 Our karigars make to order as well. Tell us the weight band and the

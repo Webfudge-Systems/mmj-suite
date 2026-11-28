@@ -59,7 +59,7 @@ export default async function CheckoutSuccessPage() {
           </div>
         </div>
 
-        <ol className="mx-auto mt-16 grid max-w-3xl gap-px border border-line bg-line sm:grid-cols-3">
+        <ol className="mx-auto mt-16 grid max-w-3xl gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-3">
           {steps.map((step) => (
             <li key={step.index} className="bg-paper p-6">
               <p className="eyebrow text-[9px] text-gold">{step.index}</p>

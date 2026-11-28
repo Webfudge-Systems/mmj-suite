@@ -49,9 +49,9 @@ export default function ContactPage() {
       />
 
       <Shell className="py-12 sm:py-16">
-        <div className="grid gap-10 lg:grid-cols-[1fr_minmax(0,440px)] lg:gap-16">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_440px] lg:gap-16">
           <div>
-            <ul className="grid gap-px border border-line bg-line sm:grid-cols-2">
+            <ul className="grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2">
               {channels.map((channel) => (
                 <li key={channel.label} className="bg-paper p-6">
                   <channel.icon className="size-4 text-gold" aria-hidden />
@@ -75,7 +75,7 @@ export default function ContactPage() {
               ))}
             </ul>
 
-            <div className="mt-10 border border-line bg-cream-deep p-7">
+            <div className="mt-10 rounded-2xl border border-line bg-cream-deep p-7">
               <p className="eyebrow text-[9px] text-stone">Before you come in</p>
               <ul className="mt-5 space-y-3 text-[13px] leading-relaxed text-ash">
                 {[

@@ -1,20 +1,26 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Star, Store } from "lucide-react";
 import { Shell } from "@/components/ui/Shell";
 import { Panel } from "@/components/ui/Panel";
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { ArrowCta } from "@/components/ui/Button";
-import { Stars } from "@/components/ui/Stars";
-import { HallmarkBadge, SaleBadge, StockDot, discountPercent } from "@/components/ui/Badge";
+import { HallmarkBadge, StockDot, discountPercent } from "@/components/ui/Badge";
 import { Gallery } from "@/components/product/Gallery";
 import { BuyPanel } from "@/components/product/BuyPanel";
 import { PriceBreakup } from "@/components/product/PriceBreakup";
+import { Fold } from "@/components/ui/Fold";
+import { ProductBenefits } from "@/components/product/ProductBenefits";
+import { StickyBuyBar } from "@/components/product/StickyBuyBar";
 import { ProductDetails } from "@/components/product/ProductDetails";
 import { ProductGrid } from "@/components/commerce/ProductGrid";
 import { ensureCatalog, getProductBySlug, getProducts, getRelated, isLiveCatalog } from "@/lib/catalog";
 import { fetchLiveProduct } from "@/lib/live-catalog";
 import { LivePieces } from "@/components/product/LivePieces";
+import { ProductPromise } from "@/components/product/ProductPromise";
+import { ProductReviews } from "@/components/product/ProductReviews";
 import { categoryLabels } from "@/data/categories";
 import { getCollection } from "@/data/collections";
 import { ratingSummary } from "@/data/reviews";
@@ -73,7 +79,7 @@ export default async function ProductPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd(product)) }}
       />
 
-      <Shell className="py-8 sm:py-12">
+      <Shell className="pb-10 pt-5 sm:py-10">
         <Breadcrumbs
           trail={[
             { label: "Home", href: "/" },
@@ -83,92 +89,104 @@ export default async function ProductPage({
           ]}
         />
 
-        <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_minmax(0,420px)] lg:gap-16">
-          <Gallery images={product.images} name={product.name} />
-
-          <div className="lg:sticky lg:top-32 lg:self-start">
-            <p className="eyebrow text-[9px] text-stone">
-              {product.purity} &middot; {categoryLabels[product.category]}
+        <div className="mt-5 grid gap-x-14 gap-y-6 lg:mt-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)]">
+          <header className="lg:col-start-2 lg:row-start-1">
+            <div className="flex items-start justify-between gap-4">
+              <h1 className="text-[clamp(1.6rem,3vw,2.3rem)] leading-[1.15] text-ink">{product.name}</h1>
+              {!product.live ? (
+                <span className="flex shrink-0 items-center gap-2 rounded-2xl bg-fog px-3 py-2 text-[13px] font-semibold text-ink">
+                  {ratingSummary.average}
+                  <Star className="size-3.5 fill-gold text-gold" aria-hidden />
+                  <span className="h-4 w-px bg-line" aria-hidden />
+                  <span className="font-medium text-ash">{ratingSummary.count}</span>
+                </span>
+              ) : null}
+            </div>
+            <p className="mt-2 text-[14px] font-medium text-wine">
+              {categoryLabels[product.category]}, {product.purity}
               {collection && (
                 <>
-                  {" "}&middot;{" "}
-                  <a
-                    href={`/collections/${collection.slug}`}
-                    className="underline-offset-4 hover:underline"
-                  >
+                  {", "}
+                  <Link href={`/collections/${collection.slug}`} className="underline-offset-4 hover:underline">
                     {collection.name}
-                  </a>
+                  </Link>
                 </>
               )}
             </p>
+            {!product.live && <p className="mt-2 text-[14px] leading-relaxed text-ash">{product.tagline}</p>}
+          </header>
 
-            <h1 className="mt-4 text-[clamp(1.5rem,3vw,2.15rem)] normal-case tracking-normal">
-              {product.name}
-            </h1>
-            <p className="mt-3 text-[14px] leading-relaxed text-ash">{product.tagline}</p>
+          <div className="lg:sticky lg:top-28 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:self-start">
+            <Gallery images={product.images} name={product.name} slug={product.slug} />
+          </div>
 
-            {/* The sample reviews belong to the sample catalogue, not to real pieces. */}
-            {!product.live && (
-              <div className="mt-5 flex items-center gap-3">
-                <Stars rating={ratingSummary.average} size={13} />
-                <span className="text-[12px] text-stone">
-                  {ratingSummary.average} &middot; {ratingSummary.count} reviews
-                </span>
-              </div>
-            )}
+          <div className="lg:col-start-2 lg:row-start-2">
+            <p className="flex items-center gap-3 rounded-2xl bg-mist px-4 py-3.5 text-[13px] font-medium text-wine">
+              <Store className="size-4 shrink-0" strokeWidth={1.8} aria-hidden />
+              {stockLine(product)}
+            </p>
 
-            <div className="mt-7 flex flex-wrap items-baseline gap-3">
-              <span className="text-[26px] tabular-nums text-ink">
+            <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2">
+              <span className="text-[30px] font-semibold leading-none tabular-nums text-ink">
                 {product.live?.priceOnRequest
                   ? "Price on request"
                   : product.live?.priceTo && product.live.priceTo > product.price
                     ? `From ${formatPrice(product.price)}`
                     : formatPrice(product.price)}
               </span>
-              {product.compareAtPrice && (
-                <span className="text-[15px] tabular-nums text-stone line-through">
-                  {formatPrice(product.compareAtPrice)}
+              {discount && (
+                <span className="rounded-full bg-gold px-3 py-1 text-[12px] font-semibold text-ink">
+                  Save {discount}%
                 </span>
               )}
-              {discount && <SaleBadge percent={discount} />}
             </div>
-            <p className="mt-2 text-[11px] text-stone">
-              {product.live?.priceOnRequest ? "None in store right now. Ask us and we will have one made." : "At today's rate, inclusive of GST and hallmarking"}
+            {product.compareAtPrice && (
+              <p className="mt-2 text-[13px] text-stone">
+                MRP <span className="tabular-nums line-through">{formatPrice(product.compareAtPrice)}</span>
+              </p>
+            )}
+            <p className="mt-2 text-[12px] text-stone">
+              {product.live?.priceOnRequest
+                ? "None in store right now. Ask us and we will have one made."
+                : "Inclusive of GST and hallmarking, at today's rate."}
             </p>
 
-            <div className="mt-6 flex flex-wrap items-center gap-4">
+            <div className="mt-5 flex flex-wrap items-center gap-3">
               <StockDot availability={product.availability} />
               <HallmarkBadge />
               <span className="text-[12px] text-stone">SKU {product.sku}</span>
             </div>
 
             <BuyPanel product={product} />
-            {product.live && product.live.pieces.length > 0 && <LivePieces pieces={product.live.pieces} />}
 
-            <div className="mt-9 space-y-3 border-t border-line pt-7">
-              {product.description.map((paragraph) => (
-                <p key={paragraph} className="text-[13px] leading-relaxed text-ash">
-                  {paragraph}
-                </p>
-              ))}
+            <ProductBenefits />
+
+            <div className="mt-8 space-y-3">
+              <ProductDetails product={product} />
+              {product.live && product.live.pieces.length > 0 && (
+                <Fold title={`In the showroom today (${product.live.pieces.length})`}>
+                  <LivePieces pieces={product.live.pieces} />
+                </Fold>
+              )}
+              <Fold title="Price breakup" defaultOpen>
+                <div className="[&>div]:border-0 [&>div]:bg-transparent [&>div]:p-0 [&_h2]:hidden">
+                  <PriceBreakup product={product} />
+                </div>
+              </Fold>
             </div>
           </div>
         </div>
       </Shell>
 
-      <Panel tone="cream">
-        <div className="grid gap-12 lg:grid-cols-[1fr_minmax(0,420px)] lg:gap-16">
-          <ProductDetails product={product} />
-          <div className="lg:pt-0">
-            <PriceBreakup product={product} />
-          </div>
-        </div>
-      </Panel>
+      <StickyBuyBar product={product} />
+
+      <ProductPromise />
+      <ProductReviews live={Boolean(product.live)} />
 
       {related.length > 0 && (
         <Panel tone="paper">
           <SectionHeading
-            label="You may also like"
+            label="Recommended for you"
             tone="paper"
             action={<ArrowCta href={`/shop/${product.category}`}>More {categoryLabels[product.category].toLowerCase()}</ArrowCta>}
           />
@@ -206,4 +224,16 @@ function jsonLd(product: Product) {
       ? {}
       : { aggregateRating: { "@type": "AggregateRating", ratingValue: ratingSummary.average, reviewCount: ratingSummary.count } }),
   };
+}
+
+/** One honest line on availability, from real stock where we have it. */
+function stockLine(product: Product) {
+  if (product.live) {
+    return product.live.inStock > 0
+      ? `${product.live.inStock} ${product.live.inStock === 1 ? "piece" : "pieces"} in the Rahuri showroom today`
+      : "Not on the floor right now. We can make it for you";
+  }
+  return product.availability === "in-stock"
+    ? "In stock at the Rahuri showroom"
+    : "Made to order, ready in three to five weeks";
 }

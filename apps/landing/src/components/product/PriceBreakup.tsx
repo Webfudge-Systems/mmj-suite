@@ -41,9 +41,9 @@ export function PriceBreakup({ product }: { product: Product }) {
   ];
 
   return (
-    <div className="border border-line bg-paper p-6 sm:p-8">
+    <div className="rounded-2xl border border-line bg-paper p-6 sm:p-8">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h2 className="eyebrow text-[10px]">Price breakup</h2>
+        <h2 className="text-[24px] text-ink">Price breakup</h2>
         <p className="text-[11px] text-stone">
           Rate as on {formatDate(rateUpdatedOn)}
         </p>
@@ -101,8 +101,8 @@ function LiveBreakup({ product }: { product: Product }) {
   const breakup = live.breakup;
   if (!breakup) {
     return (
-      <div className="border border-line bg-paper p-6 sm:p-8">
-        <h2 className="eyebrow text-[10px]">Price breakup</h2>
+      <div className="rounded-2xl border border-line bg-paper p-6 sm:p-8">
+        <h2 className="text-[24px] text-ink">Price breakup</h2>
         <p className="mt-5 text-[13px] leading-relaxed text-ash">
           This design is made to order, so the price depends on the weight you choose. Reserve it or call us and we will quote at the day&apos;s rate.
         </p>
@@ -117,9 +117,9 @@ function LiveBreakup({ product }: { product: Product }) {
     { label: "GST", note: "3% on the bill", value: breakup.gst },
   ];
   return (
-    <div className="border border-line bg-paper p-6 sm:p-8">
+    <div className="rounded-2xl border border-line bg-paper p-6 sm:p-8">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h2 className="eyebrow text-[10px]">Price breakup</h2>
+        <h2 className="text-[24px] text-ink">Price breakup</h2>
         <p className="text-[11px] text-stone">At today&apos;s published rate</p>
       </div>
       <table className="mt-6 w-full text-[13px]">

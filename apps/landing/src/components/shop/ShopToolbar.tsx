@@ -52,7 +52,7 @@ export function ShopToolbar({
             <select
               value={query.get("sort") ?? "popularity"}
               onChange={(event) => query.set("sort", event.target.value)}
-              className="border border-line bg-transparent py-2 pl-3 pr-8 text-[13px] text-ink outline-none transition-colors focus-visible:border-ink"
+              className="rounded-2xl border border-line bg-transparent py-2 pl-3 pr-8 text-[13px] text-ink outline-none transition-colors focus-visible:border-ink"
             >
               {sortOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -71,7 +71,7 @@ export function ShopToolbar({
               <button
                 type="button"
                 onClick={() => query.set(chip.key, null)}
-                className="eyebrow flex items-center gap-1.5 border border-line px-3 py-1.5 text-[9px] text-ash transition-colors hover:border-ink hover:text-ink"
+                className="eyebrow flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-[9px] text-ash transition-colors hover:border-ink hover:text-ink"
               >
                 {chip.label}
                 <X className="size-3" />

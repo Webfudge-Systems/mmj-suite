@@ -45,7 +45,7 @@ export function Drawer({
             transition={{ duration: 0.25 }}
           />
           <motion.aside
-            className={`absolute top-0 flex h-full w-full max-w-[420px] flex-col bg-cream ${
+            className={`absolute top-0 flex h-full w-full max-w-[420px] flex-col bg-paper sm:rounded-l-3xl ${
               side === "right" ? "right-0" : "left-0"
             }`}
             initial={{ x: side === "right" ? "100%" : "-100%" }}
@@ -54,7 +54,7 @@ export function Drawer({
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
           >
             <header className="flex items-center justify-between border-b border-line px-6 py-5">
-              <h2 className="eyebrow text-[13px]">{title}</h2>
+              <h2 className="text-[24px] text-ink">{title}</h2>
               <button
                 type="button"
                 onClick={onClose}

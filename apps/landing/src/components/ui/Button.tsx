@@ -2,18 +2,31 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type Variant = "solid" | "outline" | "light" | "gold" | "cream";
+type Variant = "solid" | "ink" | "outline" | "light" | "gold" | "cream" | "pill" | "pill-light";
 
 const variants: Record<Variant, string> = {
-  solid: "bg-ink text-cream hover:bg-wine",
-  outline: "border border-ink/25 text-ink hover:border-ink hover:bg-ink hover:text-cream",
-  light: "border border-cream/40 text-cream hover:bg-cream hover:text-ink",
-  gold: "bg-gold text-ink hover:bg-wine hover:text-cream",
+  solid: "bg-wine text-cream hover:bg-wine-deep",
+  ink: "bg-ink text-cream hover:bg-wine",
+  outline: "border border-ink text-ink hover:bg-ink hover:text-cream",
+  light: "border border-cream/60 text-cream hover:bg-cream hover:text-wine",
+  gold: "bg-gold text-ink hover:bg-gold-soft",
   cream: "bg-cream text-wine hover:bg-gold hover:text-ink",
+  pill: "rounded-full bg-wine text-cream hover:bg-wine-deep",
+  "pill-light": "rounded-full bg-paper text-ink shadow-sm hover:bg-gold",
 };
 
 const base =
-  "eyebrow inline-flex items-center justify-center gap-2 px-7 py-3.5 text-[12px] transition-colors duration-300 ease-[var(--ease-out-soft)]";
+  "group inline-flex items-center justify-center gap-2 rounded-full px-7 py-3.5 text-[13px] font-medium tracking-[0.02em] transition-colors duration-300 ease-[var(--ease-out-soft)]";
+
+function Arrow() {
+  return (
+    <ArrowUpRight
+      className="size-4 transition-transform duration-300 ease-[var(--ease-out-soft)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+      strokeWidth={1.6}
+      aria-hidden
+    />
+  );
+}
 
 export function Button({
   children,
@@ -42,25 +55,32 @@ export function Button({
   );
 }
 
+/** `arrow` leads the label with the ↗ glyph, as the reference's boxed CTAs do. */
 export function ButtonLink({
   children,
   href,
   variant = "solid",
+  arrow = false,
   className,
 }: {
   children: React.ReactNode;
   href: string;
   variant?: Variant;
+  arrow?: boolean;
   className?: string;
 }) {
   return (
     <Link href={href} className={cn(base, variants[variant], className)}>
+      {arrow && <Arrow />}
       {children}
     </Link>
   );
 }
 
-/** Quiet "view all" link that sits opposite every section label. */
+/**
+ * Quiet text link with the ↗ glyph and a brand-blue underline, the reference's
+ * "Shop collection" / "Book now" treatment.
+ */
 export function ArrowCta({
   children,
   href,
@@ -76,16 +96,15 @@ export function ArrowCta({
     <Link
       href={href}
       className={cn(
-        "eyebrow group inline-flex items-center gap-1.5 text-[11px] transition-opacity hover:opacity-60",
-        tone === "dark" ? "text-ink" : "text-cream",
+        "group inline-flex items-center gap-1.5 border-b-2 pb-1.5 text-[13px] font-medium transition-colors",
+        tone === "dark"
+          ? "border-wine/70 text-ink hover:border-wine hover:text-wine"
+          : "border-gold text-cream hover:text-gold",
         className,
       )}
     >
+      <Arrow />
       {children}
-      <ArrowUpRight
-        className="size-3.5 transition-transform duration-300 ease-[var(--ease-out-soft)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-        aria-hidden
-      />
     </Link>
   );
 }

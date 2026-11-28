@@ -41,7 +41,7 @@ export function SearchOverlay() {
             className="absolute inset-0 h-full w-full cursor-default bg-ink/50"
           />
           <motion.div
-            className="relative bg-cream pb-10 pt-6"
+            className="relative rounded-b-3xl bg-paper pb-10 pt-6"
             initial={{ y: -24 }}
             animate={{ y: 0 }}
             exit={{ y: -24 }}
@@ -84,7 +84,7 @@ export function SearchOverlay() {
                             onClick={closeSearch}
                             className="flex items-center gap-4 py-3"
                           >
-                            <div className="relative size-14 shrink-0 overflow-hidden bg-cream-deep">
+                            <div className="relative size-14 shrink-0 overflow-hidden rounded-2xl bg-cream-deep">
                               <Image
                                 src={product.images[0]}
                                 alt=""

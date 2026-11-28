@@ -88,10 +88,10 @@ export function CheckoutForm() {
 
   return (
     <Shell className="py-12 sm:py-16">
-      <form onSubmit={onSubmit} className="grid gap-10 lg:grid-cols-[1fr_minmax(0,380px)] lg:gap-14">
+      <form onSubmit={onSubmit} className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-14">
         <div className="space-y-12">
           <section>
-            <h2 className="eyebrow text-[10px]">Your details</h2>
+            <h2 className="text-[24px] text-ink">Your details</h2>
             <p className="mt-3 text-[13px] leading-relaxed text-ash">
               We call within one working day to confirm the pieces, the weights and the day&apos;s rate, and set a time for your visit.
             </p>
@@ -106,7 +106,7 @@ export function CheckoutForm() {
           </section>
 
           <section>
-            <h2 className="eyebrow text-[10px]">Anything we should know</h2>
+            <h2 className="text-[24px] text-ink">Anything we should know</h2>
             <TextArea
               label="Note for the shop"
               name="note"
@@ -116,7 +116,7 @@ export function CheckoutForm() {
             />
           </section>
 
-          <section className="border border-line bg-cream-deep p-5 text-[13px] leading-relaxed text-ash">
+          <section className="rounded-2xl border border-line bg-cream-deep p-5 text-[13px] leading-relaxed text-ash">
             <p className="text-ink">How payment works</p>
             <p className="mt-2">
               Nothing is charged online. You see and try the pieces at {site.name}, then pay at the counter by UPI, card or cash. The price is worked out at that day&apos;s published rate.
@@ -125,10 +125,10 @@ export function CheckoutForm() {
         </div>
 
         <div className="lg:sticky lg:top-32 lg:self-start">
-          <ul className="mb-5 divide-y divide-line border border-line bg-paper">
+          <ul className="mb-5 divide-y divide-line rounded-2xl border border-line bg-paper">
             {lines.map((line) => (
               <li key={`${line.slug}-${line.size ?? "one"}`} className="flex gap-3 p-4">
-                <span className="relative size-14 shrink-0 overflow-hidden bg-cream-deep">
+                <span className="relative size-14 shrink-0 overflow-hidden rounded-2xl bg-cream-deep">
                   <Image src={line.product.images[0]} alt="" fill sizes="56px" className="object-cover" />
                 </span>
                 <span className="min-w-0 flex-1">

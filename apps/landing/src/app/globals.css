@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  /* Open Sauce One — official MMJ brand typeface (see layout.tsx). */
+  /* Open Sauce One is the MMJ brand typeface and is used for everything. */
   --font-sans: var(--font-open-sauce), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
     Roboto, sans-serif;
   --font-display: var(--font-open-sauce), ui-sans-serif, system-ui, sans-serif;
@@ -13,23 +13,31 @@
    * Velvet Black #272727 · Taupe #AF9C87
    *
    * `wine` keeps the existing utility names but maps to Deep Blue so every
-   * bg-wine / text-wine sitewide becomes the brand navy.
+   * bg-wine / text-wine sitewide is the brand navy. `mist` is a pale tint of
+   * Deep Blue used for the soft panels; `sky` is the light end of the hero
+   * gradient.
    */
   --color-cream: #fafafa;
-  --color-cream-deep: #f0ebe3;
+  --color-cream-deep: #f2f2f3;
   --color-wine: #0a2874;
   --color-wine-deep: #071c52;
   --color-ink: #272727;
   --color-gold: #e9b120;
+  --color-gold-soft: #f3d98c;
   --color-stone: #af9c87;
 
-  --color-paper: #fafafa;
-  --color-line: #e4dfd6;
-  --color-ash: #5c564e;
+  --color-mist: #edf1f9;
+  --color-mist-deep: #dbe3f3;
+  --color-sky: #4a6cc0;
+  --color-fog: #f4f4f5;
+
+  --color-paper: #ffffff;
+  --color-line: #e6e7eb;
+  --color-ash: #5d5f66;
   --color-stock: #3f7d4a;
 
-  --radius-tile: 4px;
-  --radius-panel: 8px;
+  --radius-tile: 16px;
+  --radius-panel: 28px;
 
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -40,7 +48,8 @@
   }
 
   body {
-    background-color: var(--color-cream);
+    -webkit-tap-highlight-color: transparent;
+    background-color: var(--color-paper);
     color: var(--color-ink);
     font-family: var(--font-sans);
   }
@@ -59,11 +68,11 @@
   h2,
   h3,
   h4 {
-    font-family: var(--font-display);
+    font-family: var(--font-sans);
+    font-style: normal;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    line-height: 1.05;
+    letter-spacing: -0.025em;
+    line-height: 1.12;
   }
 
   input[type="search"]::-webkit-search-cancel-button {
@@ -80,21 +89,48 @@
   }
 }
 
-/* Tracked caps for section labels, nav, and CTAs. */
+/* Small caps-style labels: product tags, link CTAs, legal lines. */
 @utility eyebrow {
   font-family: var(--font-display);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
+  font-style: normal;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0.01em;
   line-height: 1;
 }
 
 /* Brand wordmark lockup text beside the primary mark. */
 @utility wordmark {
   font-family: var(--font-display);
+  font-style: normal;
   text-transform: uppercase;
   letter-spacing: 0.28em;
   font-weight: 600;
+}
+
+/* Plain sans heading for places (product names, card titles) that sit in h3s. */
+@utility heading-sans {
+  font-family: var(--font-sans);
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.35;
+}
+
+/* The hero's deep-blue wash, dark top-left to a pale sky at the far edge. */
+@utility bg-brand-wash {
+  background-image: linear-gradient(
+    150deg,
+    var(--color-wine-deep) 0%,
+    var(--color-wine) 38%,
+    var(--color-sky) 78%,
+    #b9c9ec 100%
+  );
+}
+
+/* Soft panel wash used behind the shop-the-look block and page headers. */
+@utility bg-mist-wash {
+  background-image: linear-gradient(120deg, var(--color-mist-deep) 0%, var(--color-mist) 45%, #ffffff 100%);
 }
 
 @media (prefers-reduced-motion: reduce) {

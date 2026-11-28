@@ -14,7 +14,7 @@ export function QuantityStepper({
   max?: number;
 }) {
   return (
-    <div className="inline-flex items-center border border-line">
+    <div className="inline-flex items-center rounded-full border border-line">
       <button
         type="button"
         aria-label="Decrease quantity"

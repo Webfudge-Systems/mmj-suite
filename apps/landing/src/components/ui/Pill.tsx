@@ -2,7 +2,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 const base =
-  "eyebrow inline-flex items-center gap-1.5 border px-3.5 py-2 text-[11px] transition-colors duration-200";
+  "inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-[12px] transition-colors duration-200";
 
 export function Pill({
   children,
@@ -23,8 +23,8 @@ export function Pill({
       className={cn(
         base,
         active
-          ? "border-ink bg-ink text-cream"
-          : "border-line bg-transparent text-ash hover:border-ink hover:text-ink",
+          ? "border-wine bg-wine text-cream"
+          : "border-line bg-paper text-ash hover:border-wine hover:text-wine",
         className,
       )}
     >
@@ -50,8 +50,8 @@ export function PillLink({
       className={cn(
         base,
         active
-          ? "border-ink bg-ink text-cream"
-          : "border-line bg-transparent text-ash hover:border-ink hover:text-ink",
+          ? "border-wine bg-wine text-cream"
+          : "border-line bg-paper text-ash hover:border-wine hover:text-wine",
         className,
       )}
     >

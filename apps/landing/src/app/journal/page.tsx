@@ -29,7 +29,7 @@ export default function JournalPage() {
           <Reveal>
             <Link
               href={`/journal/${featured.slug}`}
-              className="group grid overflow-hidden border border-line bg-paper lg:grid-cols-2"
+              className="group grid overflow-hidden rounded-2xl border border-line bg-paper lg:grid-cols-2"
             >
               <div className="relative aspect-[16/10] lg:aspect-auto lg:min-h-[420px]">
                 <Image
@@ -62,8 +62,8 @@ export default function JournalPage() {
           {rest.map((post, index) => (
             <Reveal key={post.slug} delay={Math.min(index, 3) * 0.06}>
               <li>
-                <Link href={`/journal/${post.slug}`} className="group block h-full border border-line bg-paper">
-                  <div className="relative aspect-[16/10] overflow-hidden bg-cream-deep">
+                <Link href={`/journal/${post.slug}`} className="group block h-full rounded-2xl border border-line bg-paper">
+                  <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-cream-deep">
                     <Image
                       src={post.image}
                       alt=""

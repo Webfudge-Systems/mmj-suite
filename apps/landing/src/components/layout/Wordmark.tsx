@@ -4,8 +4,9 @@ import { cn } from "@/lib/utils";
 import { site } from "@/data/site";
 
 /**
- * Horizontal brand lockup — full Primary Logo mark + Open Sauce wordmark,
- * as specified for website headers in the MMJ brand guidelines.
+ * Horizontal brand lockup: the logo mark beside the Open Sauce wordmark, as
+ * the MMJ brand guidelines specify for website headers. On dark grounds the
+ * transparent gold mark replaces the blue-tile Primary Logo.
  */
 export function Wordmark({
   className,
@@ -18,7 +19,7 @@ export function Wordmark({
   showTagline?: boolean;
   size?: "nav" | "footer";
 }) {
-  const mark = size === "nav" ? 52 : 44;
+  const light = tone === "light";
 
   return (
     <Link
@@ -26,24 +27,35 @@ export function Wordmark({
       className={cn("group inline-flex items-center gap-3 leading-none", className)}
       aria-label={`${site.name} home`}
     >
-      <Image
-        src="/brand/Primary_Logo.png"
-        alt=""
-        width={mark}
-        height={Math.round(mark * (1203 / 1405))}
-        className={cn(
-          "shrink-0 object-contain",
-          size === "nav" ? "h-12 w-auto sm:h-14" : "h-10 w-auto",
-        )}
-        style={{ width: "auto" }}
-        priority={size === "nav"}
-      />
+      {light ? (
+        <Image
+          src="/brand/LOGO.png"
+          alt=""
+          width={811}
+          height={843}
+          className="h-11 w-auto shrink-0 object-contain"
+          style={{ width: "auto" }}
+        />
+      ) : (
+        <Image
+          src="/brand/Primary_Logo.png"
+          alt=""
+          width={52}
+          height={Math.round(52 * (1203 / 1405))}
+          className={cn(
+            "shrink-0 object-contain",
+            size === "nav" ? "h-10 w-auto sm:h-12" : "h-10 w-auto",
+          )}
+          style={{ width: "auto" }}
+          priority={size === "nav"}
+        />
+      )}
       <span className="flex flex-col items-start">
         <span
           className={cn(
             "wordmark",
-            size === "nav" ? "text-[15px] sm:text-[17px]" : "text-[16px]",
-            tone === "dark" ? "text-ink" : "text-cream",
+            size === "nav" ? "text-[15px] sm:text-[17px]" : "text-[18px]",
+            light ? "text-gold" : "text-ink",
           )}
         >
           {site.shortName}
@@ -52,7 +64,7 @@ export function Wordmark({
           <span
             className={cn(
               "eyebrow mt-1.5 text-[7px] tracking-[0.18em] sm:text-[8px]",
-              tone === "dark" ? "text-stone" : "text-cream/65",
+              light ? "text-cream/60" : "text-stone",
             )}
           >
             Mukund Maid Jewellers

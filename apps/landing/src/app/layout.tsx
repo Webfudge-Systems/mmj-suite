@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Announcement } from "@/components/layout/Announcement";
 import { Header } from "@/components/layout/Header";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { SearchOverlay } from "@/components/layout/SearchOverlay";
 import { Footer } from "@/components/layout/Footer";
@@ -151,7 +152,7 @@ export default async function RootLayout({
       data-scroll-behavior="smooth"
       className={openSauce.variable}
     >
-      <body className="font-sans antialiased">
+      <body className="pb-24 font-sans antialiased lg:pb-0">
         <CatalogProvider products={products}>
         <script
           type="application/ld+json"
@@ -176,6 +177,7 @@ export default async function RootLayout({
 
         <main id="main">{children}</main>
         <Footer />
+        <BottomNav />
         </CatalogProvider>
       </body>
     </html>

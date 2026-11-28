@@ -33,7 +33,7 @@ export function CartView() {
 
   return (
     <Shell className="py-12 sm:py-16">
-      <div className="grid gap-10 lg:grid-cols-[1fr_minmax(0,380px)] lg:gap-14">
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-14">
         <div>
           <CartLines lines={lines} />
           <div className="mt-6 flex items-center justify-between border-t border-line pt-6">

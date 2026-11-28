@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ShopBrowser } from "@/components/shop/ShopBrowser";
+import { StyleStrip } from "@/components/shop/StyleStrip";
 import { filterProducts, ensureCatalog, getProducts } from "@/lib/catalog";
 import { parseFilters, parsePage, parseSort, type RawParams } from "@/lib/shop-params";
 
@@ -27,6 +28,7 @@ export default async function ShopPage({
         lead={`${getProducts().length} ${getProducts().length === 1 ? "design" : "designs"} in the showroom. Filter by metal, ornament or occasion, and open any piece to see exactly how its price is built.`}
         trail={[{ label: "Home", href: "/" }, { label: "Shop" }]}
       />
+      <StyleStrip basePath="/shop" active={filters.category} />
       <ShopBrowser products={products} filters={filters} page={parsePage(params)} />
     </>
   );

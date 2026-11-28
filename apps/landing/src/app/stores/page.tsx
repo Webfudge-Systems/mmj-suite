@@ -35,7 +35,7 @@ export default function StoresPage() {
 
       <Shell className="py-12 sm:py-16">
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
-          <Reveal className="relative aspect-[4/3] overflow-hidden bg-cream-deep">
+          <Reveal className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-cream-deep">
             <Image
               src={store.image}
               alt={`Inside the ${store.name} showroom`}
@@ -113,7 +113,7 @@ export default function StoresPage() {
           The floor, counter by counter
         </h2>
 
-        <ol className="mt-11 grid gap-px border border-line bg-line sm:grid-cols-2 lg:grid-cols-5">
+        <ol className="mt-11 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2 lg:grid-cols-5">
           {counters.map((counter, index) => (
             <li key={counter.name} className="bg-paper p-6">
               <p className="eyebrow text-[9px] text-gold">

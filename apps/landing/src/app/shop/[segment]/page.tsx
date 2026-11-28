@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ShopBrowser } from "@/components/shop/ShopBrowser";
+import { StyleStrip } from "@/components/shop/StyleStrip";
 import { filterProducts, ensureCatalog } from "@/lib/catalog";
 import { categories, getCategory, getMetalCounter, metalCounters } from "@/data/categories";
 import { parseFilters, parsePage, parseSort, type RawParams } from "@/lib/shop-params";
@@ -128,6 +129,9 @@ export default async function ShopSegmentPage({
           { label: resolved.title },
         ]}
       />
+      {!resolved.lockedKeys.includes("category") && (
+        <StyleStrip basePath={`/shop/${segment}`} active={filters.category} />
+      )}
       <ShopBrowser
         products={products}
         filters={filters}

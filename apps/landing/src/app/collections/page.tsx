@@ -38,7 +38,7 @@ export default async function CollectionsPage() {
               >
                 <Link
                   href={`/collections/${collection.slug}`}
-                  className="group relative block overflow-hidden bg-cream-deep"
+                  className="group relative block overflow-hidden rounded-2xl bg-cream-deep"
                 >
                   <div className={wide ? "aspect-[16/9] lg:aspect-[21/9]" : "aspect-[4/5]"}>
                     <Image
